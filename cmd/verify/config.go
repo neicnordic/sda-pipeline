@@ -36,7 +36,7 @@ func NewConfig() *Config {
 
 	if viper.GetString("archive.type") == "s3" {
 		s3ConfVars := []string{
-			"archive.url", "archive.acesskey", "archive.secretkey", "archive.bucket",
+			"archive.url", "archive.accesskey", "archive.secretkey", "archive.bucket",
 		}
 		requiredConfVars = append(requiredConfVars, s3ConfVars...)
 	} else {

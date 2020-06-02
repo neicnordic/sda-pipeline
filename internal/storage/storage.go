@@ -17,5 +17,4 @@ type PosixConf struct {
 	Mode       int
 	UID        int
 	GID        int
-	Separator  string
 }

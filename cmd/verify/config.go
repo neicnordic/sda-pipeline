@@ -176,12 +176,6 @@ func (c *Config) readConfig() {
 			file.Mode = 2750
 		}
 
-		if viper.IsSet("archive.separator") {
-			file.Separator = viper.GetString("archive.separator")
-		} else {
-			file.Separator = "/"
-		}
-
 		c.Archvie = file
 
 	}

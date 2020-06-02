@@ -64,7 +64,7 @@ func (c *Config) readConfig() {
 	b := broker.Mqconf{}
 
 	b.Host = viper.GetString("broker.host")
-	b.Port = viper.GetString("broker.port")
+	b.Port = viper.GetInt("broker.port")
 	b.User = viper.GetString("broker.user")
 	b.Password = viper.GetString("broker.password")
 	b.Queue = viper.GetString("broker.queue")
@@ -102,7 +102,7 @@ func (c *Config) readConfig() {
 
 	// All these are required
 	db.Host = viper.GetString("db.host")
-	db.Port = viper.GetString("db.port")
+	db.Port = viper.GetInt("db.port")
 	db.User = viper.GetString("db.user")
 	db.Password = viper.GetString("db.password")
 	db.Database = viper.GetString("db.database")
@@ -148,15 +148,17 @@ func (c *Config) readConfig() {
 		s3.Bucket = viper.GetString("archive.bucket")
 
 		if viper.IsSet("archive.port") {
-			s3.Port = viper.GetString("archive.port")
+			s3.Port = viper.GetInt("archive.port")
+		} else {
+			s3.Port = 443
 		}
 
 		if viper.IsSet("archive.chunksize") {
-			s3.Chunksize = viper.GetInt("archive.chunksize")
+			s3.Chunksize = viper.GetInt("archive.chunksize") * 1024 * 1024
 		}
 
 		if viper.IsSet("archive.cacert") {
-			s3.Port = viper.GetString("archive.cacert")
+			s3.Cacert = viper.GetString("archive.cacert")
 		}
 
 		c.Archvie = s3
@@ -165,7 +167,8 @@ func (c *Config) readConfig() {
 		file := storage.PosixConf{}
 
 		file.Location = viper.GetString("archive.location")
-		file.User = viper.GetString("archive.user")
+		file.UID = viper.GetInt("archive.uid")
+		file.GID = viper.GetInt("archive.gid")
 
 		if viper.IsSet("archive.mode") {
 			file.Mode = viper.GetInt("archive.mode")

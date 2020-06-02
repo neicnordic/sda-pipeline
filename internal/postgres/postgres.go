@@ -17,7 +17,7 @@ type SQLdb struct {
 // Pgconf stores information about the db backend
 type Pgconf struct {
 	Host       string
-	Port       string
+	Port       int
 	User       string
 	Password   string
 	Database   string
@@ -51,13 +51,13 @@ func NewDB(c Pgconf) (*sql.DB, error) {
 func buildConnInfo(c Pgconf) string {
 	connInfo := ""
 	if c.SslMode == "verify-full" {
-		connInfo = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s sslrootcert=%s sslcert=%s sslkey=%s",
+		connInfo = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s sslrootcert=%s sslcert=%s sslkey=%s",
 			c.Host, c.Port, c.User, c.Password, c.Database, c.SslMode, c.Cacert, c.ClientCert, c.ClientKey)
 	} else if c.SslMode != "disable" {
-		connInfo = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s sslrootcert=%s",
+		connInfo = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s sslrootcert=%s",
 			c.Host, c.Port, c.User, c.Password, c.Database, c.SslMode, c.Cacert)
 	} else {
-		connInfo = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		connInfo = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 			c.Host, c.Port, c.User, c.Password, c.Database, c.SslMode)
 	}
 

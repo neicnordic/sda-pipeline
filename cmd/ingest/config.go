@@ -49,7 +49,7 @@ func (c *Config) readConfig() {
 	b := broker.Mqconf{}
 
 	b.Host = viper.GetString("broker.host")
-	b.Port = viper.GetString("broker.port")
+	b.Port = viper.GetInt("broker.port")
 	b.User = viper.GetString("broker.user")
 	b.Password = viper.GetString("broker.password")
 	b.Queue = viper.GetString("broker.queue")
@@ -87,7 +87,7 @@ func (c *Config) readConfig() {
 
 	// All these are required
 	db.Host = viper.GetString("db.host")
-	db.Port = viper.GetString("db.port")
+	db.Port = viper.GetInt("db.port")
 	db.User = viper.GetString("db.user")
 	db.Password = viper.GetString("db.password")
 	db.Database = viper.GetString("db.database")

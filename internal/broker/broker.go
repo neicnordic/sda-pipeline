@@ -20,7 +20,7 @@ type AMQPBroker struct {
 // Mqconf stores information about the message broker
 type Mqconf struct {
 	Host       string
-	Port       string
+	Port       int
 	User       string
 	Password   string
 	Vhost      string
@@ -36,7 +36,7 @@ type Mqconf struct {
 // New creates a new Broker that can communicate with a backend
 // amqp server.
 func New(c Mqconf) *AMQPBroker {
-	brokerURI := buildMqURI(c.Host, c.Port, c.User, c.Password, c.Vhost, c.Ssl)
+	brokerURI := buildMqURI(c.Host, c.User, c.Password, c.Vhost, c.Port, c.Ssl)
 
 	var Connection *amqp.Connection
 	var Channel *amqp.Channel
@@ -94,12 +94,12 @@ func GetMessages(b *AMQPBroker, queue string) <-chan amqp.Delivery {
 }
 
 // BuildMqURI builds the MQ URI
-func buildMqURI(mqHost, mqPort, mqUser, mqPassword, mqVhost string, ssl bool) string {
+func buildMqURI(mqHost, mqUser, mqPassword, mqVhost string, mqPort int, ssl bool) string {
 	brokerURI := ""
 	if ssl {
-		brokerURI = "amqps://" + mqUser + ":" + mqPassword + "@" + mqHost + ":" + mqPort + mqVhost
+		brokerURI = fmt.Sprintf("amqps://%s:%s@%s:%d%s", mqUser, mqPassword, mqHost, mqPort, mqVhost)
 	} else {
-		brokerURI = "amqp://" + mqUser + ":" + mqPassword + "@" + mqHost + ":" + mqPort + mqVhost
+		brokerURI = fmt.Sprintf("amqp://%s:%s@%s:%d%s", mqUser, mqPassword, mqHost, mqPort, mqVhost)
 	}
 	return brokerURI
 }

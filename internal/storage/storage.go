@@ -3,7 +3,7 @@ package storage
 // S3Conf stores information about the S3 backend
 type S3Conf struct {
 	URL        string
-	Port       string
+	Port       int
 	AccessKey  string
 	SecretKey  string
 	Bucket     string
@@ -15,6 +15,7 @@ type S3Conf struct {
 type PosixConf struct {
 	Location   string
 	Mode       int
-	User       string
+	UID        int
+	GID        int
 	Separator  string
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -14,7 +13,6 @@ import (
 )
 
 const completed = "UPDATE local_ega.files SET status = 'COMPLETED', archive_file_checksum = $1, archive_file_checksum_type = 'SHA256'  WHERE file_id = $3;"
-const getHeader = "SELECT header from local_ega.files WHERE id = $1"
 
 // Message struct that holds the json message data
 type Message struct {
@@ -77,16 +75,20 @@ func main() {
 				}
 			}
 
-			if err == nil {
-				row := db.QueryRow(getHeader, message.FileID)
-				var hexString string
-				err = row.Scan(&hexString)
-				if err != nil {
-					log.Fatal(err)
+			header, e := postgres.GetHeader(db, m.FileID)
+			if e != nil {
+				log.Error(e)
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				d.Nack(false, false)
+				// Send the errorus message to an error queue so it can be analyzed.
+				if err := broker.SendMessage(mq, d.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, d.Body); err != nil {
+					log.Error("faild to publish message, reason: ", err)
 				}
-				header, err := hex.DecodeString(hexString)
+				continue
+			}
 				if err != nil {
-					log.Fatal(err)
+					log.Error(err)
+					d.Nack(false, true)
 				}
 				fmt.Println(header)
 			}

@@ -27,6 +27,7 @@ type Mqconf struct {
 	Queue      string
 	Exchange   string
 	RoutingKey string
+	RoutingError string
 	Ssl        bool
 	VerifyPeer bool
 	Cacert     string

@@ -40,22 +40,40 @@ func main() {
 	forever := make(chan bool)
 
 	log.Info("starting verify service")
-	var message Message
 	// var header []byte
 
 	go func() {
 		for d := range broker.GetMessages(mq, config.Broker.Queue) {
 			log.Debugf("received a message: %s", d.Body)
-			err := json.Unmarshal(bytes.Replace(d.Body, []byte(`'`), []byte(`"`), -1), &message)
-			if err != nil {
+			var m Message
+			e := json.Unmarshal(bytes.Replace(d.Body, []byte(`'`), []byte(`"`), -1), &m)
+			if e != nil {
 				log.Errorf("Not a json message: %s", err)
-			}
-
-			e := reflect.ValueOf(&message).Elem()
-			for i := 0; i < e.NumField(); i++ {
-				if e.Field(i).Interface() == "" || e.Field(i).Interface() == 0 {
-					log.Errorf("%s is missing", e.Type().Field(i).Name)
-					err = fmt.Errorf("%s is missing", e.Type().Field(i).Name)
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				d.Nack(false, false)
+				// Send the errorus message to an error queue so it can be analyzed.
+				if err := broker.SendMessage(mq, d.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, d.Body); err != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
+				continue
+			} else {
+				e := reflect.ValueOf(&m).Elem()
+				for i := 0; i < e.NumField(); i++ {
+					if e.Field(i).Interface() == "" || e.Field(i).Interface() == 0 {
+						log.Errorf("%s is missing", e.Type().Field(i).Name)
+						err = fmt.Errorf("%s is missing", e.Type().Field(i).Name)
+					}
+				}
+				if err != nil {
+					// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+					d.Nack(false, false)
+					// Send the errorus message to an error queue so it can be analyzed.
+					if err := broker.SendMessage(mq, d.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, d.Body); err != nil {
+						log.Error("faild to publish message, reason: ", err)
+					}
+					// Restart on new message
+					continue
 				}
 			}
 

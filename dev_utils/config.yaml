@@ -1,0 +1,64 @@
+archive:
+  type: "s3"
+  # S3 backend
+  url: "minio"
+  port: 443
+  accesskey: "access"
+  secretkey: "secret"
+  bucket: "archive"
+  chunksize: 32
+  cacrt: "./dev_utils/certs/ca.pem"
+  # posix backend
+  location: "/archive"
+  mode: 2640
+  uid: 1234
+  gid: 1234
+
+broker:
+  host: "localhost"
+  port: 5671
+  user: "test"
+  password: "test"
+  vhost: "test"
+  queue: "stableIDs"
+  exchange: "localega"
+  routingKey: "errmsg"
+  ssl: "true"
+  verifyPeer: "true"
+  cacert: "./dev_utils/certs/ca.pem"
+  clientCert: "./dev_utils/certs/client.pem"
+  clientKey: "./dev_utils/certs/client-key.pem"
+# If the FQDN and hostname of the broker differ
+# serverName can be set to the SAN name in the certificate
+  #  serverName: ""
+
+c4gh:
+  passphrase: "oaagCP1YgAZeEyl2eJAkHv9lkcWXWFgm"
+  filepath: "./dev_utils/c4gh.sec.pem"
+
+db:
+  host: "localhost"
+  port: 5432
+  user: "lega_in"
+  password: "lega_in"
+  database: "lega"
+  cacert: "./dev_utils/certs/ca.pem"
+  clientCert: "./dev_utils/certs/client.pem"
+  clientKey: "./dev_utils/certs/client-key.pem"
+  sslmode: "disable"
+
+inbox:
+  type: "s3"
+  # S3 backend
+  url: "minio"
+  port: 443
+  accesskey: "access"
+  secretkey: "secret"
+  bucket: "inbox"
+  chunksize: 32
+  cacrt: "./dev_utils/certs/ca.pem"
+  # posix backend
+  location: "/inbox"
+
+log:
+  level: "debug"

@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -63,4 +64,23 @@ func buildConnInfo(c Pgconf) string {
 	}
 
 	return connInfo
+}
+
+// GetHeader retrieves the file header
+func GetHeader(db *sql.DB, fileID int) ([]byte, error) {
+	const getHeader = "SELECT header from local_ega.files WHERE id = $1"
+
+	var hexString string
+	if err := db.QueryRow(getHeader, fileID).Scan(&hexString); err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	header, err := hex.DecodeString(hexString)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	return header, nil
 }

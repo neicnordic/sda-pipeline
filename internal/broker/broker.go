@@ -8,6 +8,7 @@ import (
 	"reflect"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/google/uuid"
 	"github.com/streadway/amqp"
 )
 
@@ -25,6 +26,8 @@ type Mqconf struct {
 	Password   string
 	Vhost      string
 	Queue      string
+	Exchange   string
+	RoutingKey string
 	Ssl        bool
 	VerifyPeer bool
 	Cacert     string
@@ -93,7 +96,29 @@ func GetMessages(b *AMQPBroker, queue string) <-chan amqp.Delivery {
 	return msgs
 }
 
-// BuildMqURI builds the MQ URI
+// SendMessage sends message to RabbitMQ if the upload is finished
+func SendMessage(b *AMQPBroker, exchange, routingKey string , body []byte) error {
+	corrID, _ := uuid.NewRandom()
+	err := b.Channel.Publish(
+		exchange,
+		routingKey,
+		false, // mandatory
+		false, // immediate
+		amqp.Publishing{
+			Headers:         amqp.Table{},
+			ContentEncoding: "UTF-8",
+			ContentType:     "application/json",
+			DeliveryMode:    amqp.Persistent, // 1=non-persistent, 2=persistent
+			CorrelationId:   corrID.String(),
+			Priority:        0, // 0-9
+			Body:            body,
+			// a bunch of application/implementation-specific fields
+		},
+	)
+	return err
+}
+
+// buildMqURI builds the MQ URI
 func buildMqURI(mqHost, mqUser, mqPassword, mqVhost string, mqPort int, ssl bool) string {
 	brokerURI := ""
 	if ssl {

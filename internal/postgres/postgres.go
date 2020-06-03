@@ -6,6 +6,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	// Needed implicitly to enable Postgres driver
 	_ "github.com/lib/pq"
 )
 

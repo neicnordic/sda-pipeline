@@ -7,17 +7,17 @@ import (
 	"reflect"
 
 	log "github.com/sirupsen/logrus"
-	"sda-pipeline/internal/postgres"
 	"sda-pipeline/internal/broker"
+	"sda-pipeline/internal/postgres"
 )
 
 const query = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE elixir_id = $2 and inbox_path = $3 and inbox_file_checksum = $4 and status != 'DISABLED';"
 
 // Message struct that holds the json message data
 type Message struct {
-	User               string `json:"user"`
-	StableID           string `json:"stable_id"`
-	FilePath           string `json:"file_path"`
+	User      string `json:"user"`
+	StableID  string `json:"stable_id"`
+	FilePath  string `json:"file_path"`
 	Checksums []struct {
 		Type  string `json:"type"`
 		Value string `json:"value"`

@@ -8,8 +8,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/viper"
-	"sda-pipeline/internal/postgres"
 	"sda-pipeline/internal/broker"
+	"sda-pipeline/internal/postgres"
 )
 
 var (

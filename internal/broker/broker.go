@@ -4,9 +4,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"reflect"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/streadway/amqp"
 )

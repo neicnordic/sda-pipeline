@@ -1,0 +1,10 @@
+version: 1
+update_configs:
+  # Keep go.mod (& go.sum) up to date, batching pull requests daily
+  - package_manager: "go:modules"
+    directory: "/"
+    update_schedule: "daily"
+  # Keep Dockerfile up to date, batching pull requests weekly
+  - package_manager: "docker"
+    directory: "/"
+    update_schedule: "weekly"

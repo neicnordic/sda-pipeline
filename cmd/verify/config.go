@@ -26,6 +26,10 @@ var (
 // Config is a parent object for all the different configuration parts
 type Config struct {
 	Broker   broker.Mqconf
+	Crypt4gh struct {
+		KeyPath    string
+		Passphrase string
+	}
 	Postgres postgres.Pgconf
 	Archvie  interface{}
 }
@@ -184,6 +188,8 @@ func (c *Config) readConfig() {
 
 	}
 
+	c.Crypt4gh.KeyPath = viper.GetString("c4gh.filepath")
+	c.Crypt4gh.Passphrase = viper.GetString("c4gh.passphrase")
 }
 
 func parseConfig() {

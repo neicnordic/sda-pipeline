@@ -19,8 +19,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const completed = "UPDATE local_ega.files SET status = 'COMPLETED', archive_file_checksum = $1, archive_file_checksum_type = 'SHA256'  WHERE file_id = $3;"
-
 // Message struct that holds the json message data
 type Message struct {
 	Filepath     string `json:"filepath"`
@@ -28,6 +26,18 @@ type Message struct {
 	FileID       int    `json:"file_id"`
 	ArchivePath  string `json:"archive_path"`
 	FileChecksum string `json:"file_checksum"`
+}
+
+// Completed is struct holding the full message data
+type Completed struct {
+	User               string      `json:"user"`
+	DecryptedChecksums []Checksums `json:"decrypted_checksums"`
+}
+
+// Checksums is struct for the checkksum type and value
+type Checksums struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
 }
 
 func main() {
@@ -130,7 +140,26 @@ func main() {
 			}
 			key = [32]byte{}
 
-			d.Ack(false)
+			// Mark file as "COMPLETED"
+			if e := postgres.MarkCompleted(db, fmt.Sprintf("%x", hash.Sum(nil)), m.FileID); e != nil {
+				// this should really be hadled by the DB retry mechanism
+			} else {
+				// Send message to completed
+				c := Completed{
+					User: m.User,
+					DecryptedChecksums: []Checksums{
+						{"SHA256", fmt.Sprintf("%x", hash.Sum(nil))},
+					},
+				}
+				fmt.Println(c)
+				completed, err := json.Marshal(&c)
+				fmt.Println(string(completed))
+				if err != nil {
+					// do something
+				}
+				broker.SendMessage(mq, d.CorrelationId, config.Broker.Exchange, config.Broker.RoutingKey, completed)
+				d.Ack(false)
+			}
 		}
 	}()
 

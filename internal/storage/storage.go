@@ -33,7 +33,7 @@ func FileReader(archive, filePath string) io.Reader {
 	} else {
 		f, err := os.Open(filePath)
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
 		}
 		r = f
 	}

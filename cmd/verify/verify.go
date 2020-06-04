@@ -107,13 +107,13 @@ func main() {
 			// do file verfication
 			k, e := os.Open(config.Crypt4gh.KeyPath)
 			if e != nil {
-				log.Fatal(e)
+				log.Error(e)
 			}
 			defer k.Close()
 
 			key, e := keys.ReadPrivateKey(k, []byte(config.Crypt4gh.Passphrase))
 			if e != nil {
-				log.Fatal(e)
+				log.Error(e)
 			}
 			f := storage.FileReader(config.Archive.Type, filepath.Join(filepath.Clean(config.Archive.Location), m.ArchivePath))
 
@@ -122,16 +122,16 @@ func main() {
 			var rw io.ReadWriter
 			rw = &buf
 			if _, e := io.Copy(rw, f); e != nil {
-				log.Fatal(e)
+				log.Error(e)
 			}
 
 			c4ghr, err := streaming.NewCrypt4GHReader(rw, key, nil)
 			if err != nil {
-				log.Fatal(err)
+				log.Error(err)
 			}
 			hash := sha256.New()
 			if _, err := io.Copy(hash, c4ghr); err != nil {
-				log.Fatal(err)
+				log.Error(err)
 			}
 			key = [32]byte{}
 

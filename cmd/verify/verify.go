@@ -12,6 +12,7 @@ import (
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/postgres"
+	"sda-pipeline/internal/storage"
 
 	"github.com/elixir-oslo/crypt4gh/keys"
 	"github.com/elixir-oslo/crypt4gh/streaming"
@@ -115,12 +116,7 @@ func main() {
 			if e != nil {
 				log.Fatal(e)
 			}
-
-			f, err := os.Open(filepath.Join(filepath.Clean(config.Archive.Location), m.ArchivePath))
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer f.Close()
+			f := storage.FileReader(config.Archive.Type, filepath.Join(filepath.Clean(config.Archive.Location), m.ArchivePath))
 
 			var buf bytes.Buffer
 			buf.Write(header)
@@ -151,9 +147,7 @@ func main() {
 						{"SHA256", fmt.Sprintf("%x", hash.Sum(nil))},
 					},
 				}
-				fmt.Println(c)
 				completed, err := json.Marshal(&c)
-				fmt.Println(string(completed))
 				if err != nil {
 					// do something
 				}

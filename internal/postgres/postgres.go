@@ -12,7 +12,8 @@ import (
 
 // SQLdb is
 type SQLdb struct {
-	Db *sql.DB
+	Db    *sql.DB
+	Error error
 }
 
 // Pgconf stores information about the db backend
@@ -29,7 +30,7 @@ type Pgconf struct {
 }
 
 // NewDB creates a new DB connection
-func NewDB(c Pgconf) (*sql.DB, error) {
+func NewDB(c Pgconf) *SQLdb {
 	var err error
 
 	connInfo := buildConnInfo(c)
@@ -46,7 +47,9 @@ func NewDB(c Pgconf) (*sql.DB, error) {
 		panic(err)
 	}
 
-	return db, err
+	dbs := SQLdb{Db: db, Error: err}
+
+	return &dbs
 }
 
 func buildConnInfo(c Pgconf) string {

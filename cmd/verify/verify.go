@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/postgres"
@@ -62,6 +61,7 @@ func main() {
 		for delivered := range broker.GetMessages(mq, config.Broker.Queue) {
 			log.Debugf("received a message: %s", delivered.Body)
 			var message Message
+			// TODO verify json structure
 			err := json.Unmarshal(delivered.Body, &message)
 			if err != nil {
 				log.Errorf("Not a json message: %s", err)
@@ -75,26 +75,6 @@ func main() {
 				}
 				// Restart on new message
 				continue
-			} else {
-				element := reflect.ValueOf(&message).Elem()
-				for i := 0; i < element.NumField(); i++ {
-					if element.Field(i).Interface() == "" || element.Field(i).Interface() == 0 {
-						log.Errorf("%s is missing", element.Type().Field(i).Name)
-						err = fmt.Errorf("%s is missing", element.Type().Field(i).Name)
-					}
-				}
-				if err != nil {
-					// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
-					if e := delivered.Nack(false, false); e != nil {
-						log.Errorln("failed to Nack message, reason: ", e)
-					}
-					// Send the errorus message to an error queue so it can be analyzed.
-					if e := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, delivered.Body); e != nil {
-						log.Error("faild to publish message, reason: ", e)
-					}
-					// Restart on new message
-					continue
-				}
 			}
 
 			header, err := postgres.GetHeader(db, message.FileID)

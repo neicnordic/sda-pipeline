@@ -39,7 +39,7 @@ services:
     container_name: s3
     environment:
       - MINIO_ACCESS_KEY=access
-      - MINIO_SECRET_KEY=secret
+      - MINIO_SECRET_KEY=secretkey
     healthcheck:
       test: ["CMD", "curl", "-fkq", "https://localhost:9000/minio/health/live"]
       interval: 5s

@@ -2,12 +2,19 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"reflect"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/postgres"
+
+	"github.com/elixir-oslo/crypt4gh/keys"
+	"github.com/elixir-oslo/crypt4gh/streaming"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -86,12 +93,42 @@ func main() {
 				}
 				continue
 			}
-				if err != nil {
-					log.Error(err)
-					d.Nack(false, true)
-				}
-				fmt.Println(header)
+
+			// do file verfication
+			k, e := os.Open(config.Crypt4gh.KeyPath)
+			if e != nil {
+				log.Fatal(e)
 			}
+			defer k.Close()
+
+			key, e := keys.ReadPrivateKey(k, []byte(config.Crypt4gh.Passphrase))
+			if e != nil {
+				log.Fatal(e)
+			}
+
+			f, err := os.Open(filepath.Join(filepath.Clean(config.Archive.Location), m.ArchivePath))
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer f.Close()
+
+			var buf bytes.Buffer
+			buf.Write(header)
+			var rw io.ReadWriter
+			rw = &buf
+			if _, e := io.Copy(rw, f); e != nil {
+				log.Fatal(e)
+			}
+
+			c4ghr, err := streaming.NewCrypt4GHReader(rw, key, nil)
+			if err != nil {
+				log.Fatal(err)
+			}
+			hash := sha256.New()
+			if _, err := io.Copy(hash, c4ghr); err != nil {
+				log.Fatal(err)
+			}
+			key = [32]byte{}
 
 			d.Ack(false)
 		}

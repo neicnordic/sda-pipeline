@@ -56,7 +56,6 @@ func main() {
 	forever := make(chan bool)
 
 	log.Info("starting verify service")
-	// var header []byte
 
 	go func() {
 		for d := range broker.GetMessages(mq, config.Broker.Queue) {

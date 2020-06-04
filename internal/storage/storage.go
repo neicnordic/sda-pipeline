@@ -1,7 +1,15 @@
 package storage
 
-// S3Conf stores information about the S3 backend
-type S3Conf struct {
+import (
+	"io"
+	"os"
+	log "github.com/sirupsen/logrus"
+)
+
+// Conf stores information about the storage backend
+type Conf struct {
+	Type string
+	// S3
 	URL       string
 	Port      int
 	AccessKey string
@@ -9,10 +17,7 @@ type S3Conf struct {
 	Bucket    string
 	Chunksize int
 	Cacert    string
-}
-
-// PosixConf stores information about the posix backend
-type PosixConf struct {
+	// posix
 	Location string
 	Mode     int
 	UID      int

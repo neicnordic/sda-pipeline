@@ -8,7 +8,6 @@ import (
 	"reflect"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/google/uuid"
 	"github.com/streadway/amqp"
 )
 
@@ -97,8 +96,7 @@ func GetMessages(b *AMQPBroker, queue string) <-chan amqp.Delivery {
 }
 
 // SendMessage sends message to RabbitMQ if the upload is finished
-func SendMessage(b *AMQPBroker, exchange, routingKey string , body []byte) error {
-	corrID, _ := uuid.NewRandom()
+func SendMessage(b *AMQPBroker, corrID, exchange, routingKey string , body []byte) error {
 	err := b.Channel.Publish(
 		exchange,
 		routingKey,
@@ -109,7 +107,7 @@ func SendMessage(b *AMQPBroker, exchange, routingKey string , body []byte) error
 			ContentEncoding: "UTF-8",
 			ContentType:     "application/json",
 			DeliveryMode:    amqp.Persistent, // 1=non-persistent, 2=persistent
-			CorrelationId:   corrID.String(),
+			CorrelationId:   corrID,
 			Priority:        0, // 0-9
 			Body:            body,
 			// a bunch of application/implementation-specific fields

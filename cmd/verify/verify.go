@@ -58,64 +58,70 @@ func main() {
 	log.Info("starting verify service")
 
 	go func() {
-		for d := range broker.GetMessages(mq, config.Broker.Queue) {
-			log.Debugf("received a message: %s", d.Body)
-			var m Message
-			e := json.Unmarshal(bytes.Replace(d.Body, []byte(`'`), []byte(`"`), -1), &m)
-			if e != nil {
+		for delivered := range broker.GetMessages(mq, config.Broker.Queue) {
+			log.Debugf("received a message: %s", delivered.Body)
+			var message Message
+			err := json.Unmarshal(delivered.Body, &message)
+			if err != nil {
 				log.Errorf("Not a json message: %s", err)
 				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
-				d.Nack(false, false)
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
 				// Send the errorus message to an error queue so it can be analyzed.
-				if err := broker.SendMessage(mq, d.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, d.Body); err != nil {
-					log.Error("faild to publish message, reason: ", err)
+				if e := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, delivered.Body); e != nil {
+					log.Error("faild to publish message, reason: ", e)
 				}
 				// Restart on new message
 				continue
 			} else {
-				e := reflect.ValueOf(&m).Elem()
-				for i := 0; i < e.NumField(); i++ {
-					if e.Field(i).Interface() == "" || e.Field(i).Interface() == 0 {
-						log.Errorf("%s is missing", e.Type().Field(i).Name)
-						err = fmt.Errorf("%s is missing", e.Type().Field(i).Name)
+				element := reflect.ValueOf(&message).Elem()
+				for i := 0; i < element.NumField(); i++ {
+					if element.Field(i).Interface() == "" || element.Field(i).Interface() == 0 {
+						log.Errorf("%s is missing", element.Type().Field(i).Name)
+						err = fmt.Errorf("%s is missing", element.Type().Field(i).Name)
 					}
 				}
 				if err != nil {
 					// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
-					d.Nack(false, false)
+					if e := delivered.Nack(false, false); e != nil {
+						log.Errorln("failed to Nack message, reason: ", e)
+					}
 					// Send the errorus message to an error queue so it can be analyzed.
-					if err := broker.SendMessage(mq, d.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, d.Body); err != nil {
-						log.Error("faild to publish message, reason: ", err)
+					if e := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, delivered.Body); e != nil {
+						log.Error("faild to publish message, reason: ", e)
 					}
 					// Restart on new message
 					continue
 				}
 			}
 
-			header, e := postgres.GetHeader(db, m.FileID)
-			if e != nil {
-				log.Error(e)
+			header, err := postgres.GetHeader(db, message.FileID)
+			if err != nil {
+				log.Error(err)
 				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
-				d.Nack(false, false)
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", err)
+				}
 				// Send the errorus message to an error queue so it can be analyzed.
-				if err := broker.SendMessage(mq, d.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, d.Body); err != nil {
-					log.Error("faild to publish message, reason: ", err)
+				if e := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, delivered.Body); e != nil {
+					log.Error("faild to publish message, reason: ", e)
 				}
 				continue
 			}
 
 			// do file verfication
-			k, e := os.Open(config.Crypt4gh.KeyPath)
-			if e != nil {
-				log.Error(e)
+			keyFile, err := os.Open(config.Crypt4gh.KeyPath)
+			if err != nil {
+				log.Error(err)
 			}
-			defer k.Close()
+			defer keyFile.Close()
 
-			key, e := keys.ReadPrivateKey(k, []byte(config.Crypt4gh.Passphrase))
-			if e != nil {
-				log.Error(e)
+			key, err := keys.ReadPrivateKey(keyFile, []byte(config.Crypt4gh.Passphrase))
+			if err != nil {
+				log.Error(err)
 			}
-			f := storage.FileReader(config.Archive.Type, filepath.Join(filepath.Clean(config.Archive.Location), m.ArchivePath))
+			f := storage.FileReader(config.Archive.Type, filepath.Join(filepath.Clean(config.Archive.Location), message.ArchivePath))
 
 			var buf bytes.Buffer
 			buf.Write(header)
@@ -136,12 +142,12 @@ func main() {
 			key = [32]byte{}
 
 			// Mark file as "COMPLETED"
-			if e := postgres.MarkCompleted(db, fmt.Sprintf("%x", hash.Sum(nil)), m.FileID); e != nil {
+			if e := postgres.MarkCompleted(db, fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {
 				// this should really be hadled by the DB retry mechanism
 			} else {
 				// Send message to completed
 				c := Completed{
-					User: m.User,
+					User: message.User,
 					DecryptedChecksums: []Checksums{
 						{"SHA256", fmt.Sprintf("%x", hash.Sum(nil))},
 					},
@@ -150,8 +156,8 @@ func main() {
 				if err != nil {
 					// do something
 				}
-				broker.SendMessage(mq, d.CorrelationId, config.Broker.Exchange, config.Broker.RoutingKey, completed)
-				d.Ack(false)
+				broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingKey, completed)
+				delivered.Ack(false)
 			}
 		}
 	}()

@@ -27,15 +27,15 @@ type Conf struct {
 
 // FileReader returns
 func FileReader(archive, filePath string) io.Reader {
-	var r io.Reader
+	var reader io.Reader
 	if archive == "s3" {
 		// s3 specifc stuff
 	} else {
-		f, err := os.Open(filePath)
+		file, err := os.Open(filePath)
 		if err != nil {
 			log.Error(err)
 		}
-		r = f
+		reader = file
 	}
-	return r
+	return reader
 }

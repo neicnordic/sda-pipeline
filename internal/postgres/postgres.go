@@ -88,11 +88,11 @@ func GetHeader(db *sql.DB, fileID int) ([]byte, error) {
 // MarkCompleted markes the file as "COMPLETED"
 func MarkCompleted(db *sql.DB, checksum string, fileID int) (error) {
 	const completed = "UPDATE local_ega.files SET status = 'COMPLETED', archive_file_checksum = $1, archive_file_checksum_type = 'SHA256'  WHERE id = $2;"
-	res, err := db.Exec(completed, checksum, fileID)
+	result, err := db.Exec(completed, checksum, fileID)
 	if err != nil {
 		log.Errorf("something went wrong with the DB qurey: %s", err)
 	}
-	if ra, _ := res.RowsAffected(); ra == 0 {
+	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
 		log.Errorln("something went wrong with the query zero rows where changed")
 	}
 	return err

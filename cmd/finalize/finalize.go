@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"reflect"
 
-	log "github.com/sirupsen/logrus"
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/postgres"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const query = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE elixir_id = $2 and inbox_path = $3 and inbox_file_checksum = $4 and status != 'DISABLED';"
@@ -27,9 +28,10 @@ type Message struct {
 func main() {
 	config := NewConfig()
 	mq := broker.New(config.Broker)
-	db, err := postgres.NewDB(config.Postgres)
-	if err != nil {
-		log.Println("err:", err)
+	dbs := postgres.NewDB(config.Postgres)
+	db := dbs.Db
+	if dbs.Error != nil {
+		log.Println("err:", dbs.Error)
 	}
 
 	defer mq.Channel.Close()

@@ -23,3 +23,18 @@ type Conf struct {
 	UID      int
 	GID      int
 }
+
+// FileReader returns
+func FileReader(archive, filePath string) io.Reader {
+	var r io.Reader
+	if archive == "s3" {
+		// s3 specifc stuff
+	} else {
+		f, err := os.Open(filePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		r = f
+	}
+	return r
+}

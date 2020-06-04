@@ -4,7 +4,7 @@ archive:
   url: "minio"
   port: 443
   accesskey: "access"
-  secretkey: "secret"
+  secretkey: "secretkey"
   bucket: "archive"
   chunksize: 32
   cacrt: "./dev_utils/certs/ca.pem"

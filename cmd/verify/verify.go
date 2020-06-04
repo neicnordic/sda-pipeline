@@ -27,6 +27,7 @@ type Message struct {
 	FileID       int    `json:"file_id"`
 	ArchivePath  string `json:"archive_path"`
 	FileChecksum string `json:"file_checksum"`
+	ReVerify     *bool   `json: "re_verify"`
 }
 
 // Completed is struct holding the full message data
@@ -141,23 +142,25 @@ func main() {
 			}
 			key = [32]byte{}
 
-			// Mark file as "COMPLETED"
-			if e := postgres.MarkCompleted(db, fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {
-				// this should really be hadled by the DB retry mechanism
-			} else {
-				// Send message to completed
-				c := Completed{
-					User: message.User,
-					DecryptedChecksums: []Checksums{
-						{"SHA256", fmt.Sprintf("%x", hash.Sum(nil))},
-					},
+			if ! *message.ReVerify {
+				// Mark file as "COMPLETED"
+				if e := postgres.MarkCompleted(db, fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {
+					// this should really be hadled by the DB retry mechanism
+				} else {
+					// Send message to completed
+					c := Completed{
+						User: message.User,
+						DecryptedChecksums: []Checksums{
+							{"SHA256", fmt.Sprintf("%x", hash.Sum(nil))},
+						},
+					}
+					completed, err := json.Marshal(&c)
+					if err != nil {
+						// do something
+					}
+					broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingKey, completed)
+					delivered.Ack(false)
 				}
-				completed, err := json.Marshal(&c)
-				if err != nil {
-					// do something
-				}
-				broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingKey, completed)
-				delivered.Ack(false)
 			}
 		}
 	}()

@@ -75,7 +75,8 @@ func buildConnInfo(c Pgconf) string {
 }
 
 // GetHeader retrieves the file header
-func GetHeader(db *sql.DB, fileID int) ([]byte, error) {
+func GetHeader(dbs *SQLdb, fileID int) ([]byte, error) {
+	db := dbs.Db
 	const getHeader = "SELECT header from local_ega.files WHERE id = $1"
 
 	var hexString string

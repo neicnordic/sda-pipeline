@@ -23,7 +23,6 @@ type Message struct {
 func main() {
 	config := NewConfig()
 	mq := broker.New(config.Broker)
-	var dbs Database
 	dbs, err := postgres.NewDB(config.Postgres)
 	if err != nil {
 		log.Println("err:", err)
@@ -48,7 +47,7 @@ func main() {
 			}
 
 			if err == nil {
-				err := postgres.MarkReady(dbs, message.StableID, message.User, message.FilePath, message.Checksums[0].Value)
+				err := dbs.MarkReady(message.StableID, message.User, message.FilePath, message.Checksums[0].Value)
 				if err != nil {
 					// this should be handled by the SQL retry mechanism
 				}

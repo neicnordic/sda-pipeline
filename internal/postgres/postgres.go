@@ -13,8 +13,9 @@ import (
 
 // Database defines methods to be implemented by SQLdb
 type Database interface {
-	MarkCompleted() error
-	MarkReady() error
+	GetHeader(fileID int) ([]byte, error)
+	MarkCompleted(checksum string, fileID int) error
+	MarkReady(accessionID, user, filepath, checksum string) error
 	Close()
 }
 
@@ -75,7 +76,7 @@ func buildConnInfo(c Pgconf) string {
 }
 
 // GetHeader retrieves the file header
-func GetHeader(dbs *SQLdb, fileID int) ([]byte, error) {
+func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 	db := dbs.Db
 	const getHeader = "SELECT header from local_ega.files WHERE id = $1"
 
@@ -95,7 +96,7 @@ func GetHeader(dbs *SQLdb, fileID int) ([]byte, error) {
 }
 
 // MarkCompleted markes the file as "COMPLETED"
-func MarkCompleted(dbs *SQLdb, checksum string, fileID int) error {
+func (dbs *SQLdb) MarkCompleted(checksum string, fileID int) error {
 	db := dbs.Db
 	const completed = "UPDATE local_ega.files SET status = 'COMPLETED', archive_file_checksum = $1, archive_file_checksum_type = 'SHA256'  WHERE id = $2;"
 	result, err := db.Exec(completed, checksum, fileID)
@@ -109,7 +110,7 @@ func MarkCompleted(dbs *SQLdb, checksum string, fileID int) error {
 }
 
 // MarkReady markes the file as "READY"
-func MarkReady(dbs *SQLdb, accessionID, user, filepath, checksum string) error {
+func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error {
 	db := dbs.Db
 	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE elixir_id = $2 and inbox_path = $3 and inbox_file_checksum = $4 and status != 'DISABLED';"
 	result, err := db.Exec(ready, accessionID, user, filepath, checksum)
@@ -123,7 +124,7 @@ func MarkReady(dbs *SQLdb, accessionID, user, filepath, checksum string) error {
 }
 
 // Close class the conmnection with the database
-func Close(dbs *SQLdb) {
+func (dbs *SQLdb) Close() {
 	db := dbs.Db
 	db.Close()
 }

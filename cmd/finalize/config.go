@@ -7,9 +7,10 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/spf13/viper"
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/postgres"
+
+	"github.com/spf13/viper"
 )
 
 var (

@@ -23,6 +23,7 @@ broker:
   queue: "stableIDs"
   exchange: "localega"
   routingKey: "errmsg"
+  routingError: "errmsg"
   ssl: "true"
   verifyPeer: "true"
   cacert: "./dev_utils/certs/ca.pem"

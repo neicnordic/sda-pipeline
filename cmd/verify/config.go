@@ -17,6 +17,7 @@ import (
 var (
 	requiredConfVars = []string{
 		"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue",
+		"broker.exchange", "broker.routingkey", "broker.routingerror",
 		"db.host", "db.port", "db.user", "db.password", "db.database",
 		"c4gh.passphrase", "c4gh.filepath",
 	}
@@ -24,9 +25,13 @@ var (
 
 // Config is a parent object for all the different configuration parts
 type Config struct {
+	Archive  storage.Conf
 	Broker   broker.Mqconf
+	Crypt4gh struct {
+		KeyPath    string
+		Passphrase string
+	}
 	Postgres postgres.Pgconf
-	Archvie  interface{}
 }
 
 // NewConfig initializes and parses the config file and/or environment using
@@ -41,7 +46,7 @@ func NewConfig() *Config {
 		requiredConfVars = append(requiredConfVars, s3ConfVars...)
 	} else {
 		posixConfVars := []string{
-			"archive.location", "archive.user",
+			"archive.location", "archive.uid", "archive.gid",
 		}
 		requiredConfVars = append(requiredConfVars, posixConfVars...)
 	}
@@ -68,6 +73,9 @@ func (c *Config) readConfig() {
 	b.User = viper.GetString("broker.user")
 	b.Password = viper.GetString("broker.password")
 	b.Queue = viper.GetString("broker.queue")
+	b.Exchange = viper.GetString("broker.exchange")
+	b.RoutingKey = viper.GetString("broker.routingkey")
+	b.RoutingError = viper.GetString("broker.routingerror")
 	b.ServerName = viper.GetString("broker.serverName")
 
 	if viper.IsSet("broker.vhost") {
@@ -139,8 +147,8 @@ func (c *Config) readConfig() {
 	}
 
 	if viper.GetString("archive.type") == "s3" {
-		s3 := storage.S3Conf{}
-
+		s3 := storage.Conf{}
+		s3.Type = "s3"
 		// All these are required
 		s3.URL = viper.GetString("archive.url")
 		s3.AccessKey = viper.GetString("archive.accesskey")
@@ -161,11 +169,11 @@ func (c *Config) readConfig() {
 			s3.Cacert = viper.GetString("archive.cacert")
 		}
 
-		c.Archvie = s3
+		c.Archive = s3
 
 	} else {
-		file := storage.PosixConf{}
-
+		file := storage.Conf{}
+		file.Type = "posix"
 		file.Location = viper.GetString("archive.location")
 		file.UID = viper.GetInt("archive.uid")
 		file.GID = viper.GetInt("archive.gid")
@@ -176,10 +184,12 @@ func (c *Config) readConfig() {
 			file.Mode = 2750
 		}
 
-		c.Archvie = file
+		c.Archive = file
 
 	}
 
+	c.Crypt4gh.KeyPath = viper.GetString("c4gh.filepath")
+	c.Crypt4gh.Passphrase = viper.GetString("c4gh.passphrase")
 }
 
 func parseConfig() {

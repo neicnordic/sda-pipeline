@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -9,11 +10,6 @@ import (
 	// Needed implicitly to enable Postgres driver
 	_ "github.com/lib/pq"
 )
-
-// SQLdb is
-type SQLdb struct {
-	Db *sql.DB
-}
 
 // Pgconf stores information about the db backend
 type Pgconf struct {
@@ -65,4 +61,50 @@ func buildConnInfo(c Pgconf) string {
 	}
 
 	return connInfo
+}
+
+// GetHeader retrieves the file header
+func GetHeader(db *sql.DB, fileID int) ([]byte, error) {
+	const getHeader = "SELECT header from local_ega.files WHERE id = $1"
+
+	var hexString string
+	if err := db.QueryRow(getHeader, fileID).Scan(&hexString); err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	header, err := hex.DecodeString(hexString)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	return header, nil
+}
+
+// MarkCompleted markes the file as "COMPLETED"
+func MarkCompleted(db *sql.DB, checksum string, fileID int) (error) {
+	const completed = "UPDATE local_ega.files SET status = 'COMPLETED', archive_file_checksum = $1, archive_file_checksum_type = 'SHA256'  WHERE id = $2;"
+	result, err := db.Exec(completed, checksum, fileID)
+	if err != nil {
+		log.Errorf("something went wrong with the DB qurey: %s", err)
+	}
+	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
+		log.Errorln("something went wrong with the query zero rows where changed")
+	}
+	return err
+}
+
+
+// MarkReady markes the file as "READY"
+func MarkReady(db *sql.DB, accessionID, user, filepath, checksum string) (error) {
+	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE elixir_id = $2 and inbox_path = $3 and inbox_file_checksum = $4 and status != 'DISABLED';"
+	result, err := db.Exec(ready, accessionID, user, filepath, checksum)
+	if err != nil {
+		log.Errorf("something went wrong with the DB qurey: %s", err)
+	}
+	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
+		log.Errorln("something went wrong with the query zero rows where changed")
+	}
+	return err
 }

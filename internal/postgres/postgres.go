@@ -11,11 +11,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// SQLdb is
-type SQLdb struct {
-	Db *sql.DB
-}
-
 // Pgconf stores information about the db backend
 type Pgconf struct {
 	Host       string

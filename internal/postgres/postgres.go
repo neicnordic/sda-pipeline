@@ -97,3 +97,17 @@ func MarkCompleted(db *sql.DB, checksum string, fileID int) (error) {
 	}
 	return err
 }
+
+
+// MarkReady markes the file as "READY"
+func MarkReady(db *sql.DB, accessionID, user, filepath, checksum string) (error) {
+	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE elixir_id = $2 and inbox_path = $3 and inbox_file_checksum = $4 and status != 'DISABLED';"
+	result, err := db.Exec(ready, accessionID, user, filepath, checksum)
+	if err != nil {
+		log.Errorf("something went wrong with the DB qurey: %s", err)
+	}
+	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
+		log.Errorln("something went wrong with the query zero rows where changed")
+	}
+	return err
+}

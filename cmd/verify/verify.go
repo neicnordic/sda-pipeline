@@ -26,7 +26,7 @@ type Message struct {
 	FileID       int    `json:"file_id"`
 	ArchivePath  string `json:"archive_path"`
 	FileChecksum string `json:"file_checksum"`
-	ReVerify     *bool   `json: "re_verify"`
+	ReVerify     *bool  `json: "re_verify"`
 }
 
 // Completed is struct holding the full message data
@@ -44,7 +44,8 @@ type Checksums struct {
 func main() {
 	config := NewConfig()
 	mq := broker.New(config.Broker)
-	db, err := postgres.NewDB(config.Postgres)
+	dbs, err := postgres.NewDB(config.Postgres)
+	db := dbs.Db
 	if err != nil {
 		log.Println("err:", err)
 	}
@@ -122,9 +123,9 @@ func main() {
 			}
 			key = [32]byte{}
 
-			if ! *message.ReVerify {
+			if !*message.ReVerify {
 				// Mark file as "COMPLETED"
-				if e := postgres.MarkCompleted(db, fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {
+				if e := postgres.MarkCompleted(dbs, fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {
 					// this should really be hadled by the DB retry mechanism
 				} else {
 					// Send message to completed

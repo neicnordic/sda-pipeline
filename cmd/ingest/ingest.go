@@ -27,7 +27,8 @@ type Message struct {
 func main() {
 	config := NewConfig()
 	mq := broker.New(config.Broker)
-	db, err := postgres.NewDB(config.Postgres)
+	dbs, err := postgres.NewDB(config.Postgres)
+	db := dbs.Db
 	if err != nil {
 		log.Println("err:", err)
 	}

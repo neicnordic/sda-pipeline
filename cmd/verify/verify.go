@@ -78,7 +78,7 @@ func main() {
 				continue
 			}
 
-			header, err := postgres.GetHeader(db, message.FileID)
+			header, err := postgres.GetHeader(dbs, message.FileID)
 			if err != nil {
 				log.Error(err)
 				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message

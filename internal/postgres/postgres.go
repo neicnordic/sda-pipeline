@@ -11,10 +11,11 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// Interface defining methods to be implemented by SQLdb
-type database interface {
+// Database defines methods to be implemented by SQLdb
+type Database interface {
 	MarkCompleted() error
 	MarkReady() error
+	Close()
 }
 
 // SQLdb htructs that acts as a reciever for the db update methods
@@ -118,4 +119,10 @@ func MarkReady(dbs *SQLdb, accessionID, user, filepath, checksum string) error {
 		log.Errorln("something went wrong with the query zero rows where changed")
 	}
 	return err
+}
+
+// Close class the conmnection with the database
+func Close(dbs *SQLdb) {
+	db := dbs.Db
+	db.Close()
 }

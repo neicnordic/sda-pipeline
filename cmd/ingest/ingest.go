@@ -27,15 +27,15 @@ type Message struct {
 func main() {
 	config := NewConfig()
 	mq := broker.New(config.Broker)
+	var dbs Database
 	dbs, err := postgres.NewDB(config.Postgres)
-	db := dbs.Db
 	if err != nil {
 		log.Println("err:", err)
 	}
 
+	defer dbs.Close()
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
-	defer db.Close()
 
 	forever := make(chan bool)
 

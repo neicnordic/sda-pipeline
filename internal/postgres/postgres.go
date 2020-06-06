@@ -54,9 +54,8 @@ func NewDB(c Pgconf) (*SQLdb, error) {
 		log.Errorf("Couldn't ping postgres database (%s)", err)
 		panic(err)
 	}
-	dbs := SQLdb{Db: db}
 
-	return &dbs, err
+	return &SQLdb{Db: db}, err
 }
 
 func buildConnInfo(c Pgconf) string {
@@ -95,7 +94,7 @@ func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 	return header, nil
 }
 
-// MarkCompleted markes the file as "COMPLETED"
+// MarkCompleted marks the file as "COMPLETED"
 func (dbs *SQLdb) MarkCompleted(checksum string, fileID int) error {
 	db := dbs.Db
 	const completed = "UPDATE local_ega.files SET status = 'COMPLETED', archive_file_checksum = $1, archive_file_checksum_type = 'SHA256'  WHERE id = $2;"
@@ -109,7 +108,7 @@ func (dbs *SQLdb) MarkCompleted(checksum string, fileID int) error {
 	return err
 }
 
-// MarkReady markes the file as "READY"
+// MarkReady marks the file as "READY"
 func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error {
 	db := dbs.Db
 	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE elixir_id = $2 and inbox_path = $3 and inbox_file_checksum = $4 and status != 'DISABLED';"
@@ -123,7 +122,7 @@ func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error 
 	return err
 }
 
-// Close class the conmnection with the database
+// Close terminates the conmnection with the database
 func (dbs *SQLdb) Close() {
 	db := dbs.Db
 	db.Close()

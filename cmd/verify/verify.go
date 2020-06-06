@@ -44,12 +44,12 @@ type Checksums struct {
 func main() {
 	config := NewConfig()
 	mq := broker.New(config.Broker)
-	dbs, err := postgres.NewDB(config.Postgres)
+	db, err := postgres.NewDB(config.Postgres)
 	if err != nil {
 		log.Println("err:", err)
 	}
 
-	defer dbs.Close()
+	defer db.Close()
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
 
@@ -77,7 +77,7 @@ func main() {
 				continue
 			}
 
-			header, err := dbs.GetHeader(message.FileID)
+			header, err := db.GetHeader(message.FileID)
 			if err != nil {
 				log.Error(err)
 				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
@@ -124,7 +124,7 @@ func main() {
 
 			if !*message.ReVerify {
 				// Mark file as "COMPLETED"
-				if e := dbs.MarkCompleted(fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {
+				if e := db.MarkCompleted(fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {
 					// this should really be hadled by the DB retry mechanism
 				} else {
 					// Send message to completed

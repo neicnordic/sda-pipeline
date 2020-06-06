@@ -25,9 +25,11 @@ var (
 
 // Config is a parent object for all the different configuration parts
 type Config struct {
-	Archive  storage.Conf
-	Broker   broker.Mqconf
-	Crypt4gh struct {
+	ArchiveType  string
+	PosixArchive storage.PosixConf
+	S3Archive    storage.S3Conf
+	Broker       broker.Mqconf
+	Crypt4gh     struct {
 		KeyPath    string
 		Passphrase string
 	}
@@ -147,8 +149,7 @@ func (c *Config) readConfig() {
 	}
 
 	if viper.GetString("archive.type") == "s3" {
-		s3 := storage.Conf{}
-		s3.Type = "s3"
+		s3 := storage.S3Conf{}
 		// All these are required
 		s3.URL = viper.GetString("archive.url")
 		s3.AccessKey = viper.GetString("archive.accesskey")
@@ -167,13 +168,13 @@ func (c *Config) readConfig() {
 
 		if viper.IsSet("archive.cacert") {
 			s3.Cacert = viper.GetString("archive.cacert")
-		}
 
-		c.Archive = s3
+		}
+		c.ArchiveType = "s3"
+		c.S3Archive = s3
 
 	} else {
-		file := storage.Conf{}
-		file.Type = "posix"
+		file := storage.PosixConf{}
 		file.Location = viper.GetString("archive.location")
 		file.UID = viper.GetInt("archive.uid")
 		file.GID = viper.GetInt("archive.gid")
@@ -184,7 +185,8 @@ func (c *Config) readConfig() {
 			file.Mode = 2750
 		}
 
-		c.Archive = file
+		c.ArchiveType = "posix"
+		c.PosixArchive = file
 
 	}
 

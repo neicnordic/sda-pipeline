@@ -49,6 +49,14 @@ func main() {
 		log.Println("err:", err)
 	}
 
+	var pr storage.Backend
+
+	if config.ArchiveType == "posix" {
+		pr = storage.NewPosixReader(config.PosixArchive)
+	} else {
+		pr = storage.NewS3Reader(config.S3Archive)
+	}
+
 	defer db.Close()
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
@@ -102,7 +110,7 @@ func main() {
 			if err != nil {
 				log.Error(err)
 			}
-			f := storage.FileReader(config.Archive.Type, filepath.Join(filepath.Clean(config.Archive.Location), message.ArchivePath))
+			f := pr.ReadFile(filepath.Join(filepath.Clean(config.PosixArchive.Location), message.ArchivePath))
 
 			var buf bytes.Buffer
 			buf.Write(header)

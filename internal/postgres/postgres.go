@@ -11,6 +11,19 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// Database defines methods to be implemented by SQLdb
+type Database interface {
+	GetHeader(fileID int) ([]byte, error)
+	MarkCompleted(checksum string, fileID int) error
+	MarkReady(accessionID, user, filepath, checksum string) error
+	Close()
+}
+
+// SQLdb htructs that acts as a reciever for the db update methods
+type SQLdb struct {
+	Db *sql.DB
+}
+
 // Pgconf stores information about the db backend
 type Pgconf struct {
 	Host       string
@@ -25,7 +38,7 @@ type Pgconf struct {
 }
 
 // NewDB creates a new DB connection
-func NewDB(c Pgconf) (*sql.DB, error) {
+func NewDB(c Pgconf) (*SQLdb, error) {
 	var err error
 
 	connInfo := buildConnInfo(c)
@@ -42,7 +55,7 @@ func NewDB(c Pgconf) (*sql.DB, error) {
 		panic(err)
 	}
 
-	return db, err
+	return &SQLdb{Db: db}, err
 }
 
 func buildConnInfo(c Pgconf) string {
@@ -62,7 +75,8 @@ func buildConnInfo(c Pgconf) string {
 }
 
 // GetHeader retrieves the file header
-func GetHeader(db *sql.DB, fileID int) ([]byte, error) {
+func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
+	db := dbs.Db
 	const getHeader = "SELECT header from local_ega.files WHERE id = $1"
 
 	var hexString string
@@ -80,8 +94,9 @@ func GetHeader(db *sql.DB, fileID int) ([]byte, error) {
 	return header, nil
 }
 
-// MarkCompleted markes the file as "COMPLETED"
-func MarkCompleted(db *sql.DB, checksum string, fileID int) (error) {
+// MarkCompleted marks the file as "COMPLETED"
+func (dbs *SQLdb) MarkCompleted(checksum string, fileID int) error {
+	db := dbs.Db
 	const completed = "UPDATE local_ega.files SET status = 'COMPLETED', archive_file_checksum = $1, archive_file_checksum_type = 'SHA256'  WHERE id = $2;"
 	result, err := db.Exec(completed, checksum, fileID)
 	if err != nil {
@@ -93,9 +108,9 @@ func MarkCompleted(db *sql.DB, checksum string, fileID int) (error) {
 	return err
 }
 
-
-// MarkReady markes the file as "READY"
-func MarkReady(db *sql.DB, accessionID, user, filepath, checksum string) (error) {
+// MarkReady marks the file as "READY"
+func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error {
+	db := dbs.Db
 	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE elixir_id = $2 and inbox_path = $3 and inbox_file_checksum = $4 and status != 'DISABLED';"
 	result, err := db.Exec(ready, accessionID, user, filepath, checksum)
 	if err != nil {
@@ -105,4 +120,10 @@ func MarkReady(db *sql.DB, accessionID, user, filepath, checksum string) (error)
 		log.Errorln("something went wrong with the query zero rows where changed")
 	}
 	return err
+}
+
+// Close terminates the conmnection with the database
+func (dbs *SQLdb) Close() {
+	db := dbs.Db
+	db.Close()
 }

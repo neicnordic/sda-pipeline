@@ -26,7 +26,7 @@ type Message struct {
 	FileID       int    `json:"file_id"`
 	ArchivePath  string `json:"archive_path"`
 	FileChecksum string `json:"file_checksum"`
-	ReVerify     *bool   `json: "re_verify"`
+	ReVerify     *bool  `json:"re_verify"`
 }
 
 // Completed is struct holding the full message data
@@ -77,7 +77,7 @@ func main() {
 				continue
 			}
 
-			header, err := postgres.GetHeader(db, message.FileID)
+			header, err := db.GetHeader(message.FileID)
 			if err != nil {
 				log.Error(err)
 				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
@@ -122,9 +122,9 @@ func main() {
 			}
 			key = [32]byte{}
 
-			if ! *message.ReVerify {
+			if !*message.ReVerify {
 				// Mark file as "COMPLETED"
-				if e := postgres.MarkCompleted(db, fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {
+				if e := db.MarkCompleted(fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {
 					// this should really be hadled by the DB retry mechanism
 				} else {
 					// Send message to completed

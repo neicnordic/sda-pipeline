@@ -9,13 +9,14 @@ import (
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/postgres"
+	"sda-pipeline/internal/storage"
 
 	"github.com/spf13/viper"
 )
 
 var (
 	requiredConfVars = []string{
-		"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue",
+		"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "broker.routingkey",
 		"db.host", "db.port", "db.user", "db.password", "db.database",
 	}
 )
@@ -24,12 +25,45 @@ var (
 type Config struct {
 	Broker   broker.Mqconf
 	Postgres postgres.Pgconf
+	Archive  storage.Conf
+	Inbox    storage.Conf
+	Crypt4gh Crypt4gh
+}
+
+// Crypt4gh holds c4gh related config info
+type Crypt4gh struct {
+	KeyPath    string
+	Passphrase string
 }
 
 // NewConfig initializes and parses the config file and/or environment using
 // the viper library.
 func NewConfig() *Config {
 	parseConfig()
+
+	if viper.GetString("archive.type") == "s3" {
+		s3ConfVars := []string{
+			"archive.url", "archive.accesskey", "archive.secretkey", "archive.bucket",
+		}
+		requiredConfVars = append(requiredConfVars, s3ConfVars...)
+	} else {
+		posixConfVars := []string{
+			"archive.location", "archive.uid", "archive.gid",
+		}
+		requiredConfVars = append(requiredConfVars, posixConfVars...)
+	}
+
+	if viper.GetString("inbox.type") == "s3" {
+		s3ConfVars := []string{
+			"inbox.url", "inbox.accesskey", "inbox.secretkey", "inbox.bucket",
+		}
+		requiredConfVars = append(requiredConfVars, s3ConfVars...)
+	} else {
+		posixConfVars := []string{
+			"inbox.location",
+		}
+		requiredConfVars = append(requiredConfVars, posixConfVars...)
+	}
 
 	for _, s := range requiredConfVars {
 		if !viper.IsSet(s) {
@@ -45,6 +79,91 @@ func NewConfig() *Config {
 
 func (c *Config) readConfig() {
 
+	// Setup archive
+	if viper.GetString("archive.type") == "s3" {
+		s3 := storage.Conf{}
+		s3.Type = "s3"
+		// All these are required
+		s3.URL = viper.GetString("archive.url")
+		s3.AccessKey = viper.GetString("archive.accesskey")
+		s3.SecretKey = viper.GetString("archive.secretkey")
+		s3.Bucket = viper.GetString("archive.bucket")
+
+		if viper.IsSet("archive.port") {
+			s3.Port = viper.GetInt("archive.port")
+		} else {
+			s3.Port = 443
+		}
+
+		if viper.IsSet("archive.chunksize") {
+			s3.Chunksize = viper.GetInt("archive.chunksize") * 1024 * 1024
+		}
+
+		if viper.IsSet("archive.cacert") {
+			s3.Cacert = viper.GetString("archive.cacert")
+		}
+
+		c.Archive = s3
+
+	} else {
+		file := storage.Conf{}
+		file.Type = "posix"
+		file.Location = viper.GetString("archive.location")
+		file.UID = viper.GetInt("archive.uid")
+		file.GID = viper.GetInt("archive.gid")
+
+		if viper.IsSet("archive.mode") {
+			file.Mode = viper.GetInt("archive.mode")
+		} else {
+			file.Mode = 2750
+		}
+
+		c.Archive = file
+
+	}
+
+	if viper.GetString("inbox.type") == "s3" {
+		s3 := storage.Conf{}
+		s3.Type = "s3"
+		// All these are required
+		s3.URL = viper.GetString("inbox.url")
+		s3.AccessKey = viper.GetString("inbox.accesskey")
+		s3.SecretKey = viper.GetString("arcinboxhive.secretkey")
+		s3.Bucket = viper.GetString("inbox.bucket")
+
+		if viper.IsSet("inbox.port") {
+			s3.Port = viper.GetInt("inbox.port")
+		} else {
+			s3.Port = 443
+		}
+
+		if viper.IsSet("inbox.chunksize") {
+			s3.Chunksize = viper.GetInt("inbox.chunksize") * 1024 * 1024
+		}
+
+		if viper.IsSet("inbox.cacert") {
+			s3.Cacert = viper.GetString("inbox.cacert")
+		}
+
+		c.Archive = s3
+
+	} else {
+		file := storage.Conf{}
+		file.Type = "posix"
+		file.Location = viper.GetString("inbox.location")
+		file.UID = viper.GetInt("inbox.uid")
+		file.GID = viper.GetInt("inbox.gid")
+
+		if viper.IsSet("inbox.mode") {
+			file.Mode = viper.GetInt("inbox.mode")
+		} else {
+			file.Mode = 2660
+		}
+
+		c.Inbox = file
+
+	}
+
 	// Setup broker
 	b := broker.Mqconf{}
 
@@ -52,9 +171,13 @@ func (c *Config) readConfig() {
 	b.Port = viper.GetInt("broker.port")
 	b.User = viper.GetString("broker.user")
 	b.Password = viper.GetString("broker.password")
+	b.RoutingKey = viper.GetString("broker.routingkey")
 	b.Queue = viper.GetString("broker.queue")
 	b.ServerName = viper.GetString("broker.serverName")
 
+	if viper.IsSet("broker.routingerror") {
+		b.RoutingError = viper.GetString("broker.routingerror")
+	}
 	if viper.IsSet("broker.vhost") {
 		if strings.HasPrefix(viper.GetString("broker.vhost"), "/") {
 			b.Vhost = viper.GetString("broker.vhost")
@@ -122,6 +245,9 @@ func (c *Config) readConfig() {
 		}
 		log.Printf("Setting loglevel to %s", strings.ToLower(viper.GetString("log.level")))
 	}
+
+	c.Crypt4gh.KeyPath = viper.GetString("c4gh.filepath")
+	c.Crypt4gh.Passphrase = viper.GetString("c4gh.passphrase")
 
 }
 

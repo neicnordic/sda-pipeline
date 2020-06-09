@@ -47,7 +47,7 @@ func main() {
 			}
 
 			if err == nil {
-				err := postgres.MarkReady(db, message.StableID, message.User, message.FilePath, message.Checksums[0].Value)
+				err := db.MarkReady(message.StableID, message.User, message.FilePath, message.Checksums[0].Value)
 				if err != nil {
 					// this should be handled by the SQL retry mechanism
 				}

@@ -1,8 +1,13 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"path"
+	"reflect"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -25,9 +30,11 @@ var (
 
 // Config is a parent object for all the different configuration parts
 type Config struct {
-	Archive  storage.Conf
-	Broker   broker.Mqconf
-	Crypt4gh struct {
+	ArchiveType  string
+	PosixArchive storage.PosixConf
+	S3Archive    storage.S3Conf
+	Broker       broker.Mqconf
+	Crypt4gh     struct {
 		KeyPath    string
 		Passphrase string
 	}
@@ -147,8 +154,7 @@ func (c *Config) readConfig() {
 	}
 
 	if viper.GetString("archive.type") == "s3" {
-		s3 := storage.Conf{}
-		s3.Type = "s3"
+		s3 := storage.S3Conf{}
 		// All these are required
 		s3.URL = viper.GetString("archive.url")
 		s3.AccessKey = viper.GetString("archive.accesskey")
@@ -165,15 +171,19 @@ func (c *Config) readConfig() {
 			s3.Chunksize = viper.GetInt("archive.chunksize") * 1024 * 1024
 		}
 
-		if viper.IsSet("archive.cacert") {
-			s3.Cacert = viper.GetString("archive.cacert")
+		if viper.IsSet("archive.uploadconcurrency") {
+			s3.UploadConcurrency = viper.GetInt("archive.uploadconcurrencye")
 		}
 
-		c.Archive = s3
+		if viper.IsSet("archive.cacert") {
+			s3.Cacert = viper.GetString("archive.cacert")
+
+		}
+		c.ArchiveType = "s3"
+		c.S3Archive = s3
 
 	} else {
-		file := storage.Conf{}
-		file.Type = "posix"
+		file := storage.PosixConf{}
 		file.Location = viper.GetString("archive.location")
 		file.UID = viper.GetInt("archive.uid")
 		file.GID = viper.GetInt("archive.gid")
@@ -184,7 +194,8 @@ func (c *Config) readConfig() {
 			file.Mode = 2750
 		}
 
-		c.Archive = file
+		c.ArchiveType = "posix"
+		c.PosixArchive = file
 
 	}
 
@@ -213,4 +224,36 @@ func parseConfig() {
 			log.Fatalf("fatal error config file: %s", err)
 		}
 	}
+}
+
+// TransportConfigS3 is a helper method to setup TLS for the S3 client.
+func TransportConfigS3(c *Config) http.RoundTripper {
+	cfg := new(tls.Config)
+
+	// Enforce TLS1.2 or higher
+	cfg.MinVersion = 2
+
+	// Read system CAs
+	var systemCAs, _ = x509.SystemCertPool()
+	if reflect.DeepEqual(systemCAs, x509.NewCertPool()) {
+		log.Debug("creating new CApool")
+		systemCAs = x509.NewCertPool()
+	}
+	cfg.RootCAs = systemCAs
+
+	if c.S3Archive.Cacert != "" {
+		cacert, e := ioutil.ReadFile(c.S3Archive.Cacert) // #nosec this file comes from our configuration
+		if e != nil {
+			log.Fatalf("failed to append %q to RootCAs: %v", cacert, e)
+		}
+		if ok := cfg.RootCAs.AppendCertsFromPEM(cacert); !ok {
+			log.Debug("no certs appended, using system certs only")
+		}
+	}
+
+	var trConfig http.RoundTripper = &http.Transport{
+		TLSClientConfig:   cfg,
+		ForceAttemptHTTP2: true}
+
+	return trConfig
 }

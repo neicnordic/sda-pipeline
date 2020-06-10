@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/postgres"
@@ -47,6 +46,14 @@ func main() {
 	db, err := postgres.NewDB(config.Postgres)
 	if err != nil {
 		log.Println("err:", err)
+	}
+
+	// Storage logici for S3 or Posix
+	var backend storage.Backend
+	if config.ArchiveType == "posix" {
+		backend = storage.NewPosixBackend(config.PosixArchive)
+	} else {
+		backend = storage.NewS3Backend(config.S3Archive, TransportConfigS3(config))
 	}
 
 	defer mq.Channel.Close()
@@ -102,7 +109,8 @@ func main() {
 			if err != nil {
 				log.Error(err)
 			}
-			f := storage.FileReader(config.Archive.Type, filepath.Join(filepath.Clean(config.Archive.Location), message.ArchivePath))
+
+			f := backend.ReadFile(message.ArchivePath)
 
 			var buf bytes.Buffer
 			buf.Write(header)

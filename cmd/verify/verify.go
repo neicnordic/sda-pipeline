@@ -103,19 +103,22 @@ func main() {
 			if err != nil {
 				log.Error(err)
 			}
-			defer keyFile.Close()
+			keyFile.Close()
 
 			key, err := keys.ReadPrivateKey(keyFile, []byte(config.Crypt4gh.Passphrase))
 			if err != nil {
 				log.Error(err)
 			}
 
-			f := backend.ReadFile(message.ArchivePath)
+			f, err := backend.ReadFile(message.ArchivePath)
+			if err != nil {
+				log.Errorf("Failed to open file: %s, reason: %v", message.ArchivePath, err)
+				continue
+			}
 
 			var buf bytes.Buffer
 			buf.Write(header)
-			var rw io.ReadWriter
-			rw = &buf
+			rw := io.ReadWriter(&buf)
 			if _, e := io.Copy(rw, f); e != nil {
 				log.Error(e)
 			}
@@ -128,9 +131,9 @@ func main() {
 			if _, err := io.Copy(hash, c4ghr); err != nil {
 				log.Error(err)
 			}
-			key = [32]byte{}
 
 			if !*message.ReVerify {
+			if message.ReVerify == nil {
 				// Mark file as "COMPLETED"
 				if e := db.MarkCompleted(fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {
 					// this should really be hadled by the DB retry mechanism
@@ -144,10 +147,16 @@ func main() {
 					}
 					completed, err := json.Marshal(&c)
 					if err != nil {
-						// do something
+						log.Error(err)
+						// This should really not fail.
 					}
-					broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingKey, completed)
-					delivered.Ack(false)
+					if err := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingKey, completed); err != nil {
+						// TODO fix resend mechainsm
+						log.Errorln("We need to fix this resend stuff ...")
+					}
+					if err := delivered.Ack(false); err != nil {
+						log.Errorf("failed to ack message for reason: %v", err)
+					}
 				}
 			}
 		}

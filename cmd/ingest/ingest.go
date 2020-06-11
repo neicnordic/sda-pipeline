@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"sda-pipeline/internal/broker"
+	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/postgres"
 	"sda-pipeline/internal/storage"
 
@@ -40,21 +41,21 @@ type Checksums struct {
 }
 
 func main() {
-	config := NewConfig()
-	mq := broker.New(config.Broker)
-	db, err := postgres.NewDB(config.Postgres)
+	conf := config.New("ingest")
+	mq := broker.New(conf.Broker)
+	db, err := postgres.NewDB(conf.Postgres)
 	var archive, inbox storage.Backend
-	if config.ArchiveType == "s3" {
-		archive = storage.NewS3Backend(config.ArchiveS3, TransportConfigS3(config.ArchiveS3))
+	if conf.ArchiveType == "s3" {
+		archive = storage.NewS3Backend(conf.ArchiveS3)
 	} else {
-		archive = storage.NewPosixBackend(config.ArchivePosix)
+		archive = storage.NewPosixBackend(conf.ArchivePosix)
 	}
 
-	if config.InboxType == "s3" {
-		inbox = storage.NewS3Backend(config.InboxS3, TransportConfigS3(config.InboxS3))
+	if conf.InboxType == "s3" {
+		inbox = storage.NewS3Backend(conf.InboxS3)
 
 	} else {
-		inbox = storage.NewPosixBackend(config.InboxPosix)
+		inbox = storage.NewPosixBackend(conf.InboxPosix)
 	}
 	if err != nil {
 		log.Println("err:", err)
@@ -70,7 +71,7 @@ func main() {
 	var message Message
 
 	go func() {
-		for delivered := range broker.GetMessages(mq, config.Broker.Queue) {
+		for delivered := range broker.GetMessages(mq, conf.Broker.Queue) {
 			log.Debugf("Received a message: %s", delivered.Body)
 			if err := json.Unmarshal(delivered.Body, &message); err != nil {
 				log.Errorf("Not a json message: %s", err)
@@ -97,8 +98,8 @@ func main() {
 			// 4MiB readbuffer, this must be large enough that we get the entire header and the first 64KiB datablock
 			// Should be made configurable once we have S3 support
 			var bufSize int
-			if bufSize = 4 * 1024 * 1024; config.InboxS3.Chunksize > 4*1024*1024 {
-				bufSize = config.InboxS3.Chunksize
+			if bufSize = 4 * 1024 * 1024; conf.InboxS3.Chunksize > 4*1024*1024 {
+				bufSize = conf.InboxS3.Chunksize
 			}
 			readBuffer := make([]byte, bufSize)
 			hash := sha256.New()
@@ -132,7 +133,7 @@ func main() {
 
 				//nolint:nestif
 				if bytesRead <= int64(len(readBuffer)) {
-					header, err := tryDecrypt(config.Crypt4gh, readBuffer)
+					header, err := tryDecrypt(conf.Crypt4gh, readBuffer)
 					if err != nil {
 						log.Errorln(err)
 						continue
@@ -194,7 +195,7 @@ func main() {
 				log.Error(err)
 				// This should really not fail.
 			}
-			if err := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingKey, config.Broker.Durable, brokerMsg); err != nil {
+			if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, brokerMsg); err != nil {
 				// TODO fix resend mechainsm
 				log.Errorln("We need to fix this resend stuff ...")
 			}
@@ -207,7 +208,7 @@ func main() {
 	<-forever
 }
 
-func tryDecrypt(c Crypt4gh, buf []byte) ([]byte, error) {
+func tryDecrypt(c config.Crypt4gh, buf []byte) ([]byte, error) {
 	keyFile, err := os.Open(c.KeyPath)
 	if err != nil {
 		log.Error(err)

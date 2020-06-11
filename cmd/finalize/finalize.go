@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"sda-pipeline/internal/broker"
+	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/postgres"
 
 	log "github.com/sirupsen/logrus"
@@ -21,7 +22,7 @@ type Message struct {
 }
 
 func main() {
-	config := NewConfig()
+	config := config.New("finalize")
 	mq := broker.New(config.Broker)
 	db, err := postgres.NewDB(config.Postgres)
 	if err != nil {

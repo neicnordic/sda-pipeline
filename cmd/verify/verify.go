@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"sda-pipeline/internal/broker"
+	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/postgres"
 	"sda-pipeline/internal/storage"
 
@@ -41,19 +42,19 @@ type Checksums struct {
 }
 
 func main() {
-	config := NewConfig()
-	mq := broker.New(config.Broker)
-	db, err := postgres.NewDB(config.Postgres)
+	conf := config.New("verify")
+	mq := broker.New(conf.Broker)
+	db, err := postgres.NewDB(conf.Postgres)
 	if err != nil {
 		log.Println("err:", err)
 	}
 
 	// Storage logici for S3 or Posix
 	var backend storage.Backend
-	if config.ArchiveType == "posix" {
-		backend = storage.NewPosixBackend(config.PosixArchive)
+	if conf.ArchiveType == "posix" {
+		backend = storage.NewPosixBackend(conf.ArchivePosix)
 	} else {
-		backend = storage.NewS3Backend(config.S3Archive, TransportConfigS3(config))
+		backend = storage.NewS3Backend(conf.ArchiveS3)
 	}
 
 	defer mq.Channel.Close()
@@ -65,7 +66,7 @@ func main() {
 	log.Info("starting verify service")
 
 	go func() {
-		for delivered := range broker.GetMessages(mq, config.Broker.Queue) {
+		for delivered := range broker.GetMessages(mq, conf.Broker.Queue) {
 			log.Debugf("received a message: %s", delivered.Body)
 			var message Message
 			// TODO verify json structure
@@ -77,7 +78,7 @@ func main() {
 					log.Errorln("failed to Nack message, reason: ", e)
 				}
 				// Send the errorus message to an error queue so it can be analyzed.
-				if e := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, config.Broker.Durable, delivered.Body); e != nil {
+				if e := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, delivered.Body); e != nil {
 					log.Error("faild to publish message, reason: ", e)
 				}
 				// Restart on new message
@@ -92,20 +93,20 @@ func main() {
 					log.Errorln("failed to Nack message, reason: ", err)
 				}
 				// Send the errorus message to an error queue so it can be analyzed.
-				if e := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, config.Broker.Durable, delivered.Body); e != nil {
+				if e := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, delivered.Body); e != nil {
 					log.Error("faild to publish message, reason: ", e)
 				}
 				continue
 			}
 
 			// do file verfication
-			keyFile, err := os.Open(config.Crypt4gh.KeyPath)
+			keyFile, err := os.Open(conf.Crypt4gh.KeyPath)
 			if err != nil {
 				log.Error(err)
 			}
 			keyFile.Close()
 
-			key, err := keys.ReadPrivateKey(keyFile, []byte(config.Crypt4gh.Passphrase))
+			key, err := keys.ReadPrivateKey(keyFile, []byte(conf.Crypt4gh.Passphrase))
 			if err != nil {
 				log.Error(err)
 			}
@@ -150,7 +151,7 @@ func main() {
 						log.Error(err)
 						// This should really not fail.
 					}
-					if err := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingKey, config.Broker.Durable, completed); err != nil {
+					if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completed); err != nil {
 						// TODO fix resend mechainsm
 						log.Errorln("We need to fix this resend stuff ...")
 					}

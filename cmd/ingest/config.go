@@ -1,8 +1,13 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"path"
+	"reflect"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -23,11 +28,15 @@ var (
 
 // Config is a parent object for all the different configuration parts
 type Config struct {
-	Broker   broker.Mqconf
-	Postgres postgres.Pgconf
-	Archive  storage.Conf
-	Inbox    storage.Conf
-	Crypt4gh Crypt4gh
+	ArchiveType  string
+	ArchiveS3    storage.S3Conf
+	ArchivePosix storage.PosixConf
+	Broker       broker.Mqconf
+	Crypt4gh     Crypt4gh
+	InboxType    string
+	InboxS3      storage.S3Conf
+	InboxPosix   storage.PosixConf
+	Postgres     postgres.Pgconf
 }
 
 // Crypt4gh holds c4gh related config info
@@ -82,8 +91,7 @@ func (c *Config) readConfig() {
 	// Setup archive
 	//nolint:nestif
 	if viper.GetString("archive.type") == "s3" {
-		s3 := storage.Conf{}
-		s3.Type = "s3"
+		s3 := storage.S3Conf{}
 		// All these are required
 		s3.URL = viper.GetString("archive.url")
 		s3.AccessKey = viper.GetString("archive.accesskey")
@@ -104,11 +112,11 @@ func (c *Config) readConfig() {
 			s3.Cacert = viper.GetString("archive.cacert")
 		}
 
-		c.Archive = s3
+		c.ArchiveType = "s3"
+		c.ArchiveS3 = s3
 
 	} else {
-		file := storage.Conf{}
-		file.Type = "posix"
+		file := storage.PosixConf{}
 		file.Location = viper.GetString("archive.location")
 		file.UID = viper.GetInt("archive.uid")
 		file.GID = viper.GetInt("archive.gid")
@@ -119,14 +127,14 @@ func (c *Config) readConfig() {
 			file.Mode = 2750
 		}
 
-		c.Archive = file
+		c.ArchiveType = "posix"
+		c.ArchivePosix = file
 
 	}
 
 	//nolint:nestif
 	if viper.GetString("inbox.type") == "s3" {
-		s3 := storage.Conf{}
-		s3.Type = "s3"
+		s3 := storage.S3Conf{}
 		// All these are required
 		s3.URL = viper.GetString("inbox.url")
 		s3.AccessKey = viper.GetString("inbox.accesskey")
@@ -147,11 +155,11 @@ func (c *Config) readConfig() {
 			s3.Cacert = viper.GetString("inbox.cacert")
 		}
 
-		c.Archive = s3
+		c.InboxType = "s3"
+		c.ArchiveS3 = s3
 
 	} else {
-		file := storage.Conf{}
-		file.Type = "posix"
+		file := storage.PosixConf{}
 		file.Location = viper.GetString("inbox.location")
 		file.UID = viper.GetInt("inbox.uid")
 		file.GID = viper.GetInt("inbox.gid")
@@ -162,7 +170,8 @@ func (c *Config) readConfig() {
 			file.Mode = 2660
 		}
 
-		c.Inbox = file
+		c.InboxType = "Posix"
+		c.InboxPosix = file
 
 	}
 
@@ -274,4 +283,36 @@ func parseConfig() {
 			log.Fatalf("fatal error config file: %s", err)
 		}
 	}
+}
+
+// TransportConfigS3 is a helper method to setup TLS for the S3 client.
+func TransportConfigS3(c storage.S3Conf) http.RoundTripper {
+	cfg := new(tls.Config)
+
+	// Enforce TLS1.2 or higher
+	cfg.MinVersion = 2
+
+	// Read system CAs
+	var systemCAs, _ = x509.SystemCertPool()
+	if reflect.DeepEqual(systemCAs, x509.NewCertPool()) {
+		log.Debug("creating new CApool")
+		systemCAs = x509.NewCertPool()
+	}
+	cfg.RootCAs = systemCAs
+
+	if c.Cacert != "" {
+		cacert, e := ioutil.ReadFile(c.Cacert) // #nosec this file comes from our configuration
+		if e != nil {
+			log.Fatalf("failed to append %q to RootCAs: %v", cacert, e)
+		}
+		if ok := cfg.RootCAs.AppendCertsFromPEM(cacert); !ok {
+			log.Debug("no certs appended, using system certs only")
+		}
+	}
+
+	var trConfig http.RoundTripper = &http.Transport{
+		TLSClientConfig:   cfg,
+		ForceAttemptHTTP2: true}
+
+	return trConfig
 }

@@ -43,6 +43,19 @@ func main() {
 	config := NewConfig()
 	mq := broker.New(config.Broker)
 	db, err := postgres.NewDB(config.Postgres)
+	var archive, inbox storage.Backend
+	if config.ArchiveType == "s3" {
+		archive = storage.NewS3Backend(config.ArchiveS3, TransportConfigS3(config.ArchiveS3))
+	} else {
+		archive = storage.NewPosixBackend(config.ArchivePosix)
+	}
+
+	if config.InboxType == "s3" {
+		inbox = storage.NewS3Backend(config.InboxS3, TransportConfigS3(config.InboxS3))
+
+	} else {
+		inbox = storage.NewPosixBackend(config.InboxPosix)
+	}
 	if err != nil {
 		log.Println("err:", err)
 	}
@@ -63,29 +76,29 @@ func main() {
 				log.Errorf("Not a json message: %s", err)
 			}
 
-			fileID, err := db.InsertFile(fmt.Sprintf("%s/%s", config.Inbox.Location, message.FilePath), message.User)
+			fileID, err := db.InsertFile(message.FilePath, message.User)
 			if err != nil {
 				log.Errorf("InsertFile failed, reason: %v", err)
 				// This should really be hadled by the DB retry mechanism
 			}
 
-			file, err := storage.ReadFile(config.Inbox.Type, fmt.Sprintf("%s/%s", config.Inbox.Location, message.FilePath))
+			file, err := inbox.ReadFile(message.FilePath)
 			if err != nil {
-				log.Errorf("Failed to open file: %s, reason: %v", fmt.Sprintf("%s/%s", config.Inbox.Location, message.FilePath), err)
+				log.Errorf("Failed to open file: %s, reason: %v", message.FilePath, err)
 				continue
 			}
 
-			fileSize, err := storage.GetFileSize(config.Inbox.Type, fmt.Sprintf("%s/%s", config.Inbox.Location, message.FilePath))
+			fileSize, err := inbox.GetFileSize(message.FilePath)
 			if err != nil {
-				log.Errorf("Failed to get file size: %s, reason: %v", fmt.Sprintf("%s/%s", config.Archive.Location, message.FilePath), err)
+				log.Errorf("Failed to get file size of: %s, reason: %v", message.FilePath, err)
 				continue
 			}
 
 			// 4MiB readbuffer, this must be large enough that we get the entire header and the first 64KiB datablock
 			// Should be made configurable once we have S3 support
 			var bufSize int
-			if bufSize = 4 * 1024 * 1024; config.Inbox.Chunksize > 4*1024*1024 {
-				bufSize = config.Inbox.Chunksize
+			if bufSize = 4 * 1024 * 1024; config.InboxS3.Chunksize > 4*1024*1024 {
+				bufSize = config.InboxS3.Chunksize
 			}
 			readBuffer := make([]byte, bufSize)
 			hash := sha256.New()
@@ -94,9 +107,9 @@ func main() {
 
 			// Create a random uuid as file name
 			archivedFile := uuid.New().String()
-			dest, err := storage.WriteFile(config.Archive.Type, fmt.Sprintf("%s/%s", config.Archive.Location, archivedFile))
+			dest, err := archive.WriteFile(archivedFile)
 			if err != nil {
-				log.Errorf("Failed to create file: %s, reason: %v", fmt.Sprintf("%s/%s", config.Archive.Location, archivedFile), err)
+				log.Errorf("Failed to create file: %s, reason: %v", archivedFile, err)
 				continue
 			}
 

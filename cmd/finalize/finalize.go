@@ -49,11 +49,14 @@ func main() {
 			if err == nil {
 				err := db.MarkReady(message.StableID, message.User, message.FilePath, message.Checksums[0].Value)
 				if err != nil {
+					log.Errorf("MarkReady failed, reason: %v", err)
 					// this should be handled by the SQL retry mechanism
 				}
 			}
 
-			d.Ack(false)
+			if err := d.Ack(false); err != nil {
+				log.Errorf("failed to ack message for reason: %v", err)
+			}
 		}
 	}()
 

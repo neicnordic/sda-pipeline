@@ -152,7 +152,7 @@ func (c *Config) readConfig() {
 		}
 		log.Printf("Setting loglevel to %s", strings.ToLower(viper.GetString("log.level")))
 	}
-
+	//nolint:nestif
 	if viper.GetString("archive.type") == "s3" {
 		s3 := storage.S3Conf{}
 		// All these are required

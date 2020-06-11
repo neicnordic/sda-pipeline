@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 
@@ -35,6 +37,13 @@ type Pgconf struct {
 	SslMode    string
 	ClientCert string
 	ClientKey  string
+}
+
+// FileInfo is used by ingest
+type FileInfo struct {
+	Checksum string
+	Size     int
+	Path     string
 }
 
 // NewDB creates a new DB connection
@@ -77,10 +86,10 @@ func buildConnInfo(c Pgconf) string {
 // GetHeader retrieves the file header
 func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 	db := dbs.Db
-	const getHeader = "SELECT header from local_ega.files WHERE id = $1"
+	const query = "SELECT header from local_ega.files WHERE id = $1"
 
 	var hexString string
-	if err := db.QueryRow(getHeader, fileID).Scan(&hexString); err != nil {
+	if err := db.QueryRow(query, fileID).Scan(&hexString); err != nil {
 		log.Error(err)
 		return nil, err
 	}
@@ -108,7 +117,48 @@ func (dbs *SQLdb) MarkCompleted(checksum string, fileID int) error {
 	return err
 }
 
-// MarkReady marks the file as "READY"
+// InsertFile inserts a file in the database
+func (dbs *SQLdb) InsertFile(filename, user string) (int64, error) {
+	db := dbs.Db
+	const query = "INSERT INTO local_ega.main(submission_file_path, submission_file_extension, submission_user, status, encryption_method) VALUES($1, $2, $3,'INIT', 'CRYPT4GH') RETURNING id;"
+	var fileID int64
+	err := db.QueryRow(query, filename, strings.Replace(filepath.Ext(filename), ".", "", -1), user).Scan(&fileID)
+	if err != nil {
+		log.Errorf("something went wrong with the DB qurey: %s", err)
+	}
+
+	return fileID, nil
+}
+
+// StoreHeader stores the file header in the database
+func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
+	db := dbs.Db
+	const query = "UPDATE local_ega.files SET header = $1 WHERE id = $2;"
+	result, err := db.Exec(query, hex.EncodeToString(header), id)
+	if err != nil {
+		log.Errorf("something went wrong with the DB qurey: %s", err)
+	}
+	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
+		log.Errorln("something went wrong with the query zero rows where changed")
+	}
+	return err
+}
+
+// SetArchived markes the file as 'ARCHIVED'
+func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
+	db := dbs.Db
+	const query = "UPDATE local_ega.files SET status = 'ARCHIVED', archive_path = $1, archive_filesize = $2, inbox_file_checksum = $3, inbox_file_checksum_type = 'SHA256' WHERE id = $4;"
+	result, err := db.Exec(query, file.Path, file.Size, file.Checksum, id)
+	if err != nil {
+		log.Errorf("something went wrong with the DB qurey: %s", err)
+	}
+	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
+		log.Errorln("something went wrong with the query zero rows where changed")
+	}
+	return err
+}
+
+// MarkReady markes the file as "READY"
 func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error {
 	db := dbs.Db
 	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE elixir_id = $2 and inbox_path = $3 and inbox_file_checksum = $4 and status != 'DISABLED';"

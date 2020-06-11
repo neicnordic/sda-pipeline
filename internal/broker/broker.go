@@ -4,9 +4,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"reflect"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/streadway/amqp"
 )
@@ -19,21 +20,22 @@ type AMQPBroker struct {
 
 // Mqconf stores information about the message broker
 type Mqconf struct {
-	Host       string
-	Port       int
-	User       string
-	Password   string
-	Vhost      string
-	Queue      string
-	Exchange   string
-	RoutingKey string
+	Host         string
+	Port         int
+	User         string
+	Password     string
+	Vhost        string
+	Queue        string
+	Exchange     string
+	RoutingKey   string
 	RoutingError string
-	Ssl        bool
-	VerifyPeer bool
-	Cacert     string
-	ClientCert string
-	ClientKey  string
-	ServerName string
+	Ssl          bool
+	VerifyPeer   bool
+	Cacert       string
+	ClientCert   string
+	ClientKey    string
+	ServerName   string
+	Durable      bool
 }
 
 // New creates a new Broker that can communicate with a backend
@@ -97,7 +99,16 @@ func GetMessages(b *AMQPBroker, queue string) <-chan amqp.Delivery {
 }
 
 // SendMessage sends message to RabbitMQ if the upload is finished
-func SendMessage(b *AMQPBroker, corrID, exchange, routingKey string , body []byte) error {
+func SendMessage(b *AMQPBroker, corrID, exchange, routingKey string, reliable bool, body []byte) error {
+	if reliable {
+		// Set channel
+		if e := b.Channel.Confirm(false); e != nil {
+			log.Fatalf("channel could not be put into confirm mode: %s", e)
+		}
+		// Shouldn't this be setup once and for all?
+		confirms := b.Channel.NotifyPublish(make(chan amqp.Confirmation, 100))
+		defer confirmOne(confirms)
+	}
 	err := b.Channel.Publish(
 		exchange,
 		routingKey,
@@ -163,7 +174,7 @@ func TLSConfigBroker(b Mqconf) *tls.Config {
 	if b.ServerName != "" {
 		cfg.ServerName = b.ServerName
 	}
-
+	//nolint:nestif
 	if b.VerifyPeer {
 		if b.ClientCert != "" && b.ClientKey != "" {
 			cert, e := ioutil.ReadFile(b.ClientCert)
@@ -182,4 +193,15 @@ func TLSConfigBroker(b Mqconf) *tls.Config {
 		}
 	}
 	return cfg
+}
+
+// // One would typically keep a channel of publishings, a sequence number, and a
+// // set of unacknowledged sequence numbers and loop until the publishing channel
+// // is closed.
+func confirmOne(confirms <-chan amqp.Confirmation) {
+	confirmed := <-confirms
+	if !confirmed.Ack {
+		log.Errorf("failed delivery of delivery tag: %d", confirmed.DeliveryTag)
+	}
+	log.Debugf("confirmed delivery with delivery tag: %d", confirmed.DeliveryTag)
 }

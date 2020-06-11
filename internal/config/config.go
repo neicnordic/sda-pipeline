@@ -1,13 +1,8 @@
-package main
+package config
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"path"
-	"reflect"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -45,10 +40,31 @@ type Crypt4gh struct {
 	Passphrase string
 }
 
-// NewConfig initializes and parses the config file and/or environment using
+// New initializes and parses the config file and/or environment using
 // the viper library.
-func NewConfig() *Config {
-	parseConfig()
+func New(app string) *Config {
+	viper.SetConfigName("config")
+	viper.AddConfigPath(".")
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.SetConfigType("yaml")
+	if viper.IsSet("configPath") {
+		cp := viper.GetString("configPath")
+		ss := strings.Split(strings.TrimLeft(cp, "/"), "/")
+		viper.AddConfigPath(path.Join(ss...))
+	}
+
+	if viper.IsSet("configFile") {
+		viper.SetConfigFile(viper.GetString("configFile"))
+	}
+
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			log.Infoln("No config file found, using ENVs only")
+		} else {
+			log.Fatalf("fatal error config file: %s", err)
+		}
+	}
 
 	if viper.GetString("archive.type") == "s3" {
 		s3ConfVars := []string{
@@ -57,7 +73,7 @@ func NewConfig() *Config {
 		requiredConfVars = append(requiredConfVars, s3ConfVars...)
 	} else {
 		posixConfVars := []string{
-			"archive.location", "archive.uid", "archive.gid",
+			"archive.location",
 		}
 		requiredConfVars = append(requiredConfVars, posixConfVars...)
 	}
@@ -80,14 +96,43 @@ func NewConfig() *Config {
 		}
 	}
 
+	if viper.IsSet("log.level") {
+		switch strings.ToLower(viper.GetString("log.level")) {
+		case "info":
+			log.SetLevel(log.InfoLevel)
+		case "debug":
+			log.SetLevel(log.DebugLevel)
+		case "warn":
+			log.SetLevel(log.WarnLevel)
+		case "error":
+			log.SetLevel(log.ErrorLevel)
+		}
+		log.Printf("Setting loglevel to %s", strings.ToLower(viper.GetString("log.level")))
+	}
+
 	c := &Config{}
-	c.readConfig()
+
+	switch app {
+	case "finalize":
+		c.configBroker()
+		c.configDatabase()
+	case "ingest":
+		c.configArchive()
+		c.configBroker()
+		c.configCrypt4gh()
+		c.configDatabase()
+		c.configInbox()
+	case "verify":
+		c.configArchive()
+		c.configBroker()
+		c.configCrypt4gh()
+		c.configDatabase()
+	}
 
 	return c
 }
 
-func (c *Config) readConfig() {
-
+func (c *Config) configArchive() {
 	// Setup archive
 	//nolint:nestif
 	if viper.GetString("archive.type") == "s3" {
@@ -118,20 +163,14 @@ func (c *Config) readConfig() {
 	} else {
 		file := storage.PosixConf{}
 		file.Location = viper.GetString("archive.location")
-		file.UID = viper.GetInt("archive.uid")
-		file.GID = viper.GetInt("archive.gid")
-
-		if viper.IsSet("archive.mode") {
-			file.Mode = viper.GetInt("archive.mode")
-		} else {
-			file.Mode = 2750
-		}
 
 		c.ArchiveType = "posix"
 		c.ArchivePosix = file
 
 	}
+}
 
+func (c *Config) configInbox() {
 	//nolint:nestif
 	if viper.GetString("inbox.type") == "s3" {
 		s3 := storage.S3Conf{}
@@ -156,25 +195,19 @@ func (c *Config) readConfig() {
 		}
 
 		c.InboxType = "s3"
-		c.ArchiveS3 = s3
+		c.InboxS3 = s3
 
 	} else {
 		file := storage.PosixConf{}
 		file.Location = viper.GetString("inbox.location")
-		file.UID = viper.GetInt("inbox.uid")
-		file.GID = viper.GetInt("inbox.gid")
-
-		if viper.IsSet("inbox.mode") {
-			file.Mode = viper.GetInt("inbox.mode")
-		} else {
-			file.Mode = 2660
-		}
 
 		c.InboxType = "Posix"
 		c.InboxPosix = file
 
 	}
+}
 
+func (c *Config) configBroker() {
 	// Setup broker
 	b := broker.Mqconf{}
 
@@ -219,7 +252,9 @@ func (c *Config) readConfig() {
 	}
 
 	c.Broker = b
+}
 
+func (c *Config) configDatabase() {
 	db := postgres.Pgconf{}
 
 	// All these are required
@@ -245,77 +280,9 @@ func (c *Config) readConfig() {
 	}
 
 	c.Postgres = db
+}
 
-	if viper.IsSet("log.level") {
-		switch strings.ToLower(viper.GetString("log.level")) {
-		case "info":
-			log.SetLevel(log.InfoLevel)
-		case "debug":
-			log.SetLevel(log.DebugLevel)
-		case "warn":
-			log.SetLevel(log.WarnLevel)
-		case "error":
-			log.SetLevel(log.ErrorLevel)
-		}
-		log.Printf("Setting loglevel to %s", strings.ToLower(viper.GetString("log.level")))
-	}
-
+func (c *Config) configCrypt4gh() {
 	c.Crypt4gh.KeyPath = viper.GetString("c4gh.filepath")
 	c.Crypt4gh.Passphrase = viper.GetString("c4gh.passphrase")
-
-}
-
-func parseConfig() {
-	viper.SetConfigName("config")
-	viper.AddConfigPath(".")
-	viper.AutomaticEnv()
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.SetConfigType("yaml")
-	if viper.IsSet("configPath") {
-		cp := viper.GetString("configPath")
-		ss := strings.Split(strings.TrimLeft(cp, "/"), "/")
-		viper.AddConfigPath(path.Join(ss...))
-	}
-	if viper.IsSet("configFile") {
-		viper.SetConfigFile(viper.GetString("configFile"))
-	}
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Infoln("No config file found, using ENVs only")
-		} else {
-			log.Fatalf("fatal error config file: %s", err)
-		}
-	}
-}
-
-// TransportConfigS3 is a helper method to setup TLS for the S3 client.
-func TransportConfigS3(c storage.S3Conf) http.RoundTripper {
-	cfg := new(tls.Config)
-
-	// Enforce TLS1.2 or higher
-	cfg.MinVersion = 2
-
-	// Read system CAs
-	var systemCAs, _ = x509.SystemCertPool()
-	if reflect.DeepEqual(systemCAs, x509.NewCertPool()) {
-		log.Debug("creating new CApool")
-		systemCAs = x509.NewCertPool()
-	}
-	cfg.RootCAs = systemCAs
-
-	if c.Cacert != "" {
-		cacert, e := ioutil.ReadFile(c.Cacert) // #nosec this file comes from our configuration
-		if e != nil {
-			log.Fatalf("failed to append %q to RootCAs: %v", cacert, e)
-		}
-		if ok := cfg.RootCAs.AppendCertsFromPEM(cacert); !ok {
-			log.Debug("no certs appended, using system certs only")
-		}
-	}
-
-	var trConfig http.RoundTripper = &http.Transport{
-		TLSClientConfig:   cfg,
-		ForceAttemptHTTP2: true}
-
-	return trConfig
 }

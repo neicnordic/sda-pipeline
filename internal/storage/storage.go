@@ -18,6 +18,7 @@ import (
 type Backend interface {
 	ReadFile(filePath string) io.Reader
 	WriteFile(filePath string, f io.Reader)
+	GetSize(filepath string) int64
 }
 
 // PosixBackend encapsulates an io.Reader instance
@@ -55,6 +56,12 @@ func (pb *PosixBackend) ReadFile(filePath string) io.Reader {
 // WriteFile writes an io.Reader to a specific location
 func (pb *PosixBackend) WriteFile(filePath string, f io.Reader) {
 	// TODO
+}
+
+// GetSize returns the size of a specific file
+func (pb *PosixBackend) GetSize(filePath string) int64 {
+	// TODO
+	return 0
 }
 
 // S3Backend encapsulates a S3 client instance
@@ -117,4 +124,17 @@ func (sb *S3Backend) WriteFile(filePath string, f io.Reader) {
 	} else {
 		log.Println("File uploaded to", result.Location)
 	}
+}
+
+// GetSize returns the size of a specific object
+func (sb *S3Backend) GetSize(filePath string) int64 {
+	r, err := sb.Client.HeadObject(&s3.HeadObjectInput{
+		Bucket: aws.String(sb.Bucket),
+		Key:    aws.String(filePath)})
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	return *r.ContentLength
 }

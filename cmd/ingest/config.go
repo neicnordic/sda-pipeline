@@ -186,6 +186,9 @@ func (c *Config) readConfig() {
 	b.Queue = viper.GetString("broker.queue")
 	b.ServerName = viper.GetString("broker.serverName")
 
+	if viper.IsSet("broker.durable") {
+		b.Durable = viper.GetBool("broker.durable")
+	}
 	if viper.IsSet("broker.routingerror") {
 		b.RoutingError = viper.GetString("broker.routingerror")
 	}

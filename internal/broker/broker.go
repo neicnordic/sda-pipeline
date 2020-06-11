@@ -35,6 +35,7 @@ type Mqconf struct {
 	ClientCert   string
 	ClientKey    string
 	ServerName   string
+	Durable      bool
 }
 
 // New creates a new Broker that can communicate with a backend
@@ -98,14 +99,16 @@ func GetMessages(b *AMQPBroker, queue string) <-chan amqp.Delivery {
 }
 
 // SendMessage sends message to RabbitMQ if the upload is finished
-func SendMessage(b *AMQPBroker, corrID, exchange, routingKey string, body []byte) error {
-	// Set channel
-	if e := b.Channel.Confirm(false); e != nil {
-		log.Fatalf("channel could not be put into confirm mode: %s", e)
+func SendMessage(b *AMQPBroker, corrID, exchange, routingKey string, reliable bool, body []byte) error {
+	if reliable {
+		// Set channel
+		if e := b.Channel.Confirm(false); e != nil {
+			log.Fatalf("channel could not be put into confirm mode: %s", e)
+		}
+		// Shouldn't this be setup once and for all?
+		confirms := b.Channel.NotifyPublish(make(chan amqp.Confirmation, 100))
+		defer confirmOne(confirms)
 	}
-	// Shouldn't this be setup once and for all?
-	confirms := b.Channel.NotifyPublish(make(chan amqp.Confirmation, 100))
-	defer confirmOne(confirms)
 	err := b.Channel.Publish(
 		exchange,
 		routingKey,

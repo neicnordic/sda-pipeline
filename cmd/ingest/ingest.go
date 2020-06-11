@@ -194,7 +194,7 @@ func main() {
 				log.Error(err)
 				// This should really not fail.
 			}
-			if err := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingKey, brokerMsg); err != nil {
+			if err := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingKey, config.Broker.Durable, brokerMsg); err != nil {
 				// TODO fix resend mechainsm
 				log.Errorln("We need to fix this resend stuff ...")
 			}

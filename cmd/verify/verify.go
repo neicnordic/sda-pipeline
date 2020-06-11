@@ -77,7 +77,7 @@ func main() {
 					log.Errorln("failed to Nack message, reason: ", e)
 				}
 				// Send the errorus message to an error queue so it can be analyzed.
-				if e := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, delivered.Body); e != nil {
+				if e := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, config.Broker.Durable, delivered.Body); e != nil {
 					log.Error("faild to publish message, reason: ", e)
 				}
 				// Restart on new message
@@ -92,7 +92,7 @@ func main() {
 					log.Errorln("failed to Nack message, reason: ", err)
 				}
 				// Send the errorus message to an error queue so it can be analyzed.
-				if e := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, delivered.Body); e != nil {
+				if e := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingError, config.Broker.Durable, delivered.Body); e != nil {
 					log.Error("faild to publish message, reason: ", e)
 				}
 				continue
@@ -150,7 +150,7 @@ func main() {
 						log.Error(err)
 						// This should really not fail.
 					}
-					if err := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingKey, completed); err != nil {
+					if err := broker.SendMessage(mq, delivered.CorrelationId, config.Broker.Exchange, config.Broker.RoutingKey, config.Broker.Durable, completed); err != nil {
 						// TODO fix resend mechainsm
 						log.Errorln("We need to fix this resend stuff ...")
 					}

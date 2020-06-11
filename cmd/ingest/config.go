@@ -80,6 +80,7 @@ func NewConfig() *Config {
 func (c *Config) readConfig() {
 
 	// Setup archive
+	//nolint:nestif
 	if viper.GetString("archive.type") == "s3" {
 		s3 := storage.Conf{}
 		s3.Type = "s3"
@@ -122,6 +123,7 @@ func (c *Config) readConfig() {
 
 	}
 
+	//nolint:nestif
 	if viper.GetString("inbox.type") == "s3" {
 		s3 := storage.Conf{}
 		s3.Type = "s3"

@@ -113,6 +113,7 @@ func main() {
 					log.Error(err)
 				}
 
+				//nolint:nestif
 				if bytesRead <= int64(len(readBuffer)) {
 					header, err := tryDecrypt(config.Crypt4gh, readBuffer)
 					if err != nil {

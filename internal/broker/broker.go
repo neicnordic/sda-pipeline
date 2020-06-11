@@ -171,7 +171,7 @@ func TLSConfigBroker(b Mqconf) *tls.Config {
 	if b.ServerName != "" {
 		cfg.ServerName = b.ServerName
 	}
-
+	//nolint:nestif
 	if b.VerifyPeer {
 		if b.ClientCert != "" && b.ClientKey != "" {
 			cert, e := ioutil.ReadFile(b.ClientCert)

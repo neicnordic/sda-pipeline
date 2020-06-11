@@ -132,7 +132,7 @@ func main() {
 				log.Error(err)
 			}
 
-			if !*message.ReVerify {
+			//nolint:nestif
 			if message.ReVerify == nil {
 				// Mark file as "COMPLETED"
 				if e := db.MarkCompleted(fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {

@@ -83,7 +83,11 @@ func main() {
 
 			// 4MiB readbuffer, this must be large enough that we get the entire header and the first 64KiB datablock
 			// Should be made configurable once we have S3 support
-			readBuffer := make([]byte, 4*1024*1024)
+			var bufSize int
+			if bufSize = 4 * 1024 * 1024; config.Inbox.Chunksize > 4*1024*1024 {
+				bufSize = config.Inbox.Chunksize
+			}
+			readBuffer := make([]byte, bufSize)
 			hash := sha256.New()
 			var bytesRead int64
 			var byteBuf bytes.Buffer

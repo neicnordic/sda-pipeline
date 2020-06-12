@@ -1,10 +1,14 @@
 package storage
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -32,9 +36,6 @@ type PosixBackend struct {
 // PosixConf stores information about the POSIX storage backend
 type PosixConf struct {
 	Location string
-	Mode     int
-	UID      int
-	GID      int
 }
 
 // NewPosixBackend returns a PosixReader struct
@@ -96,7 +97,8 @@ type S3Conf struct {
 }
 
 // NewS3Backend returns a S3Backend struct
-func NewS3Backend(c S3Conf, trConf http.RoundTripper) *S3Backend {
+func NewS3Backend(c S3Conf) *S3Backend {
+	trConf := transportConfigS3(c)
 	client := http.Client{Transport: trConf}
 	session := session.Must(session.NewSession(&aws.Config{
 		HTTPClient: &client}))
@@ -153,4 +155,36 @@ func (sb *S3Backend) GetFileSize(filePath string) (int64, error) {
 	}
 
 	return *r.ContentLength, nil
+}
+
+// transportConfigS3 is a helper method to setup TLS for the S3 client.
+func transportConfigS3(c S3Conf) http.RoundTripper {
+	cfg := new(tls.Config)
+
+	// Enforce TLS1.2 or higher
+	cfg.MinVersion = 2
+
+	// Read system CAs
+	var systemCAs, _ = x509.SystemCertPool()
+	if reflect.DeepEqual(systemCAs, x509.NewCertPool()) {
+		log.Debug("creating new CApool")
+		systemCAs = x509.NewCertPool()
+	}
+	cfg.RootCAs = systemCAs
+
+	if c.Cacert != "" {
+		cacert, e := ioutil.ReadFile(c.Cacert) // #nosec this file comes from our configuration
+		if e != nil {
+			log.Fatalf("failed to append %q to RootCAs: %v", cacert, e)
+		}
+		if ok := cfg.RootCAs.AppendCertsFromPEM(cacert); !ok {
+			log.Debug("no certs appended, using system certs only")
+		}
+	}
+
+	var trConfig http.RoundTripper = &http.Transport{
+		TLSClientConfig:   cfg,
+		ForceAttemptHTTP2: true}
+
+	return trConfig
 }

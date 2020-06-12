@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"io"
@@ -9,8 +10,10 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -100,8 +103,8 @@ type S3Conf struct {
 func NewS3Backend(c S3Conf) *S3Backend {
 	trConf := transportConfigS3(c)
 	client := http.Client{Transport: trConf}
-	session := session.Must(session.NewSession(&aws.Config{
-		HTTPClient: &client}))
+	s3session, err := newS3Session(c, &client)
+	session := session.Must(s3session, err)
 
 	return &S3Backend{
 		Bucket: c.Bucket,
@@ -187,4 +190,37 @@ func transportConfigS3(c S3Conf) http.RoundTripper {
 		ForceAttemptHTTP2: true}
 
 	return trConfig
+}
+
+// newS3Session returns a new session configured specifically for S3 related requests
+func newS3Session(c S3Conf, client *http.Client) (*session.Session, error) {
+	var mySession *session.Session
+	var err error
+	if c.Cacert != "" {
+		cert, _ := ioutil.ReadFile(c.Cacert)
+		cacert := bytes.NewReader(cert)
+		mySession, err = session.NewSessionWithOptions(session.Options{
+			CustomCABundle: cacert,
+			Config: aws.Config{
+				HTTPClient:       client,
+				Endpoint:         aws.String(c.URL),
+				DisableSSL:       aws.Bool(strings.HasPrefix(c.URL, "http:")),
+				S3ForcePathStyle: aws.Bool(true),
+				Credentials:      credentials.NewStaticCredentials(c.AccessKey, c.SecretKey, ""),
+			}})
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		mySession, err = session.NewSession(&aws.Config{
+			Endpoint:         aws.String(c.URL),
+			DisableSSL:       aws.Bool(strings.HasPrefix(c.URL, "http:")),
+			S3ForcePathStyle: aws.Bool(true),
+			Credentials:      credentials.NewStaticCredentials(c.AccessKey, c.SecretKey, ""),
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	return mySession, nil
 }

@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -95,6 +96,7 @@ type S3Conf struct {
 	AccessKey         string
 	SecretKey         string
 	Bucket            string
+	Region            string
 	UploadConcurrency int
 	Chunksize         int
 	Cacert            string
@@ -107,9 +109,10 @@ func NewS3Backend(c S3Conf) *S3Backend {
 	session := session.Must(session.NewSession(
 		&aws.Config{
 			Endpoint:         aws.String(fmt.Sprintf("%s:%d", c.URL, c.Port)),
-			Region:           aws.String("us-east-1"),
+			Region:           aws.String(c.Region),
 			HTTPClient:       &client,
 			S3ForcePathStyle: aws.Bool(true),
+			DisableSSL:       aws.Bool(strings.HasPrefix(c.URL, "http:")),
 			Credentials:      credentials.NewStaticCredentials(c.AccessKey, c.SecretKey, ""),
 		},
 	))

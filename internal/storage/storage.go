@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -81,9 +82,10 @@ func (pb *PosixBackend) GetFileSize(filePath string) (int64, error) {
 
 // S3Backend encapsulates a S3 client instance
 type S3Backend struct {
-	Client   *s3.S3
-	Uploader *s3manager.Uploader
-	Bucket   string
+	Client     *s3.S3
+	Downloader *s3manager.Downloader
+	Uploader   *s3manager.Uploader
+	Bucket     string
 }
 
 // S3Conf stores information about the S3 storage backend
@@ -118,21 +120,28 @@ func NewS3Backend(c S3Conf) *S3Backend {
 			u.PartSize = int64(c.Chunksize)
 			u.Concurrency = c.UploadConcurrency
 		}),
+		Downloader: s3manager.NewDownloader(session, func(d *s3manager.Downloader) {
+			d.PartSize = int64(c.Chunksize)
+			d.Concurrency = 1
+		}),
 		Client: s3.New(session)}
 }
 
 // ReadFile returns an io.Reader instance
 func (sb *S3Backend) ReadFile(filePath string) (io.Reader, error) {
-	r, err := sb.Client.GetObject(&s3.GetObjectInput{
-		Bucket: aws.String(sb.Bucket),
-		Key:    aws.String(filePath)})
+	buf := new(aws.WriteAtBuffer)
+	_, err := sb.Downloader.Download(buf,
+		&s3.GetObjectInput{
+			Bucket: aws.String(sb.Bucket),
+			Key:    aws.String(filePath),
+		},
+	)
 
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-
-	return r.Body, nil
+	return bytes.NewReader(buf.Bytes()), nil
 }
 
 // WriteFile uploads the contents of an io.Reader to a S3 bucket

@@ -177,7 +177,7 @@ func (c *Config) configInbox() {
 		// All these are required
 		s3.URL = viper.GetString("inbox.url")
 		s3.AccessKey = viper.GetString("inbox.accesskey")
-		s3.SecretKey = viper.GetString("arcinboxhive.secretkey")
+		s3.SecretKey = viper.GetString("inbox.secretkey")
 		s3.Bucket = viper.GetString("inbox.bucket")
 
 		if viper.IsSet("inbox.port") {

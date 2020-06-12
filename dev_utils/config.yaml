@@ -1,18 +1,15 @@
 archive:
-  type: "s3"
+  type: ""
   # S3 backend
-  url: "minio"
-  port: 443
+  url: "https://localhost"
+  port: 9000
   accesskey: "access"
   secretkey: "secretkey"
   bucket: "archive"
   chunksize: 32
-  cacrt: "./dev_utils/certs/ca.pem"
+  cacert: "./dev_utils/certs/ca.pem"
   # posix backend
-  location: "/archive"
-  mode: 2640
-  uid: 1234
-  gid: 1234
+  location: "/tmp"
 
 broker:
   host: "localhost"
@@ -22,8 +19,8 @@ broker:
   vhost: "test"
   queue: "stableIDs"
   exchange: "localega"
-  routingKey: "errmsg"
-  routingError: "errmsg"
+  routingKey: ""
+  routingError: ""
   ssl: "true"
   verifyPeer: "true"
   cacert: "./dev_utils/certs/ca.pem"
@@ -49,17 +46,17 @@ db:
   sslmode: "disable"
 
 inbox:
-  type: "s3"
+  type: ""
   # S3 backend
-  url: "minio"
-  port: 443
+  url: "https://localhost"
+  port: 9000
   accesskey: "access"
-  secretkey: "secret"
+  secretkey: "secretkey"
   bucket: "inbox"
   chunksize: 32
-  cacrt: "./dev_utils/certs/ca.pem"
+  cacert: "./dev_utils/certs/ca.pem"
   # posix backend
-  location: "/inbox"
+  location: "dev_utils"
 
 log:
   level: "debug"

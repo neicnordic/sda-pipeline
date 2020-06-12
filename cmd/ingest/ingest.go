@@ -44,22 +44,10 @@ func main() {
 	conf := config.New("ingest")
 	mq := broker.New(conf.Broker)
 	db, err := postgres.NewDB(conf.Postgres)
-	var archive, inbox storage.Backend
-	if conf.ArchiveType == "s3" {
-		archive = storage.NewS3Backend(conf.ArchiveS3)
-	} else {
-		archive = storage.NewPosixBackend(conf.ArchivePosix)
-	}
-
-	if conf.InboxType == "s3" {
-		inbox = storage.NewS3Backend(conf.InboxS3)
-
-	} else {
-		inbox = storage.NewPosixBackend(conf.InboxPosix)
-	}
 	if err != nil {
 		log.Println("err:", err)
 	}
+	var archive, inbox storage.Backend
 
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
@@ -72,6 +60,19 @@ func main() {
 
 	go func() {
 		for delivered := range broker.GetMessages(mq, conf.Broker.Queue) {
+			if conf.ArchiveType == "s3" {
+				archive = storage.NewS3Backend(conf.ArchiveS3)
+			} else {
+				archive = storage.NewPosixBackend(conf.ArchivePosix)
+			}
+
+			if conf.InboxType == "s3" {
+				inbox = storage.NewS3Backend(conf.InboxS3)
+
+			} else {
+				inbox = storage.NewPosixBackend(conf.InboxPosix)
+			}
+
 			log.Debugf("Received a message: %s", delivered.Body)
 			if err := json.Unmarshal(delivered.Body, &message); err != nil {
 				log.Errorf("Not a json message: %s", err)

@@ -65,4 +65,4 @@ services:
       exit 0;
       "
     volumes:
-      - ./certs/ca.crt:/etc/ssl/certs/public.crt
+      - ./certs/ca.pem:/etc/ssl/certs/public.crt

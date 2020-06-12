@@ -3,6 +3,7 @@ package storage
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"reflect"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -100,8 +102,15 @@ type S3Conf struct {
 func NewS3Backend(c S3Conf) *S3Backend {
 	trConf := transportConfigS3(c)
 	client := http.Client{Transport: trConf}
-	session := session.Must(session.NewSession(&aws.Config{
-		HTTPClient: &client}))
+	session := session.Must(session.NewSession(
+		&aws.Config{
+			Endpoint:         aws.String(fmt.Sprintf("%s:%d", c.URL, c.Port)),
+			Region:           aws.String("us-east-1"),
+			HTTPClient:       &client,
+			S3ForcePathStyle: aws.Bool(true),
+			Credentials:      credentials.NewStaticCredentials(c.AccessKey, c.SecretKey, ""),
+		},
+	))
 
 	return &S3Backend{
 		Bucket: c.Bucket,

@@ -84,7 +84,7 @@ func main() {
 				// This should really be hadled by the DB retry mechanism
 			}
 
-			file, err := inbox.ReadFile(message.FilePath)
+			file, err := inbox.NewFileReader(message.FilePath)
 			if err != nil {
 				log.Errorf("Failed to open file: %s, reason: %v", message.FilePath, err)
 				continue
@@ -109,7 +109,7 @@ func main() {
 
 			// Create a random uuid as file name
 			archivedFile := uuid.New().String()
-			dest, err := archive.WriteFile(archivedFile)
+			dest, err := archive.NewFileWriter(archivedFile)
 			if err != nil {
 				log.Errorf("Failed to create file: %s, reason: %v", archivedFile, err)
 				continue
@@ -174,6 +174,7 @@ func main() {
 				}
 			}
 
+			dest.Close()
 			log.Debugln("Mark as archived")
 			fileInfo := postgres.FileInfo{}
 			fileInfo.Checksum = fmt.Sprintf("%x", hash.Sum(nil))

@@ -111,7 +111,7 @@ func main() {
 				log.Error(err)
 			}
 
-			f, err := backend.ReadFile(message.ArchivePath)
+			f, err := backend.NewFileReader(message.ArchivePath)
 			if err != nil {
 				log.Errorf("Failed to open file: %s, reason: %v", message.ArchivePath, err)
 				continue

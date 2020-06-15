@@ -174,6 +174,7 @@ func main() {
 				}
 			}
 
+			dest.Close()
 			log.Debugln("Mark as archived")
 			fileInfo := postgres.FileInfo{}
 			fileInfo.Checksum = fmt.Sprintf("%x", hash.Sum(nil))

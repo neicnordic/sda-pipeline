@@ -26,7 +26,7 @@ import (
 type Backend interface {
 	GetFileSize(filePath string) (int64, error)
 	ReadFile(filePath string) (io.Reader, error)
-	WriteFile(filePath string) (io.Writer, error)
+	WriteFile(filePath string) (io.WriteCloser, error)
 }
 
 // PosixBackend encapsulates an io.Reader instance
@@ -60,7 +60,7 @@ func (pb *PosixBackend) ReadFile(filePath string) (io.Reader, error) {
 }
 
 // WriteFile returns an io.Writer instance
-func (pb *PosixBackend) WriteFile(filePath string) (io.Writer, error) {
+func (pb *PosixBackend) WriteFile(filePath string) (io.WriteCloser, error) {
 	file, err := os.OpenFile(filepath.Join(filepath.Clean(pb.Location), filePath), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0640)
 	if err != nil {
 		log.Error(err)
@@ -122,6 +122,7 @@ func NewS3Backend(c S3Conf) *S3Backend {
 		Uploader: s3manager.NewUploader(session, func(u *s3manager.Uploader) {
 			u.PartSize = int64(c.Chunksize)
 			u.Concurrency = c.UploadConcurrency
+			u.LeavePartsOnError = false
 		}),
 		Downloader: s3manager.NewDownloader(session, func(d *s3manager.Downloader) {
 			d.PartSize = int64(c.Chunksize)
@@ -148,20 +149,20 @@ func (sb *S3Backend) ReadFile(filePath string) (io.Reader, error) {
 }
 
 // WriteFile uploads the contents of an io.Reader to a S3 bucket
-func (sb *S3Backend) WriteFile(filePath string) (io.Writer, error) {
-	// result, err := sb.Uploader.Upload(&s3manager.UploadInput{
-	// 	Bucket: aws.String(sb.Bucket),
-	// 	Key:    aws.String(filePath),
-	// 	Body:   bytes.NewReader(buffer),
-	// })
-
-	// if err != nil {
-	// 	log.Println("failed to upload file", err)
-	// } else {
-	// 	log.Println("File uploaded to", result.Location)
-	// }
-
-	return nil, nil
+func (sb *S3Backend) WriteFile(filePath string) (io.WriteCloser, error) {
+	reader, writer := io.Pipe()
+	go func() {
+		_, err := sb.Uploader.Upload(&s3manager.UploadInput{
+			Body:            reader,
+			Bucket:          aws.String(sb.Bucket),
+			Key:             aws.String(filePath),
+			ContentEncoding: aws.String("application/octet-stream"),
+		})
+		if err != nil {
+			_ = reader.CloseWithError(err)
+		}
+	}()
+	return writer, nil
 }
 
 // GetFileSize returns the size of a specific object

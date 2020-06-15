@@ -132,90 +132,63 @@ func New(app string) *Config {
 	return c
 }
 
+func configS3Storage(prefix string) storage.S3Conf {
+
+	s3 := storage.S3Conf{}
+	// All these are required
+	s3.URL = viper.GetString(prefix + ".url")
+	s3.AccessKey = viper.GetString(prefix + ".accesskey")
+	s3.SecretKey = viper.GetString(prefix + ".secretkey")
+	s3.Bucket = viper.GetString(prefix + ".bucket")
+
+	// Defaults (move to viper?)
+
+	s3.Port = 443
+	s3.Region = "us-east-1"
+
+	if viper.IsSet(prefix + ".port") {
+		s3.Port = viper.GetInt(prefix + ".port")
+	}
+
+	if viper.IsSet(prefix + ".region") {
+		s3.Region = viper.GetString(prefix + ".region")
+	}
+
+	if viper.IsSet(prefix + ".chunksize") {
+		s3.Chunksize = viper.GetInt(prefix+".chunksize") * 1024 * 1024
+	}
+
+	if viper.IsSet(prefix + ".cacert") {
+		s3.Cacert = viper.GetString(prefix + ".cacert")
+	}
+
+	return s3
+}
+
 func (c *Config) configArchive() {
-	// Setup archive
-	//nolint:nestif
 	if viper.GetString("archive.type") == "s3" {
-		s3 := storage.S3Conf{}
-		// All these are required
-		s3.URL = viper.GetString("archive.url")
-		s3.AccessKey = viper.GetString("archive.accesskey")
-		s3.SecretKey = viper.GetString("archive.secretkey")
-		s3.Bucket = viper.GetString("archive.bucket")
-
-		if viper.IsSet("archive.port") {
-			s3.Port = viper.GetInt("archive.port")
-		} else {
-			s3.Port = 443
-		}
-
-		if viper.IsSet("archive.region") {
-			s3.Region = viper.GetString("archive.region")
-		} else {
-			s3.Region = "us-east-1"
-		}
-
-		if viper.IsSet("archive.chunksize") {
-			s3.Chunksize = viper.GetInt("archive.chunksize") * 1024 * 1024
-		}
-
-		if viper.IsSet("archive.cacert") {
-			s3.Cacert = viper.GetString("archive.cacert")
-		}
-
 		c.ArchiveType = "s3"
-		c.ArchiveS3 = s3
-
+		c.ArchiveS3 = configS3Storage("archive")
 	} else {
 		file := storage.PosixConf{}
 		file.Location = viper.GetString("archive.location")
 
 		c.ArchiveType = "posix"
 		c.ArchivePosix = file
-
 	}
 }
 
 func (c *Config) configInbox() {
-	//nolint:nestif
+
 	if viper.GetString("inbox.type") == "s3" {
-		s3 := storage.S3Conf{}
-		// All these are required
-		s3.URL = viper.GetString("inbox.url")
-		s3.AccessKey = viper.GetString("inbox.accesskey")
-		s3.SecretKey = viper.GetString("inbox.secretkey")
-		s3.Bucket = viper.GetString("inbox.bucket")
-
-		if viper.IsSet("inbox.port") {
-			s3.Port = viper.GetInt("inbox.port")
-		} else {
-			s3.Port = 443
-		}
-
-		if viper.IsSet("inbox.region") {
-			s3.Region = viper.GetString("inbox.region")
-		} else {
-			s3.Region = "us-east-1"
-		}
-
-		if viper.IsSet("inbox.chunksize") {
-			s3.Chunksize = viper.GetInt("inbox.chunksize") * 1024 * 1024
-		}
-
-		if viper.IsSet("inbox.cacert") {
-			s3.Cacert = viper.GetString("inbox.cacert")
-		}
-
 		c.InboxType = "s3"
-		c.InboxS3 = s3
-
+		c.InboxS3 = configS3Storage("inbox")
 	} else {
 		file := storage.PosixConf{}
 		file.Location = viper.GetString("inbox.location")
 
 		c.InboxType = "Posix"
 		c.InboxPosix = file
-
 	}
 }
 

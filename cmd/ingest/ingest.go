@@ -84,7 +84,7 @@ func main() {
 				// This should really be hadled by the DB retry mechanism
 			}
 
-			file, err := inbox.ReadFile(message.FilePath)
+			file, err := inbox.NewFileReader(message.FilePath)
 			if err != nil {
 				log.Errorf("Failed to open file: %s, reason: %v", message.FilePath, err)
 				continue

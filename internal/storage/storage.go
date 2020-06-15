@@ -25,7 +25,7 @@ import (
 // Backend defines methods to be implemented by PosixBackend and S3Backend
 type Backend interface {
 	GetFileSize(filePath string) (int64, error)
-	ReadFile(filePath string) (io.Reader, error)
+	NewFileReader(filePath string) (io.Reader, error)
 	NewFileWriter(filePath string) (io.WriteCloser, error)
 }
 
@@ -48,8 +48,8 @@ func NewPosixBackend(c PosixConf) *PosixBackend {
 	return &PosixBackend{FileReader: reader, Location: c.Location}
 }
 
-// ReadFile returns an io.Reader instance
-func (pb *PosixBackend) ReadFile(filePath string) (io.Reader, error) {
+// NewFileReader returns an io.Reader instance
+func (pb *PosixBackend) NewFileReader(filePath string) (io.Reader, error) {
 	file, err := os.Open(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
@@ -131,8 +131,8 @@ func NewS3Backend(c S3Conf) *S3Backend {
 		Client: s3.New(session)}
 }
 
-// ReadFile returns an io.Reader instance
-func (sb *S3Backend) ReadFile(filePath string) (io.Reader, error) {
+// NewFileReader returns an io.Reader instance
+func (sb *S3Backend) NewFileReader(filePath string) (io.Reader, error) {
 	buf := new(aws.WriteAtBuffer)
 	_, err := sb.Downloader.Download(buf,
 		&s3.GetObjectInput{

@@ -26,7 +26,7 @@ import (
 type Backend interface {
 	GetFileSize(filePath string) (int64, error)
 	ReadFile(filePath string) (io.Reader, error)
-	WriteFile(filePath string) (io.WriteCloser, error)
+	NewFileWriter(filePath string) (io.WriteCloser, error)
 }
 
 // PosixBackend encapsulates an io.Reader instance
@@ -59,8 +59,8 @@ func (pb *PosixBackend) ReadFile(filePath string) (io.Reader, error) {
 	return file, nil
 }
 
-// WriteFile returns an io.Writer instance
-func (pb *PosixBackend) WriteFile(filePath string) (io.WriteCloser, error) {
+// NewFileWriter returns an io.Writer instance
+func (pb *PosixBackend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 	file, err := os.OpenFile(filepath.Join(filepath.Clean(pb.Location), filePath), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0640)
 	if err != nil {
 		log.Error(err)
@@ -148,8 +148,8 @@ func (sb *S3Backend) ReadFile(filePath string) (io.Reader, error) {
 	return bytes.NewReader(buf.Bytes()), nil
 }
 
-// WriteFile uploads the contents of an io.Reader to a S3 bucket
-func (sb *S3Backend) WriteFile(filePath string) (io.WriteCloser, error) {
+// NewFileWriter uploads the contents of an io.Reader to a S3 bucket
+func (sb *S3Backend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 	reader, writer := io.Pipe()
 	go func() {
 		_, err := sb.Uploader.Upload(&s3manager.UploadInput{

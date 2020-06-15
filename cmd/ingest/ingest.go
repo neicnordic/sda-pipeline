@@ -109,7 +109,7 @@ func main() {
 
 			// Create a random uuid as file name
 			archivedFile := uuid.New().String()
-			dest, err := archive.WriteFile(archivedFile)
+			dest, err := archive.NewFileWriter(archivedFile)
 			if err != nil {
 				log.Errorf("Failed to create file: %s, reason: %v", archivedFile, err)
 				continue

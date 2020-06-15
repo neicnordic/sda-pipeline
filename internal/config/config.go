@@ -149,6 +149,12 @@ func (c *Config) configArchive() {
 			s3.Port = 443
 		}
 
+		if viper.IsSet("archive.region") {
+			s3.Region = viper.GetString("archive.region")
+		} else {
+			s3.Region = "us-east-1"
+		}
+
 		if viper.IsSet("archive.chunksize") {
 			s3.Chunksize = viper.GetInt("archive.chunksize") * 1024 * 1024
 		}
@@ -177,13 +183,19 @@ func (c *Config) configInbox() {
 		// All these are required
 		s3.URL = viper.GetString("inbox.url")
 		s3.AccessKey = viper.GetString("inbox.accesskey")
-		s3.SecretKey = viper.GetString("arcinboxhive.secretkey")
+		s3.SecretKey = viper.GetString("inbox.secretkey")
 		s3.Bucket = viper.GetString("inbox.bucket")
 
 		if viper.IsSet("inbox.port") {
 			s3.Port = viper.GetInt("inbox.port")
 		} else {
 			s3.Port = 443
+		}
+
+		if viper.IsSet("inbox.region") {
+			s3.Region = viper.GetString("inbox.region")
+		} else {
+			s3.Region = "us-east-1"
 		}
 
 		if viper.IsSet("inbox.chunksize") {

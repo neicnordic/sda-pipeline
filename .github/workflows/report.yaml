@@ -2,11 +2,6 @@ name: Multilinters
 
 on:
   push:
-    tags:
-      - v*
-    branches:
-      - master
-  pull_request:
 
 jobs:
 
@@ -23,4 +18,3 @@ jobs:
         with:
           version: v1.27
           args: -E gosec,goconst,nestif,interfacer,bodyclose,rowserrcheck
-          only-new-issues: true

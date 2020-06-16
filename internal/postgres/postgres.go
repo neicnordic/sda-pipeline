@@ -172,30 +172,34 @@ func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error 
 	return err
 }
 
-// GetFileIDByAccessionID retrieves a file id from an accessionID
-func (dbs *SQLdb) GetFileIDByAccessionID(accessionID string) (fileID int64, err error) {
+// MapFilesToDataset maps a set of files to a dataset in the database
+func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) error {
+	const getID = "SELECT file_id FROM local_ega.archive_files WHERE stable_id = $1"
+	const mapping = "INSERT INTO local_ega_ebi.filedataset (file_id, dataset_stable_id) VALUES ($1, $2);"
 	db := dbs.Db
-	const query = "SELECT file_id FROM local_ega.archive_files WHERE stable_id = $1"
-	err = db.QueryRow(query, accessionID).Scan(&fileID)
-	if err != nil {
-		log.Errorf("something went wrong with the DB qurey: %s", err)
-		return 0, err
-	}
+	var fileID int64
 
-	return fileID, nil
-}
+	transaction, _ := db.Begin()
+	for _, accessionID := range accessionIDs {
+		err := db.QueryRow(getID, accessionID).Scan(&fileID)
+		if err != nil {
+			log.Errorf("something went wrong with the DB qurey: %s", err)
+			if e := transaction.Rollback(); e != nil {
+				log.Errorf("failed to rollback the transaction: %s", e)
+			}
+			return err
+		}
 
-// MapFileToDataset maps a file to a dataset in the database
-func (dbs *SQLdb) MapFileToDataset(fileID int, datasetID string) error {
-	db := dbs.Db
-	const query = "INSERT INTO local_ega_ebi.filedataset (file_id, dataset_stable_id) VALUES ($1, $2);"
-	result, err := db.Exec(query, fileID, datasetID)
-	if err != nil {
-		log.Errorf("something went wrong with the DB qurey: %s", err)
+		_, err = transaction.Exec(mapping, fileID, datasetID)
+		if err != nil {
+			log.Errorf("something went wrong with the DB qurey: %s", err)
+			if e := transaction.Rollback(); e != nil {
+				log.Errorf("failed to rollback the transaction: %s", e)
+			}
+			return err
+		}
 	}
-	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
-		log.Errorln("something went wrong with the query zero rows where changed")
-	}
+	err := transaction.Commit()
 	return err
 }
 

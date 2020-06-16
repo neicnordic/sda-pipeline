@@ -41,24 +41,16 @@ func main() {
 			if err != nil {
 				log.Errorf("Not a json message: %s", err)
 			}
-			for _, accessionID := range mappings.AccessionIDs {
-				fileID, err := db.GetFileIDByAccessionID(accessionID)
-				if err != nil {
-					log.Errorf("failed to get FileID from AccecssionID: %v", accessionID)
-					// this should be handled by the SQL retry mechanism
-				}
 
-				err = db.MapFileToDataset(int(fileID), mappings.DatasetID)
-				if err != nil {
-					log.Errorf("MapfileToDataset failed, reason: %v", err)
-					// this should be handled by the SQL retry mechanism
-				}
+			err = db.MapFilesToDataset(mappings.DatasetID, mappings.AccessionIDs)
+			if err != nil {
+				log.Errorf("MapfileToDataset failed, reason: %v", err)
+				// this should be handled by the SQL retry mechanism
 			}
 
 			if err := d.Ack(false); err != nil {
 				log.Errorf("failed to ack message for reason: %v", err)
 			}
-
 		}
 	}()
 

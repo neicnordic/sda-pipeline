@@ -185,8 +185,8 @@ func (dbs *SQLdb) GetFileIDByAccessionID(accessionID string) (fileID int64, err 
 	return fileID, nil
 }
 
-// MapfileToDataset maps a file to a dataset in the database
-func (dbs *SQLdb) MapfileToDataset(fileID int, datasetID string) error {
+// MapFileToDataset maps a file to a dataset in the database
+func (dbs *SQLdb) MapFileToDataset(fileID int, datasetID string) error {
 	db := dbs.Db
 	const query = "INSERT INTO local_ega_ebi.filedataset (file_id, dataset_stable_id) VALUES ($1, $2);"
 	result, err := db.Exec(query, fileID, datasetID)

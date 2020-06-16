@@ -48,7 +48,7 @@ func main() {
 					// this should be handled by the SQL retry mechanism
 				}
 
-				err = db.MapfileToDataset(int(fileID), mappings.DatasetID)
+				err = db.MapFileToDataset(int(fileID), mappings.DatasetID)
 				if err != nil {
 					log.Errorf("MapfileToDataset failed, reason: %v", err)
 					// this should be handled by the SQL retry mechanism

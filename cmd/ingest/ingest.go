@@ -116,7 +116,7 @@ func main() {
 			}
 
 			for bytesRead < fileSize {
-				i, _ := file.Read(readBuffer)
+				i, _ := io.ReadFull(file, readBuffer)
 				if i == 0 {
 					return
 				}
@@ -174,6 +174,7 @@ func main() {
 				}
 			}
 
+			file.Close()
 			dest.Close()
 			log.Debugln("Mark as archived")
 			fileInfo := postgres.FileInfo{}

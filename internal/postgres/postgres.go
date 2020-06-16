@@ -175,7 +175,7 @@ func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error 
 // GetFileIDByAccessionID retrieves a file id from an accessionID
 func (dbs *SQLdb) GetFileIDByAccessionID(accessionID string) (fileID int64, err error) {
 	db := dbs.Db
-	const query = "SELECT id FROM local_ega.files WHERE stable_id = $1"
+	const query = "SELECT file_id FROM local_ega.archive_files WHERE stable_id = $1"
 	err = db.QueryRow(query, accessionID).Scan(&fileID)
 	if err != nil {
 		log.Errorf("something went wrong with the DB qurey: %s", err)

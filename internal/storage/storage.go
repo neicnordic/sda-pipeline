@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -25,7 +24,7 @@ import (
 // Backend defines methods to be implemented by PosixBackend and S3Backend
 type Backend interface {
 	GetFileSize(filePath string) (int64, error)
-	NewFileReader(filePath string) (io.Reader, error)
+	NewFileReader(filePath string) (io.ReadCloser, error)
 	NewFileWriter(filePath string) (io.WriteCloser, error)
 }
 
@@ -49,7 +48,7 @@ func NewPosixBackend(c PosixConf) *PosixBackend {
 }
 
 // NewFileReader returns an io.Reader instance
-func (pb *PosixBackend) NewFileReader(filePath string) (io.Reader, error) {
+func (pb *PosixBackend) NewFileReader(filePath string) (io.ReadCloser, error) {
 	file, err := os.Open(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
@@ -132,20 +131,17 @@ func NewS3Backend(c S3Conf) *S3Backend {
 }
 
 // NewFileReader returns an io.Reader instance
-func (sb *S3Backend) NewFileReader(filePath string) (io.Reader, error) {
-	buf := new(aws.WriteAtBuffer)
-	_, err := sb.Downloader.Download(buf,
-		&s3.GetObjectInput{
-			Bucket: aws.String(sb.Bucket),
-			Key:    aws.String(filePath),
-		},
-	)
+func (sb *S3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
+	r, err := sb.Client.GetObject(&s3.GetObjectInput{
+		Bucket: aws.String(sb.Bucket),
+		Key:    aws.String(filePath),
+	})
 
 	if err != nil {
 		log.Println(err)
-		return nil, err
 	}
-	return bytes.NewReader(buf.Bytes()), nil
+
+	return r.Body, nil
 }
 
 // NewFileWriter uploads the contents of an io.Reader to a S3 bucket

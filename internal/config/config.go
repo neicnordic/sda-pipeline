@@ -122,6 +122,9 @@ func New(app string) *Config {
 		c.configCrypt4gh()
 		c.configDatabase()
 		c.configInbox()
+	case "mapper":
+		c.configBroker()
+		c.configDatabase()
 	case "verify":
 		c.configArchive()
 		c.configBroker()

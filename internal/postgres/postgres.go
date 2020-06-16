@@ -172,6 +172,33 @@ func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error 
 	return err
 }
 
+// GetFileIDByAccessionID retrieves a file id from an accessionID
+func (dbs *SQLdb) GetFileIDByAccessionID(accessionID string) (fileID int64, err error) {
+	db := dbs.Db
+	const query = "SELECT id FROM local_ega.files WHERE stable_id = $1"
+	err = db.QueryRow(query, accessionID).Scan(&fileID)
+	if err != nil {
+		log.Errorf("something went wrong with the DB qurey: %s", err)
+		return 0, err
+	}
+
+	return fileID, nil
+}
+
+// MapfileToDataset maps a file to a dataset in the database
+func (dbs *SQLdb) MapfileToDataset(fileID int, datasetID string) error {
+	db := dbs.Db
+	const query = "INSERT INTO local_ega_ebi.filedataset (file_id, dataset_stable_id) VALUES ($1, $2);"
+	result, err := db.Exec(query, fileID, datasetID)
+	if err != nil {
+		log.Errorf("something went wrong with the DB qurey: %s", err)
+	}
+	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
+		log.Errorln("something went wrong with the query zero rows where changed")
+	}
+	return err
+}
+
 // Close terminates the conmnection with the database
 func (dbs *SQLdb) Close() {
 	db := dbs.Db

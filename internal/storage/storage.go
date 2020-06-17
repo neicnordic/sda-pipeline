@@ -28,27 +28,39 @@ type Backend interface {
 	NewFileWriter(filePath string) (io.WriteCloser, error)
 }
 
-// PosixBackend encapsulates an io.Reader instance
-type PosixBackend struct {
+// Conf is a wrapper for the storage config
+type Conf struct {
+	Type  string
+	S3    S3Conf
+	Posix posixConf
+}
+
+type posixBackend struct {
 	FileReader io.Reader
 	FileWriter io.Writer
 	Location   string
-	Size       int64
 }
 
-// PosixConf stores information about the POSIX storage backend
-type PosixConf struct {
+type posixConf struct {
 	Location string
 }
 
-// NewPosixBackend returns a PosixReader struct
-func NewPosixBackend(c PosixConf) *PosixBackend {
-	var reader io.Reader
-	return &PosixBackend{FileReader: reader, Location: c.Location}
+// NewBackend initates a storage backend
+func NewBackend(c Conf) Backend {
+	switch c.Type {
+	case "s3":
+		return newS3Backend(c.S3)
+	default:
+		return newPosixBackend(c.Posix)
+	}
+}
+
+func newPosixBackend(c posixConf) *posixBackend {
+	return &posixBackend{Location: c.Location}
 }
 
 // NewFileReader returns an io.Reader instance
-func (pb *PosixBackend) NewFileReader(filePath string) (io.ReadCloser, error) {
+func (pb *posixBackend) NewFileReader(filePath string) (io.ReadCloser, error) {
 	file, err := os.Open(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
@@ -59,7 +71,7 @@ func (pb *PosixBackend) NewFileReader(filePath string) (io.ReadCloser, error) {
 }
 
 // NewFileWriter returns an io.Writer instance
-func (pb *PosixBackend) NewFileWriter(filePath string) (io.WriteCloser, error) {
+func (pb *posixBackend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 	file, err := os.OpenFile(filepath.Join(filepath.Clean(pb.Location), filePath), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0640)
 	if err != nil {
 		log.Error(err)
@@ -70,7 +82,7 @@ func (pb *PosixBackend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 }
 
 // GetFileSize returns the size of the file
-func (pb *PosixBackend) GetFileSize(filePath string) (int64, error) {
+func (pb *posixBackend) GetFileSize(filePath string) (int64, error) {
 	stat, err := os.Stat(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
@@ -80,12 +92,10 @@ func (pb *PosixBackend) GetFileSize(filePath string) (int64, error) {
 	return stat.Size(), nil
 }
 
-// S3Backend encapsulates a S3 client instance
-type S3Backend struct {
-	Client     *s3.S3
-	Downloader *s3manager.Downloader
-	Uploader   *s3manager.Uploader
-	Bucket     string
+type s3Backend struct {
+	Client   *s3.S3
+	Uploader *s3manager.Uploader
+	Bucket   string
 }
 
 // S3Conf stores information about the S3 storage backend
@@ -101,8 +111,7 @@ type S3Conf struct {
 	Cacert            string
 }
 
-// NewS3Backend returns a S3Backend struct
-func NewS3Backend(c S3Conf) *S3Backend {
+func newS3Backend(c S3Conf) *s3Backend {
 	trConf := transportConfigS3(c)
 	client := http.Client{Transport: trConf}
 	session := session.Must(session.NewSession(
@@ -116,22 +125,18 @@ func NewS3Backend(c S3Conf) *S3Backend {
 		},
 	))
 
-	return &S3Backend{
+	return &s3Backend{
 		Bucket: c.Bucket,
 		Uploader: s3manager.NewUploader(session, func(u *s3manager.Uploader) {
 			u.PartSize = int64(c.Chunksize)
 			u.Concurrency = c.UploadConcurrency
 			u.LeavePartsOnError = false
 		}),
-		Downloader: s3manager.NewDownloader(session, func(d *s3manager.Downloader) {
-			d.PartSize = int64(c.Chunksize)
-			d.Concurrency = 1
-		}),
 		Client: s3.New(session)}
 }
 
 // NewFileReader returns an io.Reader instance
-func (sb *S3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
+func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 	r, err := sb.Client.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(sb.Bucket),
 		Key:    aws.String(filePath),
@@ -145,7 +150,7 @@ func (sb *S3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 }
 
 // NewFileWriter uploads the contents of an io.Reader to a S3 bucket
-func (sb *S3Backend) NewFileWriter(filePath string) (io.WriteCloser, error) {
+func (sb *s3Backend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 	reader, writer := io.Pipe()
 	go func() {
 		_, err := sb.Uploader.Upload(&s3manager.UploadInput{
@@ -162,7 +167,7 @@ func (sb *S3Backend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 }
 
 // GetFileSize returns the size of a specific object
-func (sb *S3Backend) GetFileSize(filePath string) (int64, error) {
+func (sb *s3Backend) GetFileSize(filePath string) (int64, error) {
 	r, err := sb.Client.HeadObject(&s3.HeadObjectInput{
 		Bucket: aws.String(sb.Bucket),
 		Key:    aws.String(filePath)})

@@ -47,7 +47,6 @@ func main() {
 	if err != nil {
 		log.Println("err:", err)
 	}
-	var archive, inbox storage.Backend
 
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
@@ -60,18 +59,9 @@ func main() {
 
 	go func() {
 		for delivered := range broker.GetMessages(mq, conf.Broker.Queue) {
-			if conf.ArchiveType == "s3" {
-				archive = storage.NewS3Backend(conf.ArchiveS3)
-			} else {
-				archive = storage.NewPosixBackend(conf.ArchivePosix)
-			}
 
-			if conf.InboxType == "s3" {
-				inbox = storage.NewS3Backend(conf.InboxS3)
-
-			} else {
-				inbox = storage.NewPosixBackend(conf.InboxPosix)
-			}
+			archive := storage.NewBackend(conf.Archive)
+			inbox := storage.NewBackend(conf.Inbox)
 
 			log.Debugf("Received a message: %s", delivered.Body)
 			if err := json.Unmarshal(delivered.Body, &message); err != nil {
@@ -99,8 +89,8 @@ func main() {
 			// 4MiB readbuffer, this must be large enough that we get the entire header and the first 64KiB datablock
 			// Should be made configurable once we have S3 support
 			var bufSize int
-			if bufSize = 4 * 1024 * 1024; conf.InboxS3.Chunksize > 4*1024*1024 {
-				bufSize = conf.InboxS3.Chunksize
+			if bufSize = 4 * 1024 * 1024; conf.Inbox.S3.Chunksize > 4*1024*1024 {
+				bufSize = conf.Inbox.S3.Chunksize
 			}
 			readBuffer := make([]byte, bufSize)
 			hash := sha256.New()

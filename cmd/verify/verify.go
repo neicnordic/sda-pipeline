@@ -49,13 +49,7 @@ func main() {
 		log.Println("err:", err)
 	}
 
-	// Storage logici for S3 or Posix
-	var backend storage.Backend
-	if conf.ArchiveType == "posix" {
-		backend = storage.NewPosixBackend(conf.ArchivePosix)
-	} else {
-		backend = storage.NewS3Backend(conf.ArchiveS3)
-	}
+	backend := storage.NewBackend(conf.Archive)
 
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()

@@ -23,15 +23,11 @@ var (
 
 // Config is a parent object for all the different configuration parts
 type Config struct {
-	ArchiveType  string
-	ArchiveS3    storage.S3Conf
-	ArchivePosix storage.PosixConf
-	Broker       broker.Mqconf
-	Crypt4gh     Crypt4gh
-	InboxType    string
-	InboxS3      storage.S3Conf
-	InboxPosix   storage.PosixConf
-	Postgres     postgres.Pgconf
+	Archive  storage.Conf
+	Broker   broker.Mqconf
+	Crypt4gh Crypt4gh
+	Inbox    storage.Conf
+	Postgres postgres.Pgconf
 }
 
 // Crypt4gh holds c4gh related config info
@@ -170,28 +166,22 @@ func configS3Storage(prefix string) storage.S3Conf {
 
 func (c *Config) configArchive() {
 	if viper.GetString("archive.type") == "s3" {
-		c.ArchiveType = "s3"
-		c.ArchiveS3 = configS3Storage("archive")
+		c.Archive.Type = "s3"
+		c.Archive.S3 = configS3Storage("archive")
 	} else {
-		file := storage.PosixConf{}
-		file.Location = viper.GetString("archive.location")
-
-		c.ArchiveType = "posix"
-		c.ArchivePosix = file
+		c.Archive.Type = "posix"
+		c.Archive.Posix.Location = viper.GetString("archive.location")
 	}
 }
 
 func (c *Config) configInbox() {
 
 	if viper.GetString("inbox.type") == "s3" {
-		c.InboxType = "s3"
-		c.InboxS3 = configS3Storage("inbox")
+		c.Inbox.Type = "s3"
+		c.Inbox.S3 = configS3Storage("inbox")
 	} else {
-		file := storage.PosixConf{}
-		file.Location = viper.GetString("inbox.location")
-
-		c.InboxType = "Posix"
-		c.InboxPosix = file
+		c.Inbox.Type = "Posix"
+		c.Inbox.Posix.Location = viper.GetString("inbox.location")
 	}
 }
 

@@ -39,7 +39,6 @@ type posixBackend struct {
 	FileReader io.Reader
 	FileWriter io.Writer
 	Location   string
-	Size       int64
 }
 
 type posixConf struct {
@@ -95,10 +94,8 @@ func (pb *posixBackend) GetFileSize(filePath string) (int64, error) {
 
 type s3Backend struct {
 	Client   *s3.S3
-	Client     *s3.S3
-	Downloader *s3manager.Downloader
-	Uploader   *s3manager.Uploader
-	Bucket     string
+	Uploader *s3manager.Uploader
+	Bucket   string
 }
 
 // S3Conf stores information about the S3 storage backend
@@ -134,10 +131,6 @@ func newS3Backend(c S3Conf) *s3Backend {
 			u.PartSize = int64(c.Chunksize)
 			u.Concurrency = c.UploadConcurrency
 			u.LeavePartsOnError = false
-		}),
-		Downloader: s3manager.NewDownloader(session, func(d *s3manager.Downloader) {
-			d.PartSize = int64(c.Chunksize)
-			d.Concurrency = 1
 		}),
 		Client: s3.New(session)}
 }

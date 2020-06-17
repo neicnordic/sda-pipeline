@@ -47,10 +47,18 @@ type posixConf struct {
 	Location string
 }
 
-// NewPosixBackend returns a PosixReader struct
-func NewPosixBackend(c PosixConf) *PosixBackend {
-	var reader io.Reader
-	return &PosixBackend{FileReader: reader, Location: c.Location}
+// NewBackend initates a storage backend
+func NewBackend(c Conf) Backend {
+	switch c.Type {
+	case "s3":
+		return newS3Backend(c.S3)
+	default:
+		return newPosixBackend(c.Posix)
+	}
+}
+
+func newPosixBackend(c posixConf) *posixBackend {
+	return &posixBackend{Location: c.Location}
 }
 
 // NewFileReader returns an io.Reader instance

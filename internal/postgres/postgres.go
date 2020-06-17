@@ -172,6 +172,37 @@ func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error 
 	return err
 }
 
+// MapFilesToDataset maps a set of files to a dataset in the database
+func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) error {
+	const getID = "SELECT file_id FROM local_ega.archive_files WHERE stable_id = $1"
+	const mapping = "INSERT INTO local_ega_ebi.filedataset (file_id, dataset_stable_id) VALUES ($1, $2);"
+	db := dbs.Db
+	var fileID int64
+
+	transaction, _ := db.Begin()
+	for _, accessionID := range accessionIDs {
+		err := db.QueryRow(getID, accessionID).Scan(&fileID)
+		if err != nil {
+			log.Errorf("something went wrong with the DB qurey: %s", err)
+			if e := transaction.Rollback(); e != nil {
+				log.Errorf("failed to rollback the transaction: %s", e)
+			}
+			return err
+		}
+
+		_, err = transaction.Exec(mapping, fileID, datasetID)
+		if err != nil {
+			log.Errorf("something went wrong with the DB qurey: %s", err)
+			if e := transaction.Rollback(); e != nil {
+				log.Errorf("failed to rollback the transaction: %s", e)
+			}
+			return err
+		}
+	}
+	err := transaction.Commit()
+	return err
+}
+
 // Close terminates the conmnection with the database
 func (dbs *SQLdb) Close() {
 	db := dbs.Db

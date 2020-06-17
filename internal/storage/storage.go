@@ -28,6 +28,13 @@ type Backend interface {
 	NewFileWriter(filePath string) (io.WriteCloser, error)
 }
 
+// Conf is a wrapper for the storage config
+type Conf struct {
+	Type  string
+	S3    S3Conf
+	Posix posixConf
+}
+
 // PosixBackend encapsulates an io.Reader instance
 type PosixBackend struct {
 	FileReader io.Reader
@@ -36,8 +43,7 @@ type PosixBackend struct {
 	Size       int64
 }
 
-// PosixConf stores information about the POSIX storage backend
-type PosixConf struct {
+type posixConf struct {
 	Location string
 }
 

@@ -17,25 +17,27 @@ import (
 	"github.com/elixir-oslo/crypt4gh/model/headers"
 	"github.com/elixir-oslo/crypt4gh/streaming"
 	"github.com/google/uuid"
+	"github.com/xeipuuv/gojsonschema"
+
 	log "github.com/sirupsen/logrus"
 )
 
-// Message struct that holds the json message data
-type Message struct {
-	FilePath string `json:"filepath"`
+type trigger struct {
+	Type     string `json:"type"`
 	User     string `json:"user"`
+	Filepath string `json:"filepath"`
 }
 
-// Archived is a struct holding the full message data
-type Archived struct {
+type archived struct {
 	User               string      `json:"user"`
+	FilePath           string      `json:"file_path"`
 	FileID             int64       `json:"file_id"`
 	ArchivePath        string      `json:"archive_path"`
-	EncryptedChecksums []Checksums `json:"encrypted_checksums"`
+	EncryptedChecksums []checksums `json:"encrypted_checksums"`
+	ReVerify           bool        `json:"re_verify"`
 }
 
-// Checksums is struct for the checkksum type and value
-type Checksums struct {
+type checksums struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
 }
@@ -52,37 +54,52 @@ func main() {
 	defer mq.Connection.Close()
 	defer db.Close()
 
+	ingestTrigger := gojsonschema.NewReferenceLoader("https://raw.githubusercontent.com/EGA-archive/LocalEGA/master/ingestion/schemas/ingestion-trigger.json")
+
 	forever := make(chan bool)
 
 	log.Info("starting ingest service")
-	var message Message
+	var message trigger
 
 	go func() {
 		for delivered := range broker.GetMessages(mq, conf.Broker.Queue) {
+			res, err := gojsonschema.Validate(ingestTrigger, gojsonschema.NewBytesLoader(delivered.Body))
+			if err != nil {
+				log.Error(err)
+				// publish MQ error
+				continue
+			}
+			if !res.Valid() {
+				log.Error(res.Errors())
+				// publish MQ error
+				continue
+			}
 
 			archive := storage.NewBackend(conf.Archive)
 			inbox := storage.NewBackend(conf.Inbox)
 
 			log.Debugf("Received a message: %s", delivered.Body)
 			if err := json.Unmarshal(delivered.Body, &message); err != nil {
-				log.Errorf("Not a json message: %s", err)
+				log.Errorf("Unmarshaling json message failed, reason: %s", err)
+				// publish MQ error
+				continue
 			}
 
-			fileID, err := db.InsertFile(message.FilePath, message.User)
+			fileID, err := db.InsertFile(message.Filepath, message.User)
 			if err != nil {
 				log.Errorf("InsertFile failed, reason: %v", err)
 				// This should really be hadled by the DB retry mechanism
 			}
 
-			file, err := inbox.NewFileReader(message.FilePath)
+			file, err := inbox.NewFileReader(message.Filepath)
 			if err != nil {
-				log.Errorf("Failed to open file: %s, reason: %v", message.FilePath, err)
+				log.Errorf("Failed to open file: %s, reason: %v", message.Filepath, err)
 				continue
 			}
 
-			fileSize, err := inbox.GetFileSize(message.FilePath)
+			fileSize, err := inbox.GetFileSize(message.Filepath)
 			if err != nil {
-				log.Errorf("Failed to get file size of: %s, reason: %v", message.FilePath, err)
+				log.Errorf("Failed to get file size of: %s, reason: %v", message.Filepath, err)
 				continue
 			}
 
@@ -175,19 +192,33 @@ func main() {
 			}
 
 			// Send message to archived
-			msg := Archived{
+			msg := archived{
 				User:        message.User,
+				FilePath:    message.Filepath,
 				FileID:      fileID,
 				ArchivePath: archivedFile,
-				EncryptedChecksums: []Checksums{
+				EncryptedChecksums: []checksums{
 					{"SHA256", fmt.Sprintf("%x", hash.Sum(nil))},
 				},
 			}
-			brokerMsg, err := json.Marshal(&msg)
+
+			ingestedMsg := gojsonschema.NewReferenceLoader("https://raw.githubusercontent.com/neicnordic/sda-pipeline/tree/master/schemas/ingestion-verification.json")
+			res, err = gojsonschema.Validate(ingestedMsg, gojsonschema.NewGoLoader(msg))
 			if err != nil {
+				fmt.Println("error:", err)
 				log.Error(err)
-				// This should really not fail.
+				// publish MQ error
+				continue
 			}
+			if !res.Valid() {
+				fmt.Println("result:", res.Errors())
+				log.Error(res.Errors())
+				// publish MQ error
+				continue
+			}
+
+			brokerMsg, _ := json.Marshal(&msg)
+
 			if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, brokerMsg); err != nil {
 				// TODO fix resend mechainsm
 				log.Errorln("We need to fix this resend stuff ...")

@@ -36,7 +36,7 @@ func main() {
 	defer mq.Connection.Close()
 	defer db.Close()
 
-	ingestAccession := gojsonschema.NewReferenceLoader("https://raw.githubusercontent.com/EGA-archive/LocalEGA/master/ingestion/schemas/ingestion-accession.json")
+	ingestAccession := gojsonschema.NewReferenceLoader("file://schemas/ingestion-accession.json")
 
 	forever := make(chan bool)
 

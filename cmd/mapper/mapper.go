@@ -30,7 +30,7 @@ func main() {
 	defer mq.Connection.Close()
 	defer db.Close()
 
-	datasetMapping := gojsonschema.NewReferenceLoader("https://raw.githubusercontent.com/EGA-archive/LocalEGA/master/ingestion/schemas/dataset-mapping.json")
+	datasetMapping := gojsonschema.NewReferenceLoader("file://schemas/dataset-mapping.json")
 
 	forever := make(chan bool)
 

@@ -54,7 +54,7 @@ func main() {
 	defer mq.Connection.Close()
 	defer db.Close()
 
-	ingestTrigger := gojsonschema.NewReferenceLoader("https://raw.githubusercontent.com/EGA-archive/LocalEGA/master/ingestion/schemas/ingestion-trigger.json")
+	ingestTrigger := gojsonschema.NewReferenceLoader("file://schemas/ingestion-trigger.json")
 
 	forever := make(chan bool)
 
@@ -202,7 +202,7 @@ func main() {
 				},
 			}
 
-			ingestedMsg := gojsonschema.NewReferenceLoader("https://raw.githubusercontent.com/neicnordic/sda-pipeline/tree/master/schemas/ingestion-verification.json")
+			ingestedMsg := gojsonschema.NewReferenceLoader("file://schemas/ingestion-verification.json")
 			res, err = gojsonschema.Validate(ingestedMsg, gojsonschema.NewGoLoader(msg))
 			if err != nil {
 				fmt.Println("error:", err)

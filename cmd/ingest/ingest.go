@@ -30,7 +30,7 @@ type trigger struct {
 
 type archived struct {
 	User               string      `json:"user"`
-	FilePath           string      `json:"file_path"`
+	FilePath           string      `json:"filepath"`
 	FileID             int64       `json:"file_id"`
 	ArchivePath        string      `json:"archive_path"`
 	EncryptedChecksums []checksums `json:"encrypted_checksums"`

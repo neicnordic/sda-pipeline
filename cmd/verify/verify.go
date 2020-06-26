@@ -22,7 +22,7 @@ import (
 
 // Message struct that holds the json message data
 type Message struct {
-	Filepath     string `json:"filep_ath"`
+	Filepath     string `json:"filepath"`
 	User         string `json:"user"`
 	FileID       int    `json:"file_id"`
 	ArchivePath  string `json:"archive_path"`

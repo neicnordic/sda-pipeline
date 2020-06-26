@@ -68,16 +68,24 @@ func NewDB(c Pgconf) (*SQLdb, error) {
 }
 
 func buildConnInfo(c Pgconf) string {
-	connInfo := ""
-	if c.SslMode == "verify-full" {
-		connInfo = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s sslrootcert=%s sslcert=%s sslkey=%s",
-			c.Host, c.Port, c.User, c.Password, c.Database, c.SslMode, c.Cacert, c.ClientCert, c.ClientKey)
-	} else if c.SslMode != "disable" {
-		connInfo = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s sslrootcert=%s",
-			c.Host, c.Port, c.User, c.Password, c.Database, c.SslMode, c.Cacert)
-	} else {
-		connInfo = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+
+	connInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 			c.Host, c.Port, c.User, c.Password, c.Database, c.SslMode)
+
+        if c.SslMode == "disable" {
+                return connInfo
+	}
+
+	if c.Cacert != "" {
+                connInfo += fmt.Sprintf(" sslrootcert=%s", c.Cacert)
+	}
+
+	if c.ClientCert != "" {
+                connInfo += fmt.Sprintf(" sslcert=%s", c.ClientCert)
+	}
+
+	if c.ClientKey != "" {
+                connInfo += fmt.Sprintf(" sslkey=%s", c.ClientKey)
 	}
 
 	return connInfo

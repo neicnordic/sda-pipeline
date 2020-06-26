@@ -244,14 +244,17 @@ func (c *Config) configDatabase() {
 	db.SslMode = viper.GetString("db.sslmode")
 
 	// Optional settings
-	if viper.IsSet("db.sslMode") && viper.GetString("db.sslMode") == "verify-full" {
-		db.SslMode = viper.GetString("db.sslMode")
+	if db.SslMode == "verify-full" {
 		// Since verify-full is specified, these are required.
 		if !(viper.IsSet("db.clientCert") && viper.IsSet("db.clientKey")) {
 			panic(fmt.Errorf("when db.sslMode is set to verify-full both db.clientCert and db.clientKey are needed"))
 		}
-		db.ClientCert = viper.GetString("db.clientCert")
-		db.ClientKey = viper.GetString("db.clientKey")
+	}
+	if viper.IsSet("db.clientKey") {
+	   	db.ClientKey = viper.GetString("db.clientKey")
+	}
+	if viper.IsSet("db.clientCert") {
+	   	db.ClientCert = viper.GetString("db.clientCert")
 	}
 	if viper.IsSet("db.cacert") {
 		db.Cacert = viper.GetString("db.cacert")

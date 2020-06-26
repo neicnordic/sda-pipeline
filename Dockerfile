@@ -1,14 +1,12 @@
-FROM golang:alpine as build
+FROM golang:alpine as builder
 
-RUN mkdir -p /build
-COPY ./ /build/
+ENV GOPATH=$PWD
 ENV CGO_ENABLED=0
 
-RUN cd /build/ && go build ./... && go install ./... 
-RUN cd /go/bin && for p in *; do mv "$p" "ega-$p"; done
-                              
-RUN addgroup -g 1000 lega && \     
-    adduser -D -u 1000 -G lega lega
+COPY . .
+
+RUN for p in cmd/*; do go build -o "${p/cmd\//sda-}" "./$p"; done
+RUN echo "nobody:x:65534:65534:nobody:/:/sbin/nologin" > passwd
 
 FROM scratch
 
@@ -21,9 +19,7 @@ LABEL org.label-schema.build-date=$BUILD_DATE
 LABEL org.label-schema.vcs-url="https://github.com/neicnordic/sda-pipeline"
 LABEL org.label-schema.vcs-ref=$SOURCE_COMMIT
 
-COPY --from=build /go/bin/ /
-COPY --from=build /etc/passwd /etc/passwd
-COPY --from=build /etc/group /etc/group
+COPY --from=builder /go/passwd /etc/passwd
+COPY --from=builder /go/sda-* /
 
-USER 1000
-
+USER 65534

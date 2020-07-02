@@ -7,15 +7,18 @@ import (
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/postgres"
 
+	"github.com/xeipuuv/gojsonschema"
+
 	log "github.com/sirupsen/logrus"
 )
 
 // Message struct that holds the json message data
 type Message struct {
-	User      string `json:"user"`
-	StableID  string `json:"stable_id"`
-	FilePath  string `json:"file_path"`
-	Checksums []struct {
+	Type               string `json:"type"`
+	User               string `json:"user"`
+	Filepath           string `json:"filepath"`
+	AccessionID        string `json:"accession_id"`
+	DecryptedChecksums []struct {
 		Type  string `json:"type"`
 		Value string `json:"value"`
 	} `json:"decrypted_checksums"`
@@ -33,6 +36,8 @@ func main() {
 	defer mq.Connection.Close()
 	defer db.Close()
 
+	ingestAccession := gojsonschema.NewReferenceLoader("file://schemas/ingestion-accession.json")
+
 	forever := make(chan bool)
 
 	log.Info("starting finalize service")
@@ -41,14 +46,26 @@ func main() {
 	go func() {
 		for d := range broker.GetMessages(mq, config.Broker.Queue) {
 			log.Debugf("received a message: %s", d.Body)
-			// TODO verify json structure
-			err := json.Unmarshal(d.Body, &message)
+			res, err := gojsonschema.Validate(ingestAccession, gojsonschema.NewBytesLoader(d.Body))
 			if err != nil {
-				log.Errorf("Not a json message: %s", err)
+				log.Error(err)
+				// publish MQ error
+				continue
+			}
+			if !res.Valid() {
+				log.Error(res.Errors())
+				// publish MQ error
+				continue
+			}
+
+			if err := json.Unmarshal(d.Body, &message); err != nil {
+				log.Errorf("Unmarshaling json message failed, reason: %s", err)
+				// publish MQ error
+				continue
 			}
 
 			if err == nil {
-				err := db.MarkReady(message.StableID, message.User, message.FilePath, message.Checksums[0].Value)
+				err := db.MarkReady(message.AccessionID, message.User, message.Filepath, message.DecryptedChecksums[0].Value)
 				if err != nil {
 					log.Errorf("MarkReady failed, reason: %v", err)
 					// this should be handled by the SQL retry mechanism

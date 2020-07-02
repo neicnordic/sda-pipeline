@@ -15,6 +15,7 @@ import (
 
 	"github.com/elixir-oslo/crypt4gh/keys"
 	"github.com/elixir-oslo/crypt4gh/streaming"
+	"github.com/xeipuuv/gojsonschema"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -25,13 +26,14 @@ type Message struct {
 	User         string `json:"user"`
 	FileID       int    `json:"file_id"`
 	ArchivePath  string `json:"archive_path"`
-	FileChecksum string `json:"file_checksum"`
+	FileChecksum string `json:"encrypted_checksums"`
 	ReVerify     *bool  `json:"re_verify"`
 }
 
 // Completed is struct holding the full message data
 type Completed struct {
 	User               string      `json:"user"`
+	Filepath           string      `json:"filepath"`
 	DecryptedChecksums []Checksums `json:"decrypted_checksums"`
 }
 
@@ -55,6 +57,8 @@ func main() {
 	defer mq.Connection.Close()
 	defer db.Close()
 
+	ingestVerification := gojsonschema.NewReferenceLoader("file://schemas/ingestion-verification.json")
+
 	forever := make(chan bool)
 
 	log.Info("starting verify service")
@@ -62,11 +66,21 @@ func main() {
 	go func() {
 		for delivered := range broker.GetMessages(mq, conf.Broker.Queue) {
 			log.Debugf("received a message: %s", delivered.Body)
-			var message Message
-			// TODO verify json structure
-			err := json.Unmarshal(delivered.Body, &message)
+			res, err := gojsonschema.Validate(ingestVerification, gojsonschema.NewBytesLoader(delivered.Body))
 			if err != nil {
-				log.Errorf("Not a json message: %s", err)
+				log.Error(err)
+				// publish MQ error
+				continue
+			}
+			if !res.Valid() {
+				log.Error(res.Errors())
+				// publish MQ error
+				continue
+			}
+
+			var message Message
+			if err := json.Unmarshal(delivered.Body, &message); err != nil {
+				log.Errorf("Unmarshaling json message failed, reason: %s", err)
 				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
 				if e := delivered.Nack(false, false); e != nil {
 					log.Errorln("failed to Nack message, reason: ", e)
@@ -135,16 +149,30 @@ func main() {
 				} else {
 					// Send message to completed
 					c := Completed{
-						User: message.User,
+						User:     message.User,
+						Filepath: message.Filepath,
 						DecryptedChecksums: []Checksums{
 							{"SHA256", fmt.Sprintf("%x", hash.Sum(nil))},
 						},
 					}
-					completed, err := json.Marshal(&c)
+
+					verifyMsg := gojsonschema.NewReferenceLoader("file://schemas/ingestion-accession-request.json")
+					res, err := gojsonschema.Validate(verifyMsg, gojsonschema.NewGoLoader(c))
 					if err != nil {
+						fmt.Println("error:", err)
 						log.Error(err)
-						// This should really not fail.
+						// publish MQ error
+						continue
 					}
+					if !res.Valid() {
+						fmt.Println("result:", res.Errors())
+						log.Error(res.Errors())
+						// publish MQ error
+						continue
+					}
+
+					completed, _ := json.Marshal(&c)
+
 					if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completed); err != nil {
 						// TODO fix resend mechainsm
 						log.Errorln("We need to fix this resend stuff ...")

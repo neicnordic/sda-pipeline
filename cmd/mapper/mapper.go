@@ -7,6 +7,8 @@ import (
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/postgres"
 
+	"github.com/xeipuuv/gojsonschema"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -28,6 +30,8 @@ func main() {
 	defer mq.Connection.Close()
 	defer db.Close()
 
+	datasetMapping := gojsonschema.NewReferenceLoader("file://schemas/dataset-mapping.json")
+
 	forever := make(chan bool)
 
 	log.Info("starting mapper service")
@@ -36,14 +40,25 @@ func main() {
 	go func() {
 		for d := range broker.GetMessages(mq, conf.Broker.Queue) {
 			log.Debugf("received a message: %s", d.Body)
-			// TODO verify json structure
-			err = json.Unmarshal(d.Body, &mappings)
+			res, err := gojsonschema.Validate(datasetMapping, gojsonschema.NewBytesLoader(d.Body))
 			if err != nil {
-				log.Errorf("Not a json message: %s", err)
+				log.Error(err)
+				// publish MQ error
+				continue
+			}
+			if !res.Valid() {
+				log.Error(res.Errors())
+				// publish MQ error
+				continue
 			}
 
-			err = db.MapFilesToDataset(mappings.DatasetID, mappings.AccessionIDs)
-			if err != nil {
+			if err := json.Unmarshal(d.Body, &mappings); err != nil {
+				log.Errorf("Unmarshaling json message failed, reason: %s", err)
+				// publish MQ error
+				continue
+			}
+
+			if err := db.MapFilesToDataset(mappings.DatasetID, mappings.AccessionIDs); err != nil {
 				log.Errorf("MapfileToDataset failed, reason: %v", err)
 				// this should be handled by the SQL retry mechanism
 			}

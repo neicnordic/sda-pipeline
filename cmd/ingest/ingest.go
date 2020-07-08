@@ -198,7 +198,7 @@ func main() {
 				FileID:      fileID,
 				ArchivePath: archivedFile,
 				EncryptedChecksums: []checksums{
-					{"SHA256", fmt.Sprintf("%x", hash.Sum(nil))},
+					{"sha256", fmt.Sprintf("%x", hash.Sum(nil))},
 				},
 			}
 

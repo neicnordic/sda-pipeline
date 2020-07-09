@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -141,8 +142,13 @@ func main() {
 			if _, err := io.Copy(hash, c4ghr); err != nil {
 				log.Error(err)
 			}
+			// TODO change the md5 placeholder when crypt4gh are implemented
+			b := make([]byte, 16)
+			if _, err = rand.Read(b); err != nil {
+				log.Error(err)
+			}
 			//nolint:nestif
-			if message.ReVerify == nil || *message.ReVerify == false {
+			if message.ReVerify == nil || !*message.ReVerify {
 				// Mark file as "COMPLETED"
 				if e := db.MarkCompleted(fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {
 					// this should really be hadled by the DB retry mechanism
@@ -153,7 +159,7 @@ func main() {
 						Filepath: message.Filepath,
 						DecryptedChecksums: []Checksums{
 							{"sha256", fmt.Sprintf("%x", hash.Sum(nil))},
-							{"md5", "b60fa2486b121bed8d566bacec987e0d"},
+							{"md5", fmt.Sprintf("%x", b)},
 						},
 					}
 

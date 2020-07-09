@@ -76,53 +76,49 @@ func main() {
 				continue
 			}
 
-			if err == nil {
-				// Extract the sha256 from the message and use it for the db query
-				var checksumSha256 string
-				for _, checksum := range message.DecryptedChecksums {
-					if checksum.Type == "sha256" {
-						checksumSha256 = checksum.Value
-					}
-				}
-				err := db.MarkReady(message.AccessionID, message.User, message.Filepath, checksumSha256)
-				if err != nil {
-					log.Errorf("MarkReady failed, reason: %v", err)
-					// this should be handled by the SQL retry mechanism
-				} else {
-					c := Completed{
-						User:               message.User,
-						Filepath:           message.Filepath,
-						AccessionID:        message.AccessionID,
-						DecryptedChecksums: message.DecryptedChecksums,
-					}
-
-					completeMsg := gojsonschema.NewReferenceLoader("file://schemas/ingestion-completion.json")
-					res, err := gojsonschema.Validate(completeMsg, gojsonschema.NewGoLoader(c))
-					if err != nil {
-						fmt.Println("error:", err)
-						log.Error(err)
-						// publish MQ error
-						continue
-					}
-					if !res.Valid() {
-						fmt.Println("result:", res.Errors())
-						log.Error(res.Errors())
-						// publish MQ error
-						continue
-					}
-
-					completed, _ := json.Marshal(&c)
-					if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completed); err != nil {
-						// TODO fix resend mechainsm
-						log.Errorln("We need to fix this resend stuff ...")
-					}
-
-					if err := delivered.Ack(false); err != nil {
-						log.Errorf("failed to ack message for reason: %v", err)
-					}
+			// Extract the sha256 from the message and use it for the db
+			var checksumSha256 string
+			for _, checksum := range message.DecryptedChecksums {
+				if checksum.Type == "sha256" {
+					checksumSha256 = checksum.Value
 				}
 			}
+			if err := db.MarkReady(message.AccessionID, message.User, message.Filepath, checksumSha256); err != nil {
+				log.Errorf("MarkReady failed, reason: %v", err)
+				continue
+				// this should be handled by the SQL retry mechanism
+			}
+			c := Completed{
+				User:               message.User,
+				Filepath:           message.Filepath,
+				AccessionID:        message.AccessionID,
+				DecryptedChecksums: message.DecryptedChecksums,
+			}
 
+			completeMsg := gojsonschema.NewReferenceLoader("file://schemas/ingestion-completion.json")
+			res, err = gojsonschema.Validate(completeMsg, gojsonschema.NewGoLoader(c))
+			if err != nil {
+				fmt.Println("error:", err)
+				log.Error(err)
+				// publish MQ error
+				continue
+			}
+			if !res.Valid() {
+				fmt.Println("result:", res.Errors())
+				log.Error(res.Errors())
+				// publish MQ error
+				continue
+			}
+
+			completed, _ := json.Marshal(&c)
+			if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completed); err != nil {
+				// TODO fix resend mechainsm
+				log.Errorln("We need to fix this resend stuff ...")
+			}
+
+			if err := delivered.Ack(false); err != nil {
+				log.Errorf("failed to ack message for reason: %v", err)
+			}
 		}
 	}()
 

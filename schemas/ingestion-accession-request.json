@@ -114,13 +114,14 @@
 	    "contains": {
                 "type": "object",
                 "properties": { "type": { "const": "md5" } },
-                "required": [ "type" ],
+                "required": [ "type" ]
             },
             "additionalItems": false,
             "items": {
-		"anyOf": [ { "$ref": "#/definitions/checksum-sha256" },
-			 { "$ref": "#/definitions/checksum-md5" } ]
-	    }
+                "anyOf": 
+                    [ { "$ref": "#/definitions/checksum-sha256" },
+                      { "$ref": "#/definitions/checksum-md5" } ]
+	            }
+            }
         }
-    }
 }

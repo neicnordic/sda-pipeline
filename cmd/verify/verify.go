@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -22,22 +23,22 @@ import (
 
 // Message struct that holds the json message data
 type Message struct {
-	Filepath     string `json:"filepath"`
-	User         string `json:"user"`
-	FileID       int    `json:"file_id"`
-	ArchivePath  string `json:"archive_path"`
-	FileChecksum string `json:"encrypted_checksums"`
-	ReVerify     *bool  `json:"re_verify"`
+	Filepath           string      `json:"filepath"`
+	User               string      `json:"user"`
+	FileID             int         `json:"file_id"`
+	ArchivePath        string      `json:"archive_path"`
+	EncryptedChecksums []Checksums `json:"encrypted_checksums"`
+	ReVerify           *bool       `json:"re_verify"`
 }
 
-// Completed is struct holding the full message data
-type Completed struct {
+// Verified is struct holding the full message data
+type Verified struct {
 	User               string      `json:"user"`
 	Filepath           string      `json:"filepath"`
 	DecryptedChecksums []Checksums `json:"decrypted_checksums"`
 }
 
-// Checksums is struct for the checkksum type and value
+// Checksums is struct for the checksum type and value
 type Checksums struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
@@ -112,12 +113,12 @@ func main() {
 			if err != nil {
 				log.Error(err)
 			}
-			keyFile.Close()
 
 			key, err := keys.ReadPrivateKey(keyFile, []byte(conf.Crypt4gh.Passphrase))
 			if err != nil {
 				log.Error(err)
 			}
+			keyFile.Close()
 
 			f, err := backend.NewFileReader(message.ArchivePath)
 			if err != nil {
@@ -136,23 +137,29 @@ func main() {
 			if err != nil {
 				log.Error(err)
 			}
+
 			hash := sha256.New()
 			if _, err := io.Copy(hash, c4ghr); err != nil {
 				log.Error(err)
 			}
-
+			// TODO change the md5 placeholder when crypt4gh are implemented
+			b := make([]byte, 16)
+			if _, err = rand.Read(b); err != nil {
+				log.Error(err)
+			}
 			//nolint:nestif
-			if message.ReVerify == nil {
+			if message.ReVerify == nil || !*message.ReVerify {
 				// Mark file as "COMPLETED"
 				if e := db.MarkCompleted(fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {
 					// this should really be hadled by the DB retry mechanism
 				} else {
-					// Send message to completed
-					c := Completed{
+					// Send message to verified
+					c := Verified{
 						User:     message.User,
 						Filepath: message.Filepath,
 						DecryptedChecksums: []Checksums{
-							{"SHA256", fmt.Sprintf("%x", hash.Sum(nil))},
+							{"sha256", fmt.Sprintf("%x", hash.Sum(nil))},
+							{"md5", fmt.Sprintf("%x", b)},
 						},
 					}
 
@@ -171,9 +178,9 @@ func main() {
 						continue
 					}
 
-					completed, _ := json.Marshal(&c)
+					verified, _ := json.Marshal(&c)
 
-					if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completed); err != nil {
+					if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, verified); err != nil {
 						// TODO fix resend mechainsm
 						log.Errorln("We need to fix this resend stuff ...")
 					}

@@ -60,6 +60,13 @@
             "arguments": {}
         },
         {
+            "name": "files.verified",
+            "vhost": "test",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {}
+        },
+        {
             "name": "files.error",
             "vhost": "test",
             "durable": true,
@@ -131,6 +138,14 @@
             "arguments": {},
             "destination": "files.completed",
             "routing_key": "files.completed"
+        },
+        {
+            "source": "localega",
+            "vhost": "test",
+            "destination_type": "queue",
+            "arguments": {},
+            "destination": "files.verified",
+            "routing_key": "files.verified"
         },
         {
             "source": "localega",

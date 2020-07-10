@@ -125,7 +125,7 @@
 	    "contains": {
                 "type": "object",
                 "properties": { "type": { "const": "md5" } },
-                "required": [ "type" ],
+                "required": [ "type" ]
             },
             "additionalItems": false,
             "items": {

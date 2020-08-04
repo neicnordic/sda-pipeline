@@ -20,7 +20,7 @@ LABEL org.label-schema.vcs-url="https://github.com/neicnordic/sda-pipeline"
 LABEL org.label-schema.vcs-ref=$SOURCE_COMMIT
 
 COPY --from=builder /go/passwd /etc/passwd
-COPY --from=builder /go/sda-* /
+COPY --from=builder /go/sda-* /bin/
 COPY --from=builder /go/schemas /schemas
 
 USER 65534

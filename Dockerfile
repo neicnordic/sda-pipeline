@@ -21,5 +21,6 @@ LABEL org.label-schema.vcs-ref=$SOURCE_COMMIT
 
 COPY --from=builder /go/passwd /etc/passwd
 COPY --from=builder /go/sda-* /
+COPY --from=builder /go/schemas /schemas
 
 USER 65534

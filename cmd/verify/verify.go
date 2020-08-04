@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"crypto/rand"
+	"crypto/md5" // #nosec
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -138,19 +138,18 @@ func main() {
 				log.Error(err)
 			}
 
-			hash := sha256.New()
-			if _, err := io.Copy(hash, c4ghr); err != nil {
+			md5hash := md5.New() // #nosec
+			sha256hash := sha256.New()
+
+			stream := io.TeeReader(c4ghr, md5hash)
+			if _, err := io.Copy(sha256hash, stream); err != nil {
 				log.Error(err)
 			}
-			// TODO change the md5 placeholder when crypt4gh are implemented
-			b := make([]byte, 16)
-			if _, err = rand.Read(b); err != nil {
-				log.Error(err)
-			}
+
 			//nolint:nestif
 			if message.ReVerify == nil || !*message.ReVerify {
 				// Mark file as "COMPLETED"
-				if e := db.MarkCompleted(fmt.Sprintf("%x", hash.Sum(nil)), message.FileID); e != nil {
+				if e := db.MarkCompleted(fmt.Sprintf("%x", sha256hash.Sum(nil)), message.FileID); e != nil {
 					// this should really be hadled by the DB retry mechanism
 				} else {
 					// Send message to verified
@@ -158,8 +157,8 @@ func main() {
 						User:     message.User,
 						Filepath: message.Filepath,
 						DecryptedChecksums: []Checksums{
-							{"sha256", fmt.Sprintf("%x", hash.Sum(nil))},
-							{"md5", fmt.Sprintf("%x", b)},
+							{"sha256", fmt.Sprintf("%x", sha256hash.Sum(nil))},
+							{"md5", fmt.Sprintf("%x", md5hash.Sum(nil))},
 						},
 					}
 

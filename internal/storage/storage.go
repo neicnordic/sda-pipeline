@@ -46,17 +46,25 @@ type posixConf struct {
 }
 
 // NewBackend initates a storage backend
-func NewBackend(c Conf) Backend {
+func NewBackend(c Conf, formatData ...interface{}) Backend {
 	switch c.Type {
 	case "s3":
 		return newS3Backend(c.S3)
 	default:
-		return newPosixBackend(c.Posix)
+		return newPosixBackend(c.Posix, formatData...)
 	}
 }
 
-func newPosixBackend(c posixConf) *posixBackend {
-	return &posixBackend{Location: c.Location}
+func newPosixBackend(c posixConf, formatData ...interface{}) *posixBackend {
+	username := ""
+
+	// Only username (%s) supported for now.
+
+	if len(formatData) > 0 {
+		username = formatData[0].(string)
+	}
+
+	return &posixBackend{Location: strings.ReplaceAll(c.Location, "%s", username)}
 }
 
 // NewFileReader returns an io.Reader instance

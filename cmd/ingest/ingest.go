@@ -75,8 +75,8 @@ func main() {
 				continue
 			}
 
-			archive := storage.NewBackend(conf.Archive)
-			inbox := storage.NewBackend(conf.Inbox)
+			archive := storage.NewBackend(conf.Archive, message.User)
+			inbox := storage.NewBackend(conf.Inbox, message.User)
 
 			log.Debugf("Received a message: %s", delivered.Body)
 			if err := json.Unmarshal(delivered.Body, &message); err != nil {

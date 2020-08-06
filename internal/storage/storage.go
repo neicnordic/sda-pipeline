@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -124,6 +125,21 @@ func newS3Backend(c S3Conf) *s3Backend {
 			Credentials:      credentials.NewStaticCredentials(c.AccessKey, c.SecretKey, ""),
 		},
 	))
+
+	// Attempt to create a bucket, but we really expect an error here
+	// (BucketAlreadyOwnedByYou)
+	_, err := s3.New(session).CreateBucket(&s3.CreateBucketInput{
+		Bucket: aws.String(c.Bucket),
+	})
+
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+
+			if aerr.Code() != s3.ErrCodeBucketAlreadyOwnedByYou {
+				log.Warning("Unexpected issue while creating bucket", err)
+			}
+		}
+	}
 
 	return &s3Backend{
 		Bucket: c.Bucket,

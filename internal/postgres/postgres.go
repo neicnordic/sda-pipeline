@@ -121,11 +121,11 @@ func (dbs *SQLdb) MarkCompleted(checksum string, fileID int) error {
 	const completed = "UPDATE local_ega.files SET status = 'COMPLETED', archive_file_checksum = $1, archive_file_checksum_type = 'SHA256'  WHERE id = $2;"
 	result, err := db.Exec(completed, checksum, fileID)
 	if err != nil {
-		log.Errorf("something went wrong with the DB qurey: %s", err)
+		log.Errorf("something went wrong with the DB query: %s", err)
 		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
-		log.Errorln("something went wrong with the query zero rows where changed")
+		log.Errorln("something went wrong with the query zero rows were changed")
 	}
 	return err
 }
@@ -137,7 +137,7 @@ func (dbs *SQLdb) InsertFile(filename, user string) (int64, error) {
 	var fileID int64
 	err := db.QueryRow(query, filename, strings.Replace(filepath.Ext(filename), ".", "", -1), user).Scan(&fileID)
 	if err != nil {
-		log.Errorf("something went wrong with the DB qurey: %s", err)
+		log.Errorf("something went wrong with the DB query: %s", err)
 	}
 
 	return fileID, nil
@@ -149,11 +149,11 @@ func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
 	const query = "UPDATE local_ega.files SET header = $1 WHERE id = $2;"
 	result, err := db.Exec(query, hex.EncodeToString(header), id)
 	if err != nil {
-		log.Errorf("something went wrong with the DB qurey: %s", err)
+		log.Errorf("something went wrong with the DB query: %s", err)
 		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
-		log.Errorln("something went wrong with the query zero rows where changed")
+		log.Errorln("something went wrong with the query zero rows were changed")
 	}
 	return err
 }
@@ -164,11 +164,11 @@ func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
 	const query = "UPDATE local_ega.files SET status = 'ARCHIVED', archive_path = $1, archive_filesize = $2, inbox_file_checksum = $3, inbox_file_checksum_type = 'SHA256' WHERE id = $4;"
 	result, err := db.Exec(query, file.Path, file.Size, file.Checksum, id)
 	if err != nil {
-		log.Errorf("something went wrong with the DB qurey: %s", err)
+		log.Errorf("something went wrong with the DB query: %s", err)
 		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
-		log.Errorln("something went wrong with the query zero rows where changed")
+		log.Errorln("something went wrong with the query zero rows were changed")
 	}
 	return err
 }
@@ -179,11 +179,11 @@ func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error 
 	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE elixir_id = $2 and inbox_path = $3 and inbox_file_checksum = $4 and status != 'DISABLED';"
 	result, err := db.Exec(ready, accessionID, user, filepath, checksum)
 	if err != nil {
-		log.Errorf("something went wrong with the DB qurey: %s", err)
+		log.Errorf("something went wrong with the DB query: %s", err)
 		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
-		log.Errorln("something went wrong with the query zero rows where changed")
+		log.Errorln("something went wrong with the query zero rows were changed")
 	}
 	return err
 }
@@ -200,7 +200,7 @@ func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) err
 
 		err := db.QueryRow(getID, accessionID).Scan(&fileID)
 		if err != nil {
-			log.Errorf("something went wrong with the DB qurey: %s", err)
+			log.Errorf("something went wrong with the DB query: %s", err)
 			if e := transaction.Rollback(); e != nil {
 				log.Errorf("failed to rollback the transaction: %s", e)
 			}
@@ -209,7 +209,7 @@ func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) err
 
 		_, err = transaction.Exec(mapping, fileID, datasetID)
 		if err != nil {
-			log.Errorf("something went wrong with the DB qurey: %s", err)
+			log.Errorf("something went wrong with the DB query: %s", err)
 			if e := transaction.Rollback(); e != nil {
 				log.Errorf("failed to rollback the transaction: %s", e)
 			}

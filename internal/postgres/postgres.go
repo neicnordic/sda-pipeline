@@ -122,6 +122,7 @@ func (dbs *SQLdb) MarkCompleted(checksum string, fileID int) error {
 	result, err := db.Exec(completed, checksum, fileID)
 	if err != nil {
 		log.Errorf("something went wrong with the DB qurey: %s", err)
+		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
 		log.Errorln("something went wrong with the query zero rows where changed")
@@ -149,6 +150,7 @@ func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
 	result, err := db.Exec(query, hex.EncodeToString(header), id)
 	if err != nil {
 		log.Errorf("something went wrong with the DB qurey: %s", err)
+		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
 		log.Errorln("something went wrong with the query zero rows where changed")
@@ -163,6 +165,7 @@ func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
 	result, err := db.Exec(query, file.Path, file.Size, file.Checksum, id)
 	if err != nil {
 		log.Errorf("something went wrong with the DB qurey: %s", err)
+		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
 		log.Errorln("something went wrong with the query zero rows where changed")
@@ -177,6 +180,7 @@ func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error 
 	result, err := db.Exec(ready, accessionID, user, filepath, checksum)
 	if err != nil {
 		log.Errorf("something went wrong with the DB qurey: %s", err)
+		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
 		log.Errorln("something went wrong with the query zero rows where changed")

@@ -138,6 +138,7 @@ func (dbs *SQLdb) InsertFile(filename, user string) (int64, error) {
 	err := db.QueryRow(query, filename, strings.Replace(filepath.Ext(filename), ".", "", -1), user).Scan(&fileID)
 	if err != nil {
 		log.Errorf("something went wrong with the DB query: %s", err)
+		return 0, err
 	}
 
 	return fileID, nil

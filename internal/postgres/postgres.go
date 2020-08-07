@@ -46,6 +46,10 @@ type FileInfo struct {
 	Path     string
 }
 
+// For testing
+
+var sqlOpen = sql.Open
+
 // NewDB creates a new DB connection
 func NewDB(c Pgconf) (*SQLdb, error) {
 	var err error
@@ -53,7 +57,7 @@ func NewDB(c Pgconf) (*SQLdb, error) {
 	connInfo := buildConnInfo(c)
 
 	log.Debugf("Connecting to DB with <%s>", connInfo)
-	db, err := sql.Open("postgres", connInfo)
+	db, err := sqlOpen("postgres", connInfo)
 	if err != nil {
 		log.Errorf("PostgresErrMsg 1: %s", err)
 		panic(err)
@@ -70,22 +74,22 @@ func NewDB(c Pgconf) (*SQLdb, error) {
 func buildConnInfo(c Pgconf) string {
 
 	connInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-			c.Host, c.Port, c.User, c.Password, c.Database, c.SslMode)
+		c.Host, c.Port, c.User, c.Password, c.Database, c.SslMode)
 
-        if c.SslMode == "disable" {
-                return connInfo
+	if c.SslMode == "disable" {
+		return connInfo
 	}
 
 	if c.Cacert != "" {
-                connInfo += fmt.Sprintf(" sslrootcert=%s", c.Cacert)
+		connInfo += fmt.Sprintf(" sslrootcert=%s", c.Cacert)
 	}
 
 	if c.ClientCert != "" {
-                connInfo += fmt.Sprintf(" sslcert=%s", c.ClientCert)
+		connInfo += fmt.Sprintf(" sslcert=%s", c.ClientCert)
 	}
 
 	if c.ClientKey != "" {
-                connInfo += fmt.Sprintf(" sslkey=%s", c.ClientKey)
+		connInfo += fmt.Sprintf(" sslkey=%s", c.ClientKey)
 	}
 
 	return connInfo
@@ -189,6 +193,7 @@ func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) err
 
 	transaction, _ := db.Begin()
 	for _, accessionID := range accessionIDs {
+
 		err := db.QueryRow(getID, accessionID).Scan(&fileID)
 		if err != nil {
 			log.Errorf("something went wrong with the DB qurey: %s", err)

@@ -71,9 +71,12 @@ func TestNewDB(t *testing.T) {
 		return db, nil
 	}
 
-	NewDB(testPgconf)
+	_, err := NewDB(testPgconf)
 
-	if err := mock.ExpectationsWereMet(); err != nil {
+	if err != nil {
+		t.Errorf("NewDB failed unexpectedly")
+	}
+	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
@@ -86,7 +89,11 @@ func sqlTesterHelper(t *testing.T, f func(sqlmock.Sqlmock, *SQLdb) error) error 
 		return db, err
 	}
 
-	testDb, _ := NewDB(testPgconf)
+	testDb, err := NewDB(testPgconf)
+
+	if err != nil {
+		t.Errorf("NewDB failed unexpectedly")
+	}
 
 	returnErr := f(mock, testDb)
 
@@ -481,7 +488,7 @@ func TestMarkReady(t *testing.T) {
 	log.SetOutput(os.Stdout)
 }
 func TestMapFilesToDataset(t *testing.T) {
-	sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
 		// Set up a few file sets with different accession ids.
 		accessions := []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"}
@@ -511,18 +518,29 @@ func TestMapFilesToDataset(t *testing.T) {
 			}
 			mock.ExpectCommit()
 
-			testDb.MapFilesToDataset(di, acs)
+			err := testDb.MapFilesToDataset(di, acs)
+			if err != nil {
+				t.Errorf("MapFilesToDataset failed unexpectedly")
+			}
 		}
 
 		return nil
 	})
+
+	if r != nil {
+		t.Errorf("Tests for MapFilesToDataset failed unexpectedly")
+	}
 }
 
 func TestClose(t *testing.T) {
-	sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
 		mock.ExpectClose()
 		testDb.Close()
 		return nil
 	})
+
+	if r != nil {
+		t.Errorf("Close failed unexpectedly")
+	}
 }

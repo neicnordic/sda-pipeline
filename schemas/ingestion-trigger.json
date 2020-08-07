@@ -10,7 +10,7 @@
     ],
     "additionalProperties": true,
     "definitions": {
-	"checksum-sha256": {
+        "checksum-sha256": {
             "$id": "#/definitions/checksum-sha256",
             "type": "object",
             "title": "The sha256 checksum schema",
@@ -39,14 +39,14 @@
                     "type": "string",
                     "title": "The checksum value in hex format",
                     "description": "The checksum value in (case-insensitive) hex format",
-		    "pattern": "^[a-fA-F0-9]{64}$",
+                    "pattern": "^[a-fA-F0-9]{64}$",
                     "examples": [
                         "82E4e60e7beb3db2e06A00a079788F7d71f75b61a4b75f28c4c942703dabb6d6"
                     ]
                 }
             }
-	},
-	"checksum-md5": {
+        },
+        "checksum-md5": {
             "$id": "#/definitions/checksum-md5",
             "type": "object",
             "title": "The md5 checksum schema",
@@ -75,21 +75,24 @@
                     "type": "string",
                     "title": "The checksum value in hex format",
                     "description": "The checksum value in (case-insensitive) hex format",
-		    "pattern": "^[a-fA-F0-9]{32}$",
+                    "pattern": "^[a-fA-F0-9]{32}$",
                     "examples": [
                         "7Ac236b1a8dce2dac89e7cf45d2b48BD"
                     ]
                 }
             }
-	}
+        }
     },
     "properties": {
-	"type": {
+        "type": {
             "$id": "#/properties/type",
             "type": "string",
             "title": "The message type",
             "description": "The message type",
-	    "enum": [ "ingest", "cancel" ]
+            "enum": [
+                "ingest",
+                "cancel"
+            ]
         },
         "user": {
             "$id": "#/properties/user",
@@ -115,14 +118,28 @@
             "title": "The checksums of the encrypted file",
             "description": "An explanation about the purpose of this instance.",
             "examples": [
-                [ { "type": "sha256", "value": "82E4e60e7beb3db2e06A00a079788F7d71f75b61a4b75f28c4c942703dabb6d6" },
-                  { "type": "md5"   , "value": "7Ac236b1a8dce2dac89e7cf45d2b48BD" }]
+                [
+                    {
+                        "type": "sha256",
+                        "value": "82E4e60e7beb3db2e06A00a079788F7d71f75b61a4b75f28c4c942703dabb6d6"
+                    },
+                    {
+                        "type": "md5",
+                        "value": "7Ac236b1a8dce2dac89e7cf45d2b48BD"
+                    }
+                ]
             ],
             "additionalItems": false,
             "items": {
-		"anyOf": [ { "$ref": "#/definitions/checksum-sha256" },
-			   { "$ref": "#/definitions/checksum-md5" } ]
-	    }
+                "anyOf": [
+                    {
+                        "$ref": "#/definitions/checksum-sha256"
+                    },
+                    {
+                        "$ref": "#/definitions/checksum-md5"
+                    }
+                ]
+            }
         }
     }
 }

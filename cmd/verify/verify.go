@@ -138,14 +138,10 @@ func main() {
 				continue
 			}
 
-			var buf bytes.Buffer
-			buf.Write(header)
-			rw := io.ReadWriter(&buf)
-			if _, e := io.Copy(rw, f); e != nil {
-				log.Error(e)
-			}
+			hr := bytes.NewReader(header)
+			mr := io.MultiReader(hr, f)
 
-			c4ghr, err := streaming.NewCrypt4GHReader(rw, key, nil)
+			c4ghr, err := streaming.NewCrypt4GHReader(mr, key, nil)
 			if err != nil {
 				log.Error(err)
 				continue
@@ -155,6 +151,7 @@ func main() {
 			sha256hash := sha256.New()
 
 			stream := io.TeeReader(c4ghr, md5hash)
+
 			if _, err := io.Copy(sha256hash, stream); err != nil {
 				log.Error(err)
 				continue

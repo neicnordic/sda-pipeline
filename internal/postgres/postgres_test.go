@@ -51,11 +51,38 @@ func TestBuildConnInfo(t *testing.T) {
 	}
 }
 
+func CatchNewDBPanic() (err error) {
+	// Recover if NewDB panics
+
+	defer func() {
+		r := recover()
+		if r != nil {
+			err = fmt.Errorf("Caught panic")
+		}
+	}()
+
+	_, err = NewDB(testPgconf)
+
+	return err
+}
 func TestNewDB(t *testing.T) {
 
-	db, mock, _ := sqlmock.New(sqlmock.MonitorPingsOption(true))
+	// Test failure first
 
-	mock.ExpectPing()
+	sqlOpen = func(x string, y string) (*sql.DB, error) {
+		return nil, errors.New("fail for testing")
+	}
+
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+
+	err := CatchNewDBPanic()
+
+	if err == nil {
+		t.Errorf("NewDB did not report error when it should.")
+	}
+
+	db, mock, _ := sqlmock.New(sqlmock.MonitorPingsOption(true))
 
 	sqlOpen = func(dbName string, connInfo string) (*sql.DB, error) {
 		if dbName != "postgres" {
@@ -71,14 +98,34 @@ func TestNewDB(t *testing.T) {
 		return db, nil
 	}
 
-	_, err := NewDB(testPgconf)
+	mock.ExpectPing().WillReturnError(fmt.Errorf("ping fail for testing"))
+
+	err = CatchNewDBPanic()
+
+	if buf.Len() == 0 {
+		t.Errorf("Expected warnings were missing")
+	}
+
+	log.SetOutput(os.Stdout)
+
+	if err == nil {
+		t.Errorf("NewDB should fail when ping fails")
+	}
+
+	if err = mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	mock.ExpectPing()
+	_, err = NewDB(testPgconf)
 
 	if err != nil {
-		t.Errorf("NewDB failed unexpectedly")
+		t.Errorf("NewDB failed unexpectedly: " + err.Error())
 	}
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
+
 }
 
 // Helper function for "simple" sql tests
@@ -521,8 +568,50 @@ func TestMapFilesToDataset(t *testing.T) {
 			err := testDb.MapFilesToDataset(di, acs)
 			if err != nil {
 				t.Errorf("MapFilesToDataset failed unexpectedly")
+				return err
 			}
 		}
+
+		var buf bytes.Buffer
+		log.SetOutput(&buf)
+
+		mock.ExpectBegin()
+		mock.ExpectQuery("SELECT file_id FROM local_ega.archive_files WHERE stable_id = \\$1").
+			WithArgs("aid1").WillReturnError(fmt.Errorf("error for testing"))
+		mock.ExpectRollback().WillReturnError(fmt.Errorf("error again"))
+
+		err := testDb.MapFilesToDataset("dataset", []string{"aid1"})
+
+		if buf.Len() == 0 {
+			t.Errorf("Expected warning missing")
+		}
+
+		if err == nil {
+			t.Errorf("MapFilesToDataset did not fail as expected")
+		}
+
+		buf.Reset()
+
+		mock.ExpectBegin()
+		mock.ExpectQuery("SELECT file_id FROM local_ega.archive_files WHERE stable_id = \\$1").
+			WithArgs("aid1").WillReturnRows(sqlmock.NewRows([]string{"file_id"}).AddRow(100))
+
+		mock.ExpectExec("INSERT INTO local_ega_ebi.filedataset \\(file_id, dataset_stable_id\\) VALUES \\(\\$1, \\$2\\);").
+			WithArgs(100, "dataset").WillReturnError(fmt.Errorf("error for testing"))
+
+		mock.ExpectRollback().WillReturnError(fmt.Errorf("error again"))
+
+		err = testDb.MapFilesToDataset("dataset", []string{"aid1"})
+
+		if buf.Len() == 0 {
+			t.Errorf("Expected warning missing")
+		}
+
+		if err == nil {
+			t.Errorf("MapFilesToDataset did not fail as expected")
+		}
+
+		log.SetOutput(os.Stdout)
 
 		return nil
 	})
@@ -530,6 +619,7 @@ func TestMapFilesToDataset(t *testing.T) {
 	if r != nil {
 		t.Errorf("Tests for MapFilesToDataset failed unexpectedly")
 	}
+
 }
 
 func TestClose(t *testing.T) {

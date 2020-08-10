@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/DATA-DOG/go-sqlmock"
+	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 /*
@@ -37,22 +37,23 @@ func TestBuildConnInfo(t *testing.T) {
 
 	s := buildConnInfo(testPgconf)
 
-	if s != testConnInfo {
-		t.Error("Bad string for verify-full: " + s)
-	}
+	assert.Equalf(t, s, testConnInfo, "Bad string for verify-full: '%s' while expecting '%s'", s, testConnInfo)
 
 	noSslConf := testPgconf
 	noSslConf.SslMode = "disable"
 
 	s = buildConnInfo(noSslConf)
 
-	if s != "host=localhost port=42 user=user password=password dbname=database sslmode=disable" {
-		t.Error("Bad string for disable: " + s)
-	}
+	assert.Equalf(t, s,
+		"host=localhost port=42 user=user password=password dbname=database sslmode=disable",
+		"Bad string for disable: %s", s)
+
 }
 
 func CatchNewDBPanic() (err error) {
 	// Recover if NewDB panics
+	// Allow both panic and error return here, so use a custom function rather
+	// than assert.Panics
 
 	defer func() {
 		r := recover()
@@ -85,14 +86,17 @@ func TestNewDB(t *testing.T) {
 	db, mock, _ := sqlmock.New(sqlmock.MonitorPingsOption(true))
 
 	sqlOpen = func(dbName string, connInfo string) (*sql.DB, error) {
-		if dbName != "postgres" {
-			t.Error("Unexpected database name '" + dbName + "' while expecting 'postgres'")
-			return nil, errors.New("Unexpected dbname")
+		if !assert.Equalf(t, dbName, "postgres",
+			"Unexpected database name '%s' while expecting 'postgres'",
+			dbName) {
+			return nil, fmt.Errorf("Unexpected dbName %s", dbName)
 		}
 
-		if connInfo != testConnInfo {
-			t.Error("Unexpected connection info '" + connInfo + "' while expecting '" + testConnInfo + "'")
-			return nil, errors.New("Unexpected conninfo")
+		if !assert.Equalf(t, connInfo, testConnInfo,
+			"Unexpected connection info '%s' while expecting '%s",
+			connInfo,
+			testConnInfo) {
+			return nil, fmt.Errorf("Unexpected connInfo %s", connInfo)
 		}
 
 		return db, nil
@@ -102,15 +106,12 @@ func TestNewDB(t *testing.T) {
 
 	err = CatchNewDBPanic()
 
-	if buf.Len() == 0 {
-		t.Errorf("Expected warnings were missing")
-	}
+	assert.NotZero(t, buf.Len(), "Expected warnings were missing")
+	assert.NotNilf(t, err, "DB failed: %s", err)
 
 	log.SetOutput(os.Stdout)
 
-	if err == nil {
-		t.Errorf("NewDB should fail when ping fails")
-	}
+	assert.NotNil(t, err, "NewDB should fail when ping fails")
 
 	if err = mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -119,12 +120,10 @@ func TestNewDB(t *testing.T) {
 	mock.ExpectPing()
 	_, err = NewDB(testPgconf)
 
-	if err != nil {
-		t.Errorf("NewDB failed unexpectedly: " + err.Error())
-	}
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("there were unfulfilled expectations: %s", err)
-	}
+	assert.Nilf(t, err, "NewDB failed unexpectedly: %s", err)
+
+	err = mock.ExpectationsWereMet()
+	assert.Nilf(t, err, "there were unfulfilled expectations: %s", err)
 
 }
 
@@ -138,15 +137,12 @@ func sqlTesterHelper(t *testing.T, f func(sqlmock.Sqlmock, *SQLdb) error) error 
 
 	testDb, err := NewDB(testPgconf)
 
-	if err != nil {
-		t.Errorf("NewDB failed unexpectedly")
-	}
+	assert.Nil(t, err, "NewDB failed unexpectedly")
 
 	returnErr := f(mock, testDb)
+	err = mock.ExpectationsWereMet()
 
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("there were unfulfilled expectations: %s", err)
-	}
+	assert.Nilf(t, err, "there were unfulfilled expectations: %s", err)
 
 	return returnErr
 }
@@ -160,9 +156,7 @@ func TestMarkCompleted(t *testing.T) {
 		return testDb.MarkCompleted("1", 10)
 	})
 
-	if r != nil {
-		t.Errorf("MarkCompleted failed unexpectedly")
-	}
+	assert.Nil(t, r, "MarkCompleted failed unexpectedly")
 
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
@@ -174,13 +168,8 @@ func TestMarkCompleted(t *testing.T) {
 		return testDb.MarkCompleted("1", 10)
 	})
 
-	if r != nil {
-		t.Errorf("MarkCompleted failed unexpectedly")
-	}
-
-	if buf.Len() == 0 {
-		t.Errorf("Expected warning missing")
-	}
+	assert.Nil(t, r, "MarkCompleted failed unexpectedly")
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	buf.Reset()
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
@@ -191,13 +180,8 @@ func TestMarkCompleted(t *testing.T) {
 		return testDb.MarkCompleted("1", 10)
 	})
 
-	if r == nil {
-		t.Errorf("MarkCompleted did not fail when expected")
-	}
-
-	if buf.Len() == 0 {
-		t.Errorf("Expected warning missing")
-	}
+	assert.NotNil(t, r, "MarkCompleted did not fail as expected")
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	log.SetOutput(os.Stdout)
 }
@@ -212,9 +196,8 @@ func TestInsertFile(t *testing.T) {
 		_, err := testDb.InsertFile("/tmp/file.c4gh", "nobody")
 		return err
 	})
-	if r != nil {
-		t.Errorf("InsertFile failed unexpectedly")
-	}
+
+	assert.Nil(t, r, "InsertFile failed unexpectedly")
 
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
@@ -230,13 +213,8 @@ func TestInsertFile(t *testing.T) {
 	})
 
 	// Assume it should report failure for now
-	if r == nil {
-		t.Errorf("InsertFile returned no fileId but did not fail")
-	}
-
-	if buf.Len() == 0 {
-		t.Errorf("Expected warning missing")
-	}
+	assert.NotNil(t, r, "InsertFile returned no fileID but did not fail")
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	buf.Reset()
 
@@ -251,13 +229,8 @@ func TestInsertFile(t *testing.T) {
 		return err
 	})
 
-	if r == nil {
-		t.Errorf("InsertFile did not fail correctly")
-	}
-
-	if buf.Len() == 0 {
-		t.Errorf("Expected warning missing")
-	}
+	assert.NotNil(t, r, "InsertFile did not fail correctly")
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	log.SetOutput(os.Stdout)
 }
@@ -272,15 +245,12 @@ func TestGetHeader(t *testing.T) {
 
 		x, err := testDb.GetHeader(42)
 
-		if !bytes.Equal(x, header) {
-			t.Errorf("did not get expected header")
-		}
+		assert.Equal(t, x, header, "did not get expected header")
+
 		return err
 	})
 
-	if r != nil {
-		t.Errorf("GetHeader failed unexpectedly")
-	}
+	assert.Nil(t, r, "GetHeader failed unexpectedly")
 
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
@@ -296,13 +266,8 @@ func TestGetHeader(t *testing.T) {
 		return err
 	})
 
-	if r == nil {
-		t.Errorf("GetHeader did not fail as expected")
-	}
-
-	if buf.Len() == 0 {
-		t.Errorf("Expected warning missing")
-	}
+	assert.NotNil(t, r, "GetHeader did not fail as expected")
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
@@ -315,13 +280,8 @@ func TestGetHeader(t *testing.T) {
 		return err
 	})
 
-	if r == nil {
-		t.Errorf("GetHeader did not fail as expected")
-	}
-
-	if buf.Len() == 0 {
-		t.Errorf("Expected warning missing")
-	}
+	assert.NotNil(t, r, "GetHeader did not fail as expected")
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	buf.Reset()
 
@@ -336,13 +296,8 @@ func TestGetHeader(t *testing.T) {
 		return err
 	})
 
-	if r == nil {
-		t.Errorf("GetHeader did not fail as expected")
-	}
-
-	if buf.Len() == 0 {
-		t.Errorf("Expected warning missing")
-	}
+	assert.NotNil(t, r, "GetHeader did not fail as expected")
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	log.SetOutput(os.Stdout)
 }
@@ -359,9 +314,7 @@ func TestStoreHeader(t *testing.T) {
 		return testDb.StoreHeader(header, 42)
 	})
 
-	if r != nil {
-		t.Errorf("StoreHeader failed unexpectedly")
-	}
+	assert.Nil(t, r, "StoreHeader failed unexpectedly")
 
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
@@ -378,13 +331,8 @@ func TestStoreHeader(t *testing.T) {
 		return testDb.StoreHeader(header, 42)
 	})
 
-	if r != nil {
-		t.Errorf("StoreHeader failed unexpectedly")
-	}
-
-	if buf.Len() == 0 {
-		t.Errorf("Expected warning missing")
-	}
+	assert.Nil(t, r, "StoreHeader failed unexpectedly")
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	buf.Reset()
 
@@ -399,13 +347,8 @@ func TestStoreHeader(t *testing.T) {
 		return testDb.StoreHeader(header, 42)
 	})
 
-	if r == nil {
-		t.Errorf("StoreHeader did not fail correctly")
-	}
-
-	if buf.Len() == 0 {
-		t.Errorf("Expected warning missing")
-	}
+	assert.NotNil(t, r, "StoreHeader did not fail correctly")
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	log.SetOutput(os.Stdout)
 }
@@ -424,9 +367,7 @@ func TestSetArchived(t *testing.T) {
 		return testDb.SetArchived(file, 42)
 	})
 
-	if r != nil {
-		t.Errorf("SetArchived failed unexpectedly")
-	}
+	assert.Nil(t, r, "SetArchived failed unexpectedly")
 
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
@@ -444,13 +385,8 @@ func TestSetArchived(t *testing.T) {
 		return testDb.SetArchived(file, 42)
 	})
 
-	if r != nil {
-		t.Errorf("SetArchived failed unexpectedly")
-	}
-
-	if buf.Len() == 0 {
-		t.Errorf("Expected warning missing")
-	}
+	assert.Nil(t, r, "SetArchived failed unexpectedly")
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	buf.Reset()
 
@@ -465,13 +401,9 @@ func TestSetArchived(t *testing.T) {
 		return testDb.SetArchived(file, 42)
 	})
 
-	if r == nil {
-		t.Errorf("SetArchived did not fail correctly")
-	}
+	assert.NotNil(t, r, "SetArchived did not fail correctly")
 
-	if buf.Len() == 0 {
-		t.Errorf("Expected warning missing")
-	}
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	log.SetOutput(os.Stdout)
 }
@@ -488,9 +420,7 @@ func TestMarkReady(t *testing.T) {
 		return testDb.MarkReady("accessionId", "nobody", "/tmp/file.c4gh", "checksum")
 	})
 
-	if r != nil {
-		t.Errorf("MarkReady failed unexpectedly")
-	}
+	assert.Nil(t, r, "MarkReady failed unexpectedly")
 
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
@@ -507,13 +437,9 @@ func TestMarkReady(t *testing.T) {
 		return testDb.MarkReady("accessionId", "nobody", "/tmp/file.c4gh", "checksum")
 	})
 
-	if r != nil {
-		t.Errorf("MarkReady failed unexpectedly")
-	}
+	assert.Nil(t, r, "MarkReady failed unexpectedly")
 
-	if buf.Len() == 0 {
-		t.Errorf("Expected warning missing")
-	}
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
@@ -524,13 +450,8 @@ func TestMarkReady(t *testing.T) {
 		return testDb.MarkReady("accessionId", "nobody", "/tmp/file.c4gh", "checksum")
 	})
 
-	if r == nil {
-		t.Errorf("MarkReady failed unexpectedly")
-	}
-
-	if buf.Len() == 0 {
-		t.Errorf("Expected warning missing")
-	}
+	assert.NotNil(t, r, "MarkReady did not fail as expected")
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	log.SetOutput(os.Stdout)
 }
@@ -566,8 +487,8 @@ func TestMapFilesToDataset(t *testing.T) {
 			mock.ExpectCommit()
 
 			err := testDb.MapFilesToDataset(di, acs)
-			if err != nil {
-				t.Errorf("MapFilesToDataset failed unexpectedly")
+
+			if !assert.Nil(t, err, "MapFilesToDataset failed unexpectedly") {
 				return err
 			}
 		}
@@ -582,13 +503,8 @@ func TestMapFilesToDataset(t *testing.T) {
 
 		err := testDb.MapFilesToDataset("dataset", []string{"aid1"})
 
-		if buf.Len() == 0 {
-			t.Errorf("Expected warning missing")
-		}
-
-		if err == nil {
-			t.Errorf("MapFilesToDataset did not fail as expected")
-		}
+		assert.NotZero(t, buf.Len(), "Expected warning missing")
+		assert.NotNil(t, err, "MapFilesToDataset did not fail as expected")
 
 		buf.Reset()
 
@@ -603,22 +519,15 @@ func TestMapFilesToDataset(t *testing.T) {
 
 		err = testDb.MapFilesToDataset("dataset", []string{"aid1"})
 
-		if buf.Len() == 0 {
-			t.Errorf("Expected warning missing")
-		}
-
-		if err == nil {
-			t.Errorf("MapFilesToDataset did not fail as expected")
-		}
+		assert.NotZero(t, buf.Len(), "Expected warning missing")
+		assert.NotNil(t, err, "MapFilesToDataset did not fail as expected")
 
 		log.SetOutput(os.Stdout)
 
 		return nil
 	})
 
-	if r != nil {
-		t.Errorf("Tests for MapFilesToDataset failed unexpectedly")
-	}
+	assert.Nil(t, r, "Tests for MapFilesToDataset failed unexpectedly")
 
 }
 
@@ -630,7 +539,6 @@ func TestClose(t *testing.T) {
 		return nil
 	})
 
-	if r != nil {
-		t.Errorf("Close failed unexpectedly")
-	}
+	assert.Nil(t, r, "Close failed unexpectedly")
+
 }

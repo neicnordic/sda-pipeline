@@ -549,18 +549,18 @@ func TestMapFilesToDataset(t *testing.T) {
 
 		for di, acs := range diSet {
 			mock.ExpectBegin()
-			for _, aId := range acs {
+			for _, aID := range acs {
 				r := sqlmock.NewRows([]string{"file_id"})
 
-				fileId, _ := strconv.Atoi(aId)
+				fileID, _ := strconv.Atoi(aID)
 
-				r.AddRow(fileId)
+				r.AddRow(fileID)
 
 				mock.ExpectQuery("SELECT file_id FROM local_ega.archive_files WHERE stable_id = \\$1").
-					WithArgs(aId).WillReturnRows(r)
+					WithArgs(aID).WillReturnRows(r)
 
 				mock.ExpectExec("INSERT INTO local_ega_ebi.filedataset \\(file_id, dataset_stable_id\\) VALUES \\(\\$1, \\$2\\);").
-					WithArgs(fileId, di).WillReturnResult(success)
+					WithArgs(fileID, di).WillReturnResult(success)
 
 			}
 			mock.ExpectCommit()

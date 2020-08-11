@@ -145,6 +145,7 @@ func main() {
 			c4ghr, err := streaming.NewCrypt4GHReader(rw, key, nil)
 			if err != nil {
 				log.Error(err)
+				continue
 			}
 
 			md5hash := md5.New() // #nosec
@@ -153,6 +154,7 @@ func main() {
 			stream := io.TeeReader(c4ghr, md5hash)
 			if _, err := io.Copy(sha256hash, stream); err != nil {
 				log.Error(err)
+				continue
 			}
 
 			//nolint:nestif

@@ -83,6 +83,7 @@ func main() {
 					checksumSha256 = checksum.Value
 				}
 			}
+			log.Debug("Mark ready")
 			if err := db.MarkReady(message.AccessionID, message.User, message.Filepath, checksumSha256); err != nil {
 				log.Errorf("MarkReady failed, reason: %v", err)
 				continue

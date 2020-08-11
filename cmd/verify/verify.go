@@ -157,6 +157,7 @@ func main() {
 
 			//nolint:nestif
 			if message.ReVerify == nil || !*message.ReVerify {
+				log.Debug("Mark completed")
 				// Mark file as "COMPLETED"
 				if e := db.MarkCompleted(fmt.Sprintf("%x", sha256hash.Sum(nil)), message.FileID); e != nil {
 					// this should really be hadled by the DB retry mechanism

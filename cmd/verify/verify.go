@@ -167,7 +167,7 @@ func main() {
 					// Send message to verified
 					c := Verified{
 						User:     message.User,
-						Filepath: message.Filepath,
+						Filepath: message.ArchivePath,
 						DecryptedChecksums: []Checksums{
 							{"sha256", fmt.Sprintf("%x", sha256hash.Sum(nil))},
 							{"md5", fmt.Sprintf("%x", md5hash.Sum(nil))},

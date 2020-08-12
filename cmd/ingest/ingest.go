@@ -185,6 +185,8 @@ func main() {
 			dest.Close()
 			log.Debugln("Mark as archived")
 			fileInfo := postgres.FileInfo{}
+			fileInfo.Path = archivedFile
+			fileInfo.Size = fileSize
 			fileInfo.Checksum = fmt.Sprintf("%x", hash.Sum(nil))
 			if err := db.SetArchived(fileInfo, fileID); err != nil {
 				log.Error("SetArchived failed")

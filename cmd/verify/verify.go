@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
@@ -120,6 +121,14 @@ func main() {
 			}
 			keyFile.Close()
 
+			// fix to deal with a slow S3 metadata write,
+			// or we get a 404 when trying to read the file.
+			var fs int64
+			for fs == 0 {
+				time.Sleep(100 * time.Millisecond )
+				fs, _ = backend.GetFileSize(message.ArchivePath)
+			}
+
 			f, err := backend.NewFileReader(message.ArchivePath)
 			if err != nil {
 				log.Errorf("Failed to open file: %s, reason: %v", message.ArchivePath, err)
@@ -136,6 +145,7 @@ func main() {
 			c4ghr, err := streaming.NewCrypt4GHReader(rw, key, nil)
 			if err != nil {
 				log.Error(err)
+				continue
 			}
 
 			md5hash := md5.New() // #nosec
@@ -144,10 +154,12 @@ func main() {
 			stream := io.TeeReader(c4ghr, md5hash)
 			if _, err := io.Copy(sha256hash, stream); err != nil {
 				log.Error(err)
+				continue
 			}
 
 			//nolint:nestif
 			if message.ReVerify == nil || !*message.ReVerify {
+				log.Debug("Mark completed")
 				// Mark file as "COMPLETED"
 				if e := db.MarkCompleted(fmt.Sprintf("%x", sha256hash.Sum(nil)), message.FileID); e != nil {
 					// this should really be hadled by the DB retry mechanism
@@ -155,7 +167,7 @@ func main() {
 					// Send message to verified
 					c := Verified{
 						User:     message.User,
-						Filepath: message.Filepath,
+						Filepath: message.ArchivePath,
 						DecryptedChecksums: []Checksums{
 							{"sha256", fmt.Sprintf("%x", sha256hash.Sum(nil))},
 							{"md5", fmt.Sprintf("%x", md5hash.Sum(nil))},

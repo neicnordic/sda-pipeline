@@ -42,7 +42,7 @@ type Pgconf struct {
 // FileInfo is used by ingest
 type FileInfo struct {
 	Checksum string
-	Size     int
+	Size     int64
 	Path     string
 }
 
@@ -177,7 +177,7 @@ func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
 // MarkReady markes the file as "READY"
 func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error {
 	db := dbs.Db
-	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE elixir_id = $2 and inbox_path = $3 and inbox_file_checksum = $4 and status != 'DISABLED';"
+	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE elixir_id = $2 and archive_path = $3 and archive_file_checksum = $4 and status != 'DISABLED';"
 	result, err := db.Exec(ready, accessionID, user, filepath, checksum)
 	if err != nil {
 		log.Errorf("something went wrong with the DB query: %s", err)

@@ -143,7 +143,7 @@ func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 	})
 
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	return r.Body, nil
@@ -173,7 +173,7 @@ func (sb *s3Backend) GetFileSize(filePath string) (int64, error) {
 		Key:    aws.String(filePath)})
 
 	if err != nil {
-		log.Println(err)
+		log.Errorln(err)
 		return 0, err
 	}
 

@@ -1,0 +1,29 @@
+version: "2.4"
+services:
+  ingest:
+    command: sda-ingest
+    container_name: ingest
+    env_file: ./env.ingest
+    image: neicnordic/sda-pipeline:latest
+    volumes:
+      - ./config.yaml:/config.yaml
+      - ./:/dev_utils/
+    mem_limit: 1024m
+  verify:
+    command: sda-verify
+    container_name: verify
+    env_file: ./env.verify
+    image: neicnordic/sda-pipeline:latest
+    volumes:
+      - ./config.yaml:/config.yaml
+      - ./:/dev_utils/
+#    mem_limit: 256m
+  finalize:
+    command: sda-finalize
+    container_name: finalize
+    env_file: ./env.finalize
+    image: neicnordic/sda-pipeline:latest
+    volumes:
+      - ./config.yaml:/config.yaml
+      - ./:/dev_utils/
+    mem_limit: 64m

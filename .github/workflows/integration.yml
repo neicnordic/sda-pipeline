@@ -47,8 +47,8 @@ jobs:
       - name: upload the dummy file
         run: |
           cd dev_utils
-          s3cmd -c s3cmd.conf mb s3://inbox
-          s3cmd -c s3cmd.conf mb s3://archive
+          s3cmd -c s3cmd.conf mb s3://inbox || true
+          s3cmd -c s3cmd.conf mb s3://archive || true
           s3cmd -c s3cmd.conf put dummy_data.c4gh s3://inbox/test/dummy_data.c4gh
 
       - name: publish message

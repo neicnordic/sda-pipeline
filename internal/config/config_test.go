@@ -210,6 +210,19 @@ func (suite *TestSuite) TestConfigBroker() {
 	assert.Equal(suite.T(), "test", config.Broker.ClientKey)
 }
 
+func (suite *TestSuite) TestConfigDatabase() {
+	viper.Set("db.sslmode", "verify-full")
+	viper.Set("db.clientCert", "test")
+	viper.Set("db.clientKey", "test")
+	config, err := New("ingest")
+	assert.NotNil(suite.T(), config)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config.Broker)
+	assert.Equal(suite.T(), "verify-full", config.Postgres.SslMode)
+	assert.Equal(suite.T(), "test", config.Postgres.ClientCert)
+	assert.Equal(suite.T(), "test", config.Postgres.ClientKey)
+}
+
 func (suite *TestSuite) TestMapperConfiguration() {
 	config, err := New("mapper")
 	assert.NotNil(suite.T(), config)

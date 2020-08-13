@@ -17,6 +17,7 @@ type AMQPchannel interface {
 	Confirm(noWait bool) error
 	NotifyPublish(confirm chan amqp.Confirmation) chan amqp.Confirmation
 	Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error
+	Close() error
 }
 
 // AMQPBroker is a Broker that reads messages from a local AMQP broker
@@ -45,9 +46,9 @@ type Mqconf struct {
 	Durable      bool
 }
 
-// New creates a new Broker that can communicate with a backend
+// NewMQ creates a new Broker that can communicate with a backend
 // amqp server.
-func New(c Mqconf) *AMQPBroker {
+func NewMQ(c Mqconf) *AMQPBroker {
 	brokerURI := buildMqURI(c.Host, c.User, c.Password, c.Vhost, c.Port, c.Ssl)
 
 	var Connection *amqp.Connection
@@ -70,7 +71,7 @@ func New(c Mqconf) *AMQPBroker {
 		log.Errorf("Broker channel error: %s", err)
 	}
 
-	// The queuse already exists so we can safely do a passive declaration
+	// The queues already exists so we can safely do a passive declaration
 	_, err = Channel.QueueDeclarePassive(
 		c.Queue, // name
 		true,    // durable

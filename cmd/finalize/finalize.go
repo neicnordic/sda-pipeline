@@ -41,7 +41,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	mq := broker.New(conf.Broker)
+	mq := broker.NewMQ(conf.Broker)
 	db, err := postgres.NewDB(conf.Postgres)
 	if err != nil {
 		log.Fatal(err)

@@ -169,7 +169,7 @@ func TestPosixBackend(t *testing.T) {
 
 	buf.Reset()
 
-	size, err = p.GetFileSize(posixDoesNotExist) // nolint
+	_, err = p.GetFileSize(posixDoesNotExist) // nolint
 	assert.NotNil(t, err, "posix GetFileSize worked when it should not")
 	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
@@ -270,7 +270,7 @@ func TestS3Backend(t *testing.T) {
 
 	log.SetOutput(&buf)
 
-	size, err = s3.GetFileSize(s3DoesNotExist) // nolint
+	_, err = s3.GetFileSize(s3DoesNotExist)
 	assert.NotNil(t, err, "s3 GetFileSize worked when it should not")
 	assert.NotZero(t, buf.Len(), "Expected warning missing")
 

@@ -14,6 +14,9 @@ import (
 	"github.com/spf13/viper"
 )
 
+const POSIX = "posix"
+const S3 = "s3"
+
 var (
 	requiredConfVars = []string{
 		"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "broker.routingkey",
@@ -62,15 +65,15 @@ func New(app string) (*Config, error) {
 		}
 	}
 
-	if viper.GetString("archive.type") == "s3" {
+	if viper.GetString("archive.type") == S3 {
 		requiredConfVars = append(requiredConfVars, []string{"archive.url", "archive.accesskey", "archive.secretkey", "archive.bucket"}...)
-	} else if viper.GetString("archive.type") == "posix" {
+	} else if viper.GetString("archive.type") == POSIX {
 		requiredConfVars = append(requiredConfVars, []string{"archive.location"}...)
 	}
 
-	if viper.GetString("inbox.type") == "s3" {
+	if viper.GetString("inbox.type") == S3 {
 		requiredConfVars = append(requiredConfVars, []string{"inbox.url", "inbox.accesskey", "inbox.secretkey", "inbox.bucket"}...)
-	} else if viper.GetString("archive.type") == "posix" {
+	} else if viper.GetString("archive.type") == POSIX {
 		requiredConfVars = append(requiredConfVars, []string{"inbox.location"}...)
 	}
 
@@ -148,21 +151,21 @@ func configS3Storage(prefix string) storage.S3Conf {
 }
 
 func (c *Config) configArchive() {
-	if viper.GetString("archive.type") == "s3" {
-		c.Archive.Type = "s3"
+	if viper.GetString("archive.type") == S3 {
+		c.Archive.Type = S3
 		c.Archive.S3 = configS3Storage("archive")
 	} else {
-		c.Archive.Type = "posix"
+		c.Archive.Type = POSIX
 		c.Archive.Posix.Location = viper.GetString("archive.location")
 	}
 }
 
 func (c *Config) configInbox() {
-	if viper.GetString("inbox.type") == "s3" {
-		c.Inbox.Type = "s3"
+	if viper.GetString("inbox.type") == S3 {
+		c.Inbox.Type = S3
 		c.Inbox.S3 = configS3Storage("inbox")
 	} else {
-		c.Inbox.Type = "posix"
+		c.Inbox.Type = POSIX
 		c.Inbox.Posix.Location = viper.GetString("inbox.location")
 	}
 }

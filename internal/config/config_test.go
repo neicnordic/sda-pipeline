@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -154,4 +155,12 @@ func (suite *TestSuite) TestIngestConfiguration() {
 	assert.NotNil(suite.T(), config.Crypt4gh)
 	assert.Equal(suite.T(), "test", config.Crypt4gh.KeyPath)
 	assert.Equal(suite.T(), "test", config.Crypt4gh.Passphrase)
+}
+
+func (suite *TestSuite) TestDefaultLogLevel() {
+	viper.Set("log.level", "test")
+	config, err := New("test")
+	assert.Nil(suite.T(), config)
+	assert.Error(suite.T(), err)
+	assert.Equal(suite.T(), log.TraceLevel, log.GetLevel())
 }

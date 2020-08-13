@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"path"
 	"strings"
@@ -77,7 +76,7 @@ func New(app string) (*Config, error) {
 
 	for _, s := range requiredConfVars {
 		if !viper.IsSet(s) {
-			return nil, errors.New(fmt.Sprintf("%s not set", s))
+			return nil, fmt.Errorf("%s not set", s)
 		}
 	}
 
@@ -112,7 +111,7 @@ func New(app string) (*Config, error) {
 		return c, nil
 	}
 
-	return nil, errors.New(fmt.Sprintf("application '%s' doesn't exist", app))
+	return nil, fmt.Errorf("application '%s' doesn't exist", app)
 }
 
 func configS3Storage(prefix string) storage.S3Conf {

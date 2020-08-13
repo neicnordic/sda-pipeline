@@ -1,0 +1,10 @@
+{
+    "type": "ingest",
+    "user": "test",
+    "filepath": "test/dummy_data.c4gh",
+    "accession_id": "EGAF00123456789",
+    "decrypted_checksums": [
+        { "type": "sha256", "value": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+        { "type": "md5", "value": "d41d8cd98f00b204e9800998ecf8427e" }
+    ]
+}

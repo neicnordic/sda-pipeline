@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"path"
 	"strings"
@@ -38,16 +39,16 @@ type Crypt4gh struct {
 
 // New initializes and parses the config file and/or environment using
 // the viper library.
-func New(app string) *Config {
+func New(app string) (*Config, error) {
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.SetConfigType("yaml")
 	if viper.IsSet("configPath") {
-		cp := viper.GetString("configPath")
-		ss := strings.Split(strings.TrimLeft(cp, "/"), "/")
-		viper.AddConfigPath(path.Join(ss...))
+		configPath := viper.GetString("configPath")
+		splitPath := strings.Split(strings.TrimLeft(configPath, "/"), "/")
+		viper.AddConfigPath(path.Join(splitPath...))
 	}
 
 	if viper.IsSet("configFile") {
@@ -58,77 +59,60 @@ func New(app string) *Config {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			log.Infoln("No config file found, using ENVs only")
 		} else {
-			log.Fatalf("fatal error config file: %s", err)
+			return nil, err
 		}
 	}
 
 	if viper.GetString("archive.type") == "s3" {
-		s3ConfVars := []string{
-			"archive.url", "archive.accesskey", "archive.secretkey", "archive.bucket",
-		}
-		requiredConfVars = append(requiredConfVars, s3ConfVars...)
+		requiredConfVars = append(requiredConfVars, []string{"archive.url", "archive.accesskey", "archive.secretkey", "archive.bucket"}...)
 	} else {
-		posixConfVars := []string{
-			"archive.location",
-		}
-		requiredConfVars = append(requiredConfVars, posixConfVars...)
+		requiredConfVars = append(requiredConfVars, []string{"archive.location"}...)
 	}
 
 	if viper.GetString("inbox.type") == "s3" {
-		s3ConfVars := []string{
-			"inbox.url", "inbox.accesskey", "inbox.secretkey", "inbox.bucket",
-		}
-		requiredConfVars = append(requiredConfVars, s3ConfVars...)
+		requiredConfVars = append(requiredConfVars, []string{"inbox.url", "inbox.accesskey", "inbox.secretkey", "inbox.bucket"}...)
 	} else {
-		posixConfVars := []string{
-			"inbox.location",
-		}
-		requiredConfVars = append(requiredConfVars, posixConfVars...)
+		requiredConfVars = append(requiredConfVars, []string{"inbox.location"}...)
 	}
 
 	for _, s := range requiredConfVars {
 		if !viper.IsSet(s) {
-			log.Fatalf("%s not set", s)
+			return nil, errors.New(fmt.Sprintf("%s not set", s))
 		}
 	}
 
 	if viper.IsSet("log.level") {
-		switch strings.ToLower(viper.GetString("log.level")) {
-		case "info":
-			log.SetLevel(log.InfoLevel)
-		case "debug":
-			log.SetLevel(log.DebugLevel)
-		case "warn":
-			log.SetLevel(log.WarnLevel)
-		case "error":
-			log.SetLevel(log.ErrorLevel)
+		stringLevel := viper.GetString("log.level")
+		intLevel, err := log.ParseLevel(stringLevel)
+		if err != nil {
+			log.Printf("Log level '%s' not supported, setting to 'trace'", stringLevel)
+			intLevel = log.TraceLevel
 		}
-		log.Printf("Setting loglevel to %s", strings.ToLower(viper.GetString("log.level")))
+		log.SetLevel(intLevel)
+		log.Printf("Setting log level to '%s'", stringLevel)
 	}
 
 	c := &Config{}
+	c.configBroker()
+	c.configDatabase()
 
 	switch app {
-	case "finalize":
-		c.configBroker()
-		c.configDatabase()
 	case "ingest":
 		c.configArchive()
-		c.configBroker()
 		c.configCrypt4gh()
-		c.configDatabase()
 		c.configInbox()
-	case "mapper":
-		c.configBroker()
-		c.configDatabase()
+		return c, nil
 	case "verify":
 		c.configArchive()
-		c.configBroker()
 		c.configCrypt4gh()
-		c.configDatabase()
+		return c, nil
+	case "finalize":
+		return c, nil
+	case "mapper":
+		return c, nil
 	}
 
-	return c
+	return nil, errors.New(fmt.Sprintf("application '%s' doesn't exist", app))
 }
 
 func configS3Storage(prefix string) storage.S3Conf {
@@ -251,10 +235,10 @@ func (c *Config) configDatabase() {
 		}
 	}
 	if viper.IsSet("db.clientKey") {
-	   	db.ClientKey = viper.GetString("db.clientKey")
+		db.ClientKey = viper.GetString("db.clientKey")
 	}
 	if viper.IsSet("db.clientCert") {
-	   	db.ClientCert = viper.GetString("db.clientCert")
+		db.ClientCert = viper.GetString("db.clientCert")
 	}
 	if viper.IsSet("db.cacert") {
 		db.Cacert = viper.GetString("db.cacert")

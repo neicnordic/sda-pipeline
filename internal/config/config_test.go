@@ -199,6 +199,7 @@ func (suite *TestSuite) TestConfigBroker() {
 	viper.Set("broker.verifyPeer", true)
 	viper.Set("broker.clientCert", "test")
 	viper.Set("broker.clientKey", "test")
+	viper.Set("broker.cacert", "test")
 	config, err := New("ingest")
 	assert.NotNil(suite.T(), config)
 	assert.NoError(suite.T(), err)
@@ -208,12 +209,14 @@ func (suite *TestSuite) TestConfigBroker() {
 	assert.Equal(suite.T(), true, config.Broker.Ssl)
 	assert.Equal(suite.T(), "test", config.Broker.ClientCert)
 	assert.Equal(suite.T(), "test", config.Broker.ClientKey)
+	assert.Equal(suite.T(), "test", config.Broker.Cacert)
 }
 
 func (suite *TestSuite) TestConfigDatabase() {
 	viper.Set("db.sslmode", "verify-full")
 	viper.Set("db.clientCert", "test")
 	viper.Set("db.clientKey", "test")
+	viper.Set("db.cacert", "test")
 	config, err := New("ingest")
 	assert.NotNil(suite.T(), config)
 	assert.NoError(suite.T(), err)
@@ -221,6 +224,7 @@ func (suite *TestSuite) TestConfigDatabase() {
 	assert.Equal(suite.T(), "verify-full", config.Postgres.SslMode)
 	assert.Equal(suite.T(), "test", config.Postgres.ClientCert)
 	assert.Equal(suite.T(), "test", config.Postgres.ClientKey)
+	assert.Equal(suite.T(), "test", config.Postgres.Cacert)
 }
 
 func (suite *TestSuite) TestMapperConfiguration() {

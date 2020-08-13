@@ -1,8 +1,8 @@
 name: integration test
 on: [pull_request]
 jobs:
-  integration:
-    name: integration
+  s3_integration:
+    name: s3_integration
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
@@ -90,6 +90,108 @@ jobs:
           curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
           -H 'Content-Type: application/json;charset=UTF-8' \
           --data-binary '{"vhost":"test","name":"localega","properties":{"delivery_mode":2,"correlation_id":"1","content_encoding":"UTF-8","content_type":"application/json"},"routing_key":"stableIDs","payload_encoding":"string","payload":"{\"type\":\"accession\",\"user\":\"test\",\"filepath\":\"test/dummy_data.c4gh\",\"accession_id\":\"EGAF00123456789\",\"decrypted_checksums\":[{\"type\":\"sha256\",\"value\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"},{\"type\":\"md5\",\"value\":\"d41d8cd98f00b204e9800998ecf8427e\"}]}"}'
+
+      - name: wait for finalize to complete
+        run: |
+          RETRY_TIMES=0
+          until docker logs finalize 2>&1 | grep "Mark ready"
+          do echo "waiting for finalize to complete"
+          RETRY_TIMES=$((RETRY_TIMES+1));
+          if [ $RETRY_TIMES -eq 6 ]; then exit 1; fi
+          sleep 10;
+          done
+
+      - name: get logs from finalize
+        if: failure()
+        run: docker logs finalize
+
+  posix_integration:
+    name: posix_integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: build container
+        run: docker build -t neicnordic/sda-pipeline:latest .
+
+      - name: start backend
+        run: |
+          cd dev_utils
+          docker-compose -f compose-backend.yml up -d db mq
+
+      - name: Wait for containers to start
+        run: |
+          RETRY_TIMES=0
+          for p in mq db
+          do
+          until docker ps -f name=$p --format {{.Status}} | grep "(healthy)"
+          do echo "waiting for $p to become ready"
+          RETRY_TIMES=$((RETRY_TIMES+1));
+          if [ $RETRY_TIMES -eq 30 ]; then exit 1; fi
+          sleep 10;
+          done
+          done
+
+      - name: switch to posix
+        run: |
+          sed -i 's/=s3/=posix/g' dev_utils/env.ingest
+          sed -i 's/=s3/=posix/g' dev_utils/env.verify
+      - name: start sda
+        run: |
+          cd dev_utils
+          docker-compose -f compose-sda.yml up -d
+
+      - name: fix volume permissions
+        run: docker run --rm -v dev_utils_archive:/foo alpine sh -c "chmod 777 /foo"
+
+      - name: debug
+        run: docker ps -a
+
+      - name: publish message
+        run: |
+          curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
+          -H 'Content-Type: application/json;charset=UTF-8' \
+          --data-binary '{"vhost":"test","name":"localega","properties":{"delivery_mode":2,"correlation_id":"1","content_encoding":"UTF-8","content_type":"application/json"},"routing_key":"files","payload_encoding":"string","payload":"{\"type\":\"ingest\",\"user\":\"test\",\"filepath\":\"dummy_data.c4gh\",\"encrypted_checksums\":[{\"type\":\"sha256\",\"value\":\"5e9c767958cc3f6e8d16512b8b8dcab855ad1e04e05798b86f50ef600e137578\",\"type\":\"md5\",\"value\":\"b60fa2486b121bed8d566bacec987e0d\"}]}"}'
+
+      - name: wait for ingestion to complete
+        run: |
+          RETRY_TIMES=0
+          until docker logs ingest 2>&1 | grep "Mark as archived"
+          do echo "waiting for ingestion to complete"
+          RETRY_TIMES=$((RETRY_TIMES+1));
+          if [ $RETRY_TIMES -eq 6 ]; then exit 1; fi
+          sleep 10;
+          done
+
+      - name: get logs from ingest
+        if: failure()
+        run: docker logs ingest
+
+      - name: wait for verification to complete
+        run: |
+          RETRY_TIMES=0
+          until docker logs verify 2>&1 | grep "Mark completed"
+          do echo "waiting for verification to complete"
+          RETRY_TIMES=$((RETRY_TIMES+1));
+          if [ $RETRY_TIMES -eq 6 ]; then exit 1; fi
+          sleep 10;
+          done
+      
+      - name: get logs from verify
+        if: failure()
+        run: docker logs verify
+
+      - name: publish stable ID
+        run: |
+          curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
+          -H 'Content-Type: application/json;charset=UTF-8' \
+          --data-binary '{"vhost":"test","name":"localega","properties":{"delivery_mode":2,"correlation_id":"1","content_encoding":"UTF-8","content_type":"application/json"},"routing_key":"stableIDs","payload_encoding":"string","payload":"{\"type\":\"accession\",\"user\":\"test\",\"filepath\":\"dummy_data.c4gh\",\"accession_id\":\"EGAF00123456789\",\"decrypted_checksums\":[{\"type\":\"sha256\",\"value\":\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"},{\"type\":\"md5\",\"value\":\"d41d8cd98f00b204e9800998ecf8427e\"}]}"}'
 
       - name: wait for finalize to complete
         run: |

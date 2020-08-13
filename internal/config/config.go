@@ -64,13 +64,13 @@ func New(app string) (*Config, error) {
 
 	if viper.GetString("archive.type") == "s3" {
 		requiredConfVars = append(requiredConfVars, []string{"archive.url", "archive.accesskey", "archive.secretkey", "archive.bucket"}...)
-	} else {
+	} else if viper.GetString("archive.type") == "posix" {
 		requiredConfVars = append(requiredConfVars, []string{"archive.location"}...)
 	}
 
 	if viper.GetString("inbox.type") == "s3" {
 		requiredConfVars = append(requiredConfVars, []string{"inbox.url", "inbox.accesskey", "inbox.secretkey", "inbox.bucket"}...)
-	} else {
+	} else if viper.GetString("archive.type") == "posix" {
 		requiredConfVars = append(requiredConfVars, []string{"inbox.location"}...)
 	}
 
@@ -97,9 +97,9 @@ func New(app string) (*Config, error) {
 
 	switch app {
 	case "ingest":
+		c.configInbox()
 		c.configArchive()
 		c.configCrypt4gh()
-		c.configInbox()
 		return c, nil
 	case "verify":
 		c.configArchive()
@@ -158,12 +158,11 @@ func (c *Config) configArchive() {
 }
 
 func (c *Config) configInbox() {
-
 	if viper.GetString("inbox.type") == "s3" {
 		c.Inbox.Type = "s3"
 		c.Inbox.S3 = configS3Storage("inbox")
 	} else {
-		c.Inbox.Type = "Posix"
+		c.Inbox.Type = "posix"
 		c.Inbox.Posix.Location = viper.GetString("inbox.location")
 	}
 }

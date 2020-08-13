@@ -12,10 +12,17 @@ import (
 	"github.com/streadway/amqp"
 )
 
+type AMQPchannel interface {
+	Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error)
+	Confirm(noWait bool) error
+	NotifyPublish(confirm chan amqp.Confirmation) chan amqp.Confirmation
+	Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error
+}
+
 // AMQPBroker is a Broker that reads messages from a local AMQP broker
 type AMQPBroker struct {
 	Connection *amqp.Connection
-	Channel    *amqp.Channel
+	Channel    AMQPchannel
 }
 
 // Mqconf stores information about the message broker

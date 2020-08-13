@@ -8,6 +8,7 @@ services:
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
+      - archive:/tmp
     mem_limit: 1024m
   verify:
     command: sda-verify
@@ -17,6 +18,7 @@ services:
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
+      - archive:/tmp
 #    mem_limit: 256m
   finalize:
     command: sda-finalize
@@ -27,3 +29,6 @@ services:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
     mem_limit: 64m
+
+volumes:
+     archive:

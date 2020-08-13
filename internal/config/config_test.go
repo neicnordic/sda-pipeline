@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -12,11 +13,7 @@ type TestSuite struct {
 	suite.Suite
 }
 
-func TestConfigTestSuite(t *testing.T) {
-	suite.Run(t, new(TestSuite))
-}
-
-func (suite *TestSuite) TestNonExistingApplication() {
+func (suite *TestSuite) SetupTest() {
 	viper.Set("broker.host", "test")
 	viper.Set("broker.port", "test")
 	viper.Set("broker.user", "test")
@@ -30,10 +27,35 @@ func (suite *TestSuite) TestNonExistingApplication() {
 	viper.Set("db.database", "test")
 	viper.Set("archive.location", "test")
 	viper.Set("inbox.location", "test")
+}
+
+func (suite *TestSuite) TearDownTest() {
+	viper.Reset()
+}
+
+func TestConfigTestSuite(t *testing.T) {
+	suite.Run(t, new(TestSuite))
+}
+
+func (suite *TestSuite) TestNonExistingApplication() {
 	expectedError := errors.New("application 'test' doesn't exist")
 	config, err := New("test")
 	assert.Nil(suite.T(), config)
 	if assert.Error(suite.T(), err) {
 		assert.Equal(suite.T(), expectedError, err)
+	}
+}
+
+func (suite *TestSuite) TestMissingRequiredConfVar() {
+	for _, requiredConfVar := range requiredConfVars {
+		requiredConfVarValue := viper.Get(requiredConfVar)
+		viper.Set(requiredConfVar, nil)
+		expectedError := fmt.Errorf("%s not set", requiredConfVar)
+		config, err := New("test")
+		assert.Nil(suite.T(), config)
+		if assert.Error(suite.T(), err) {
+			assert.Equal(suite.T(), expectedError, err)
+		}
+		viper.Set(requiredConfVar, requiredConfVarValue)
 	}
 }

@@ -1,10 +1,11 @@
 {
     "user": "test",
     "filepath": "test/dummy_data.c4gh",
-    "file_id": "1",
+    "file_id": 1,
     "archive_path": "123e4567-e89b-12d3-a456-426614174000",
     "encrypted_checksums": [
         { "type": "sha256", "value": "5e9c767958cc3f6e8d16512b8b8dcab855ad1e04e05798b86f50ef600e137578" },
         { "type": "md5", "value": "b60fa2486b121bed8d566bacec987e0d" }
-    ]
+    ],
+    "re_verify": false
 }

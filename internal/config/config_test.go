@@ -10,6 +10,13 @@ import (
 	"testing"
 )
 
+var (
+	defaultRequiredConfVars = []string{
+		"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "broker.routingkey",
+		"db.host", "db.port", "db.user", "db.password", "db.database",
+	}
+)
+
 type TestSuite struct {
 	suite.Suite
 }
@@ -30,10 +37,19 @@ func (suite *TestSuite) SetupTest() {
 
 func (suite *TestSuite) TearDownTest() {
 	viper.Reset()
+	requiredConfVars = defaultRequiredConfVars
 }
 
 func TestConfigTestSuite(t *testing.T) {
 	suite.Run(t, new(TestSuite))
+}
+
+func (suite *TestSuite) TestConfigFile() {
+	viper.Set("configFile", "test")
+	config, err := New("test")
+	assert.Nil(suite.T(), config)
+	assert.Error(suite.T(), err)
+	assert.Equal(suite.T(), "test", viper.ConfigFileUsed())
 }
 
 func (suite *TestSuite) TestNonExistingApplication() {
@@ -47,6 +63,76 @@ func (suite *TestSuite) TestNonExistingApplication() {
 
 func (suite *TestSuite) TestMissingRequiredConfVar() {
 	for _, requiredConfVar := range requiredConfVars {
+		requiredConfVarValue := viper.Get(requiredConfVar)
+		viper.Set(requiredConfVar, nil)
+		expectedError := fmt.Errorf("%s not set", requiredConfVar)
+		config, err := New("test")
+		assert.Nil(suite.T(), config)
+		if assert.Error(suite.T(), err) {
+			assert.Equal(suite.T(), expectedError, err)
+		}
+		viper.Set(requiredConfVar, requiredConfVarValue)
+	}
+}
+
+func (suite *TestSuite) TestMissingRequiredArchiveS3ConfVar() {
+	viper.Set("archive.type", S3)
+	viper.Set("archive.url", "test")
+	viper.Set("archive.accesskey", "test")
+	viper.Set("archive.secretkey", "test")
+	viper.Set("archive.bucket", "test")
+	for _, requiredConfVar := range append([]string{"archive.url", "archive.accesskey", "archive.secretkey", "archive.bucket"}, requiredConfVars...) {
+		requiredConfVarValue := viper.Get(requiredConfVar)
+		viper.Set(requiredConfVar, nil)
+		expectedError := fmt.Errorf("%s not set", requiredConfVar)
+		config, err := New("test")
+		assert.Nil(suite.T(), config)
+		if assert.Error(suite.T(), err) {
+			assert.Equal(suite.T(), expectedError, err)
+		}
+		viper.Set(requiredConfVar, requiredConfVarValue)
+	}
+}
+
+func (suite *TestSuite) TestMissingRequiredArchivePosixConfVar() {
+	viper.Set("archive.type", POSIX)
+	viper.Set("archive.location", "test")
+	for _, requiredConfVar := range append([]string{"archive.location"}, requiredConfVars...) {
+		requiredConfVarValue := viper.Get(requiredConfVar)
+		viper.Set(requiredConfVar, nil)
+		expectedError := fmt.Errorf("%s not set", requiredConfVar)
+		config, err := New("test")
+		assert.Nil(suite.T(), config)
+		if assert.Error(suite.T(), err) {
+			assert.Equal(suite.T(), expectedError, err)
+		}
+		viper.Set(requiredConfVar, requiredConfVarValue)
+	}
+}
+
+func (suite *TestSuite) TestMissingRequiredInboxS3ConfVar() {
+	viper.Set("inbox.type", S3)
+	viper.Set("inbox.url", "test")
+	viper.Set("inbox.accesskey", "test")
+	viper.Set("inbox.secretkey", "test")
+	viper.Set("inbox.bucket", "test")
+	for _, requiredConfVar := range append([]string{"inbox.url", "inbox.accesskey", "inbox.secretkey", "inbox.bucket"}, requiredConfVars...) {
+		requiredConfVarValue := viper.Get(requiredConfVar)
+		viper.Set(requiredConfVar, nil)
+		expectedError := fmt.Errorf("%s not set", requiredConfVar)
+		config, err := New("test")
+		assert.Nil(suite.T(), config)
+		if assert.Error(suite.T(), err) {
+			assert.Equal(suite.T(), expectedError, err)
+		}
+		viper.Set(requiredConfVar, requiredConfVarValue)
+	}
+}
+
+func (suite *TestSuite) TestMissingRequiredInboxPosixConfVar() {
+	viper.Set("inbox.type", POSIX)
+	viper.Set("inbox.location", "test")
+	for _, requiredConfVar := range append([]string{"inbox.location"}, requiredConfVars...) {
 		requiredConfVarValue := viper.Get(requiredConfVar)
 		viper.Set(requiredConfVar, nil)
 		expectedError := fmt.Errorf("%s not set", requiredConfVar)

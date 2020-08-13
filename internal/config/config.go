@@ -73,7 +73,7 @@ func New(app string) (*Config, error) {
 
 	if viper.GetString("inbox.type") == S3 {
 		requiredConfVars = append(requiredConfVars, []string{"inbox.url", "inbox.accesskey", "inbox.secretkey", "inbox.bucket"}...)
-	} else if viper.GetString("archive.type") == POSIX {
+	} else if viper.GetString("inbox.type") == POSIX {
 		requiredConfVars = append(requiredConfVars, []string{"inbox.location"}...)
 	}
 

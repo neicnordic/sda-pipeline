@@ -43,11 +43,14 @@ type checksums struct {
 }
 
 func main() {
-	conf := config.New("ingest")
+	conf, err := config.New("ingest")
+	if err != nil {
+		log.Fatal(err)
+	}
 	mq := broker.New(conf.Broker)
 	db, err := postgres.NewDB(conf.Postgres)
 	if err != nil {
-		log.Println("err:", err)
+		log.Fatal(err)
 	}
 
 	defer mq.Channel.Close()

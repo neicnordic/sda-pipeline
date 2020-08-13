@@ -46,11 +46,14 @@ type Checksums struct {
 }
 
 func main() {
-	conf := config.New("verify")
+	conf, err := config.New("verify")
+	if err != nil {
+		log.Fatal(err)
+	}
 	mq := broker.New(conf.Broker)
 	db, err := postgres.NewDB(conf.Postgres)
 	if err != nil {
-		log.Println("err:", err)
+		log.Fatal(err)
 	}
 
 	backend := storage.NewBackend(conf.Archive)
@@ -125,7 +128,7 @@ func main() {
 			// or we get a 404 when trying to read the file.
 			var fs int64
 			for fs == 0 {
-				time.Sleep(100 * time.Millisecond )
+				time.Sleep(100 * time.Millisecond)
 				fs, _ = backend.GetFileSize(message.ArchivePath)
 			}
 

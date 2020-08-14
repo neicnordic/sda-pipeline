@@ -3,11 +3,13 @@ package config
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
+	"testing"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 var (
@@ -336,4 +338,13 @@ func (suite *TestSuite) TestDefaultLogLevel() {
 	assert.Nil(suite.T(), config)
 	assert.Error(suite.T(), err)
 	assert.Equal(suite.T(), log.TraceLevel, log.GetLevel())
+}
+
+func (suite *TestSuite) TestConfigPath() {
+	viper.Set("configPath", "../../dev_utils")
+	config, err := New("test")
+	assert.Nil(suite.T(), config)
+	assert.Error(suite.T(), err)
+	absPath,_ := filepath.Abs("../../dev_utils/config.yaml")
+	assert.Equal(suite.T(), absPath, viper.ConfigFileUsed())
 }

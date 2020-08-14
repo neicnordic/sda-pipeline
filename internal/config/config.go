@@ -205,7 +205,7 @@ func (c *Config) configBroker() {
 		b.VerifyPeer = viper.GetBool("broker.verifyPeer")
 		// Since verifyPeer is specified, these are required.
 		if !(viper.IsSet("broker.clientCert") && viper.IsSet("broker.clientKey")) {
-			log.Fatalln("when broker.verifyPeer is set both broker.clientCert and broker.clientKey is needed")
+			log.Panicln("when broker.verifyPeer is set both broker.clientCert and broker.clientKey is needed")
 		}
 		b.ClientCert = viper.GetString("broker.clientCert")
 		b.ClientKey = viper.GetString("broker.clientKey")

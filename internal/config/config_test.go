@@ -216,6 +216,9 @@ func (suite *TestSuite) TestConfigBroker() {
 	viper.Set("broker.vhost", "/test")
 	config, err = New("ingest")
 	assert.Equal(suite.T(), "/test", config.Broker.Vhost)
+	viper.Set("broker.vhost", "")
+	config, _ = New("ingest")
+	assert.Equal(suite.T(), "/", config.Broker.Vhost)
 }
 
 func (suite *TestSuite) TestConfigDatabase() {

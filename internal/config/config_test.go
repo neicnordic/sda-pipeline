@@ -199,7 +199,7 @@ func (suite *TestSuite) TestConfigBroker() {
 	viper.Set("broker.vhost", "test")
 	viper.Set("broker.ssl", true)
 	viper.Set("broker.verifyPeer", true)
-	assert.Panics(suite.T(), func(){ New("ingest") } )
+	assert.Panics(suite.T(), func(){ New("ingest") } ) // nolint
 	viper.Set("broker.clientCert", "test")
 	viper.Set("broker.clientKey", "test")
 	viper.Set("broker.cacert", "test")
@@ -214,7 +214,7 @@ func (suite *TestSuite) TestConfigBroker() {
 	assert.Equal(suite.T(), "test", config.Broker.ClientKey)
 	assert.Equal(suite.T(), "test", config.Broker.Cacert)
 	viper.Set("broker.vhost", "/test")
-	config, err = New("ingest")
+	config, _ = New("ingest")
 	assert.Equal(suite.T(), "/test", config.Broker.Vhost)
 	viper.Set("broker.vhost", "")
 	config, _ = New("ingest")
@@ -223,7 +223,7 @@ func (suite *TestSuite) TestConfigBroker() {
 
 func (suite *TestSuite) TestConfigDatabase() {
 	viper.Set("db.sslmode", "verify-full")
-	assert.Panics(suite.T(), func(){ New("ingest") } )
+	assert.Panics(suite.T(), func() { New("ingest") } ) // nolint
 	viper.Set("db.clientCert", "test")
 	viper.Set("db.clientKey", "test")
 	viper.Set("db.cacert", "test")

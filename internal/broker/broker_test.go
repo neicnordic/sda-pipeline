@@ -15,7 +15,7 @@ type mockChannel struct {
 }
 
 func (*mockChannel) Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error) {
-	return nil, nil
+	return nil, fmt.Errorf("error")
 }
 
 func (*mockChannel) Confirm(noWait bool) error {
@@ -39,7 +39,13 @@ func TestGetMessages(t *testing.T) {
 	c := mockChannel{}
 	b.Channel = &c
 
+	var str bytes.Buffer
+	log.SetOutput(&str)
+
 	GetMessages(&b, "queue")
+	assert.NotZero(t, str.Len(), "Expected warnings were missing")
+	assert.Contains(t, str.String(), "Error reading from channel")
+
 }
 
 func TestSendMessage(t *testing.T) {

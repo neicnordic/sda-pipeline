@@ -218,6 +218,7 @@ func (suite *TestSuite) TestConfigBroker() {
 
 func (suite *TestSuite) TestConfigDatabase() {
 	viper.Set("db.sslmode", "verify-full")
+	assert.Panics(suite.T(), func(){ New("ingest") } )
 	viper.Set("db.clientCert", "test")
 	viper.Set("db.clientKey", "test")
 	viper.Set("db.cacert", "test")

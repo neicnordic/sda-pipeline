@@ -211,6 +211,9 @@ func (suite *TestSuite) TestConfigBroker() {
 	assert.Equal(suite.T(), "test", config.Broker.ClientCert)
 	assert.Equal(suite.T(), "test", config.Broker.ClientKey)
 	assert.Equal(suite.T(), "test", config.Broker.Cacert)
+	viper.Set("broker.vhost", "/test")
+	config, err = New("ingest")
+	assert.Equal(suite.T(), "/test", config.Broker.Vhost)
 }
 
 func (suite *TestSuite) TestConfigDatabase() {

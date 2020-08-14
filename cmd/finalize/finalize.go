@@ -37,11 +37,14 @@ type Completed struct {
 }
 
 func main() {
-	conf := config.New("finalize")
+	conf, err := config.New("finalize")
+	if err != nil {
+		log.Fatal(err)
+	}
 	mq := broker.New(conf.Broker)
 	db, err := postgres.NewDB(conf.Postgres)
 	if err != nil {
-		log.Println("err:", err)
+		log.Fatal(err)
 	}
 
 	defer mq.Channel.Close()

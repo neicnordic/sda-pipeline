@@ -34,7 +34,7 @@ func (*mockChannel) Close() error {
 	return nil
 }
 
-func TestGetMessages(t *testing.T) {
+func TestGetMessages_Error(t *testing.T) {
 	b := AMQPBroker{}
 	c := mockChannel{}
 	b.Channel = &c
@@ -48,7 +48,7 @@ func TestGetMessages(t *testing.T) {
 
 }
 
-func TestSendMessage(t *testing.T) {
+func TestSendMessage_Error(t *testing.T) {
 	b := AMQPBroker{}
 	c := mockChannel{}
 	b.Channel = &c
@@ -70,11 +70,11 @@ var tMqconf = Mqconf{"localhost",
 	"exchange",
 	"routingkey",
 	"routingError",
-	false,
-	false,
-	"cacert",
-	"clientcert",
-	"clientkey",
+	true,
+	true,
+	"../../dev_utils/certs/ca.pem",
+	"../../dev_utils/certs/mq.pem",
+	"../../dev_utils/certs/mq-key.pem",
 	"servername",
 	true}
 
@@ -97,7 +97,11 @@ func CatchNewMQPanic() (err error) {
 		}
 	}()
 
-	_ = NewMQ(tMqconf)
+	noSslConf := tMqconf
+	noSslConf.Ssl = false
+	noSslConf.VerifyPeer = false
+
+	_ = NewMQ(noSslConf)
 
 	return err
 }
@@ -119,6 +123,26 @@ func TestNewMQConn_Error(t *testing.T) {
 	if newErr == nil {
 		t.Errorf("New MQ did not report error when it should.")
 	}
+}
+
+func TestTLSConfigBroker(t *testing.T) {
+
+	assert.NotPanics(t, func() { TLSConfigBroker(tMqconf) })
+	tls := TLSConfigBroker(tMqconf)
+	assert.NotZero(t, tls.Certificates, "Expected warnings were missing")
+	assert.EqualValues(t, tls.ServerName, "servername")
+
+	noSslConf := tMqconf
+	noSslConf.Ssl = false
+	noSslConf.VerifyPeer = false
+	noSslConf.Cacert = ""
+	noSslConf.ClientCert = ""
+	noSslConf.ClientKey = ""
+
+	notls := TLSConfigBroker(noSslConf)
+
+	assert.Zero(t, notls.Certificates, "Expected warnings were missing")
+
 }
 
 func TestConfirmOne(t *testing.T) {

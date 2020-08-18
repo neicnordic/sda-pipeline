@@ -5,12 +5,13 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-	"reflect"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/streadway/amqp"
 )
+
+var logFatalf = log.Fatalf
 
 type AMQPchannel interface {
 	Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error)
@@ -64,11 +65,12 @@ func NewMQ(c Mqconf) *AMQPBroker {
 	}
 	if err != nil {
 		log.Errorf("Broker Connection error: %s", err)
+		return nil
 	}
 
 	Channel, err = Connection.Channel()
 	if err != nil {
-		log.Errorf("Broker channel error: %s", err)
+		logFatalf("Broker channel error: %s", err)
 	}
 
 	// The queues already exists so we can safely do a passive declaration
@@ -81,7 +83,7 @@ func NewMQ(c Mqconf) *AMQPBroker {
 		nil,     // arguments
 	)
 	if err != nil {
-		log.Fatalf("Queue Declare: %s", err)
+		logFatalf("Queue Declare: %s", err)
 	}
 
 	return &AMQPBroker{Connection, Channel}
@@ -111,7 +113,7 @@ func SendMessage(b *AMQPBroker, corrID, exchange, routingKey string, reliable bo
 	if reliable {
 		// Set channel
 		if e := b.Channel.Confirm(false); e != nil {
-			log.Fatalf("channel could not be put into confirm mode: %s", e)
+			logFatalf("channel could not be put into confirm mode: %s", e)
 		}
 		// Shouldn't this be setup once and for all?
 		confirms := b.Channel.NotifyPublish(make(chan amqp.Confirmation, 100))
@@ -167,11 +169,13 @@ func TLSConfigBroker(b Mqconf) *tls.Config {
 
 		cacert, e := ioutil.ReadFile(cacert) // #nosec this file comes from our configuration
 		if e != nil {
-			log.Fatalf("Failed to append %q to RootCAs: %v", cacert, e)
+			logFatalf("Failed to append %q to RootCAs: %v", cacert, e)
 		}
+
 		if ok := cfg.RootCAs.AppendCertsFromPEM(cacert); !ok {
 			log.Errorln("No certs appended, using system certs only")
 		}
+
 	}
 
 	// If the server URI difers from the hostname in the certificate
@@ -184,17 +188,19 @@ func TLSConfigBroker(b Mqconf) *tls.Config {
 		if b.ClientCert != "" && b.ClientKey != "" {
 			cert, e := ioutil.ReadFile(b.ClientCert)
 			if e != nil {
-				log.Fatalf("Failed to append %q to RootCAs: %v", b.ClientKey, e)
+				logFatalf("Failed to append %q to RootCAs: %v", b.ClientKey, e)
 			}
 			key, e := ioutil.ReadFile(b.ClientKey)
 			if e != nil {
-				log.Fatalf("Failed to append %q to RootCAs: %v", b.ClientKey, e)
+				logFatalf("Failed to append %q to RootCAs: %v", b.ClientKey, e)
 			}
+
 			if certs, e := tls.X509KeyPair(cert, key); e == nil {
 				cfg.Certificates = append(cfg.Certificates, certs)
 			}
+
 		} else {
-			log.Fatalf("No certificates supplied")
+			logFatalf("No certificates supplied")
 		}
 	}
 	return cfg

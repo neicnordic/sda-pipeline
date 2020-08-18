@@ -156,10 +156,7 @@ func TLSConfigBroker(b Mqconf) *tls.Config {
 
 	// Read system CAs
 	var systemCAs, _ = x509.SystemCertPool()
-	if reflect.DeepEqual(systemCAs, x509.NewCertPool()) {
-		fmt.Println("creating new CApool")
-		systemCAs = x509.NewCertPool()
-	}
+
 	cfg.RootCAs = systemCAs
 
 	// Add CAs for broker and db

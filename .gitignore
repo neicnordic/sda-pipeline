@@ -10,6 +10,8 @@ sda-pipeline
 *.dll
 *.so
 *.dylib
+# ignore build binaries for sda
+sda-*
 
 # Test binary, built with `go test -c`
 *.test

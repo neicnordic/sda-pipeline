@@ -120,7 +120,7 @@ func TestSendMessage(t *testing.T) {
 }
 
 var tMqconf = Mqconf{"127.0.0.1",
-	5672,
+	6565,
 	"user",
 	"password",
 	"/vhost",
@@ -218,7 +218,7 @@ func TestNewMQConn_Error(t *testing.T) {
 
 	brokerURI := buildMqURI(tMqconf.Host, tMqconf.User, tMqconf.Password, tMqconf.Vhost, tMqconf.Port, tMqconf.Ssl)
 
-	expectedMsg := "dial tcp 127.0.0.1:5672: connect: connection refused"
+	expectedMsg := "dial tcp 127.0.0.1:6565: connect: connection refused"
 
 	_, err := amqp.Dial(brokerURI)
 

@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"path"
 	"strings"
 
@@ -12,6 +11,7 @@ import (
 	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 )
 

@@ -223,13 +223,13 @@ func setupFakeS3() (err error) {
 func TestS3Backend(t *testing.T) {
 
 	testConf.Type = "s3"
-	s3 := NewBackend(testConf).(*s3Backend)
+	backend := NewBackend(testConf).(*s3Backend)
 
 	var buf bytes.Buffer
 
-	assert.IsType(t, s3, &s3Backend{}, "Wrong type from NewBackend with s3")
+	assert.IsType(t, backend, &s3Backend{}, "Wrong type from NewBackend with s3")
 
-	writer, err := s3.NewFileWriter(s3Creatable)
+	writer, err := backend.NewFileWriter(s3Creatable)
 
 	assert.NotNil(t, writer, "Got a nil reader for writer from s3")
 	assert.Nil(t, err, "posix NewFileWriter failed when it shouldn't")
@@ -243,11 +243,11 @@ func TestS3Backend(t *testing.T) {
 	// Give things some time to happen.
 	time.Sleep(1e9)
 
-	reader, err := s3.NewFileReader(s3Creatable)
+	reader, err := backend.NewFileReader(s3Creatable)
 	assert.Nil(t, err, "s3 NewFileReader failed when it should work")
 	assert.NotNil(t, reader, "Got a nil reader for s3")
 
-	size, err := s3.GetFileSize(s3Creatable)
+	size, err := backend.GetFileSize(s3Creatable)
 	assert.Nil(t, err, "s3 GetFileSize failed when it should work")
 	assert.Equal(t, int64(len(writeData)), size, "Got an incorrect file size")
 
@@ -270,13 +270,13 @@ func TestS3Backend(t *testing.T) {
 
 	log.SetOutput(&buf)
 
-	_, err = s3.GetFileSize(s3DoesNotExist)
+	_, err = backend.GetFileSize(s3DoesNotExist)
 	assert.NotNil(t, err, "s3 GetFileSize worked when it should not")
 	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	buf.Reset()
 
-	reader, err = s3.NewFileReader(s3DoesNotExist)
+	reader, err = backend.NewFileReader(s3DoesNotExist)
 	assert.NotNil(t, err, "s3 NewFileReader worked when it should not")
 	assert.Nil(t, reader, "Got a non-nil reader for s3")
 	assert.NotZero(t, buf.Len(), "Expected warning missing")

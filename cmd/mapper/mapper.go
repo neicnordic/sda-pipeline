@@ -5,7 +5,7 @@ import (
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
-	"sda-pipeline/internal/postgres"
+	"sda-pipeline/internal/database"
 
 	"github.com/xeipuuv/gojsonschema"
 
@@ -19,12 +19,15 @@ type message struct {
 }
 
 func main() {
-	conf, err := config.New("ingest")
+	conf, err := config.NewConfig("ingest")
 	if err != nil {
 		log.Fatal(err)
 	}
-	mq := broker.NewMQ(conf.Broker)
-	db, err := postgres.NewDB(conf.Postgres)
+	mq, err := broker.NewMQ(conf.Broker)
+	if err != nil {
+		log.Fatal(err)
+	}
+	db, err := database.NewDB(conf.Database)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,7 +44,11 @@ func main() {
 	var mappings message
 
 	go func() {
-		for d := range broker.GetMessages(mq, conf.Broker.Queue) {
+		messages, err := broker.GetMessages(mq, conf.Broker.Queue)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for d := range messages {
 			log.Debugf("received a message: %s", d.Body)
 			res, err := gojsonschema.Validate(datasetMapping, gojsonschema.NewBytesLoader(d.Body))
 			if err != nil {

@@ -6,7 +6,7 @@ import (
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
-	"sda-pipeline/internal/postgres"
+	"sda-pipeline/internal/database"
 
 	"github.com/xeipuuv/gojsonschema"
 
@@ -22,7 +22,7 @@ type Message struct {
 	DecryptedChecksums []Checksums `json:"decrypted_checksums"`
 }
 
-// Checksums is struct for the checkksum type and value
+// Checksums is struct for the checksum type and value
 type Checksums struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
@@ -37,12 +37,15 @@ type Completed struct {
 }
 
 func main() {
-	conf, err := config.New("finalize")
+	conf, err := config.NewConfig("finalize")
 	if err != nil {
 		log.Fatal(err)
 	}
-	mq := broker.NewMQ(conf.Broker)
-	db, err := postgres.NewDB(conf.Postgres)
+	mq, err := broker.NewMQ(conf.Broker)
+	if err != nil {
+		log.Fatal(err)
+	}
+	db, err := database.NewDB(conf.Database)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,7 +62,11 @@ func main() {
 	var message Message
 
 	go func() {
-		for delivered := range broker.GetMessages(mq, conf.Broker.Queue) {
+		messages, err := broker.GetMessages(mq, conf.Broker.Queue)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for delivered := range messages {
 			log.Debugf("received a message: %s", delivered.Body)
 			res, err := gojsonschema.Validate(ingestAccession, gojsonschema.NewBytesLoader(delivered.Body))
 			if err != nil {
@@ -79,7 +86,7 @@ func main() {
 				continue
 			}
 
-			// Extract the sha256 from the message and use it for the db
+			// Extract the sha256 from the message and use it for the database
 			var checksumSha256 string
 			for _, checksum := range message.DecryptedChecksums {
 				if checksum.Type == "sha256" {
@@ -116,7 +123,7 @@ func main() {
 
 			completed, _ := json.Marshal(&c)
 			if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completed); err != nil {
-				// TODO fix resend mechainsm
+				// TODO fix resend mechanism
 				log.Errorln("We need to fix this resend stuff ...")
 			}
 

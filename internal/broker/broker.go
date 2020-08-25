@@ -13,7 +13,7 @@ import (
 
 var logFatalf = log.Fatalf
 
-type AMQPchannel interface {
+type AMQPChannel interface {
 	Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error)
 	Confirm(noWait bool) error
 	NotifyPublish(confirm chan amqp.Confirmation) chan amqp.Confirmation
@@ -24,11 +24,11 @@ type AMQPchannel interface {
 // AMQPBroker is a Broker that reads messages from a local AMQP broker
 type AMQPBroker struct {
 	Connection *amqp.Connection
-	Channel    AMQPchannel
+	Channel    AMQPChannel
 }
 
-// Mqconf stores information about the message broker
-type Mqconf struct {
+// MQConf stores information about the message broker
+type MQConf struct {
 	Host         string
 	Port         int
 	User         string
@@ -40,7 +40,7 @@ type Mqconf struct {
 	RoutingError string
 	Ssl          bool
 	VerifyPeer   bool
-	Cacert       string
+	CACert       string
 	ClientCert   string
 	ClientKey    string
 	ServerName   string
@@ -49,50 +49,53 @@ type Mqconf struct {
 
 // NewMQ creates a new Broker that can communicate with a backend
 // amqp server.
-func NewMQ(c Mqconf) *AMQPBroker {
-	brokerURI := buildMqURI(c.Host, c.User, c.Password, c.Vhost, c.Port, c.Ssl)
+func NewMQ(configuration MQConf) (*AMQPBroker, error) {
+	brokerURI := buildMQURI(configuration.Host, configuration.User, configuration.Password, configuration.Vhost, configuration.Port, configuration.Ssl)
 
 	var Connection *amqp.Connection
 	var Channel *amqp.Channel
 	var err error
 
 	log.Debugf("Connecting to broker with <%s>", brokerURI)
-	if c.Ssl {
-		tlsConfig := TLSConfigBroker(c)
+	if configuration.Ssl {
+		var tlsConfig *tls.Config
+		tlsConfig, err = TLSConfigBroker(configuration)
+		if err != nil {
+			return nil, err
+		}
 		Connection, err = amqp.DialTLS(brokerURI, tlsConfig)
 	} else {
 		Connection, err = amqp.Dial(brokerURI)
 	}
 	if err != nil {
-		log.Errorf("Broker Connection error: %s", err)
-		return nil
+		return nil, err
 	}
 
 	Channel, err = Connection.Channel()
 	if err != nil {
-		logFatalf("Broker channel error: %s", err)
+		return nil, err
 	}
 
 	// The queues already exists so we can safely do a passive declaration
 	_, err = Channel.QueueDeclarePassive(
-		c.Queue, // name
-		true,    // durable
-		false,   // auto-deleted
-		false,   // internal
-		false,   // noWait
-		nil,     // arguments
+		configuration.Queue, // name
+		true,                // durable
+		false,               // auto-deleted
+		false,               // internal
+		false,               // noWait
+		nil,                 // arguments
 	)
 	if err != nil {
-		logFatalf("Queue Declare: %s", err)
+		return nil, err
 	}
 
-	return &AMQPBroker{Connection, Channel}
+	return &AMQPBroker{Connection, Channel}, nil
 }
 
 // GetMessages reads messages from the queue
-func GetMessages(b *AMQPBroker, queue string) <-chan amqp.Delivery {
-	ch := b.Channel
-	msgs, err := ch.Consume(
+func GetMessages(broker *AMQPBroker, queue string) (<-chan amqp.Delivery, error) {
+	ch := broker.Channel
+	return ch.Consume(
 		queue, // queue
 		"",    // consumer
 		false, // auto-ack
@@ -101,25 +104,20 @@ func GetMessages(b *AMQPBroker, queue string) <-chan amqp.Delivery {
 		false, // no-wait
 		nil,   // args
 	)
-	if err != nil {
-		log.Errorf("Error reading from channel: %s", err)
-	}
-
-	return msgs
 }
 
 // SendMessage sends message to RabbitMQ if the upload is finished
-func SendMessage(b *AMQPBroker, corrID, exchange, routingKey string, reliable bool, body []byte) error {
+func SendMessage(broker *AMQPBroker, corrID, exchange, routingKey string, reliable bool, body []byte) error {
 	if reliable {
 		// Set channel
-		if e := b.Channel.Confirm(false); e != nil {
+		if e := broker.Channel.Confirm(false); e != nil {
 			logFatalf("channel could not be put into confirm mode: %s", e)
 		}
 		// Shouldn't this be setup once and for all?
-		confirms := b.Channel.NotifyPublish(make(chan amqp.Confirmation, 100))
+		confirms := broker.Channel.NotifyPublish(make(chan amqp.Confirmation, 100))
 		defer confirmOne(confirms)
 	}
-	err := b.Channel.Publish(
+	err := broker.Channel.Publish(
 		exchange,
 		routingKey,
 		false, // mandatory
@@ -138,8 +136,8 @@ func SendMessage(b *AMQPBroker, corrID, exchange, routingKey string, reliable bo
 	return err
 }
 
-// buildMqURI builds the MQ URI
-func buildMqURI(mqHost, mqUser, mqPassword, mqVhost string, mqPort int, ssl bool) string {
+// buildMQURI builds the MQ URI
+func buildMQURI(mqHost, mqUser, mqPassword, mqVhost string, mqPort int, ssl bool) string {
 	brokerURI := ""
 	if ssl {
 		brokerURI = fmt.Sprintf("amqps://%s:%s@%s:%d%s", mqUser, mqPassword, mqHost, mqPort, mqVhost)
@@ -150,65 +148,63 @@ func buildMqURI(mqHost, mqUser, mqPassword, mqVhost string, mqPort int, ssl bool
 }
 
 // TLSConfigBroker is a helper method to setup TLS for the message broker
-func TLSConfigBroker(b Mqconf) *tls.Config {
-	cfg := new(tls.Config)
-
-	// Enforce TLS1.2 or higher
-	cfg.MinVersion = 2
-
+func TLSConfigBroker(configuration MQConf) (*tls.Config, error) {
 	// Read system CAs
-	var systemCAs, _ = x509.SystemCertPool()
+	systemCAs, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, err
+	}
 
-	cfg.RootCAs = systemCAs
+	tlsConfig := tls.Config{
+		MinVersion: tls.VersionTLS12,
+		RootCAs:    systemCAs,
+	}
 
-	// Add CAs for broker and db
-	for _, cacert := range []string{b.Cacert} {
+	// Add CAs for broker and database
+	for _, cacert := range []string{configuration.CACert} {
 		if cacert == "" {
 			continue
 		}
-
 		cacert, e := ioutil.ReadFile(cacert) // #nosec this file comes from our configuration
 		if e != nil {
-			logFatalf("Failed to append %q to RootCAs: %v", cacert, e)
+			return nil, err
 		}
-
-		if ok := cfg.RootCAs.AppendCertsFromPEM(cacert); !ok {
-			log.Errorln("No certs appended, using system certs only")
+		if ok := tlsConfig.RootCAs.AppendCertsFromPEM(cacert); !ok {
+			log.Warnln("No certs appended, using system certs only")
 		}
-
 	}
 
 	// If the server URI difers from the hostname in the certificate
 	// we need to set the hostname to match our certificates against.
-	if b.ServerName != "" {
-		cfg.ServerName = b.ServerName
+	if configuration.ServerName != "" {
+		tlsConfig.ServerName = configuration.ServerName
 	}
 	//nolint:nestif
-	if b.VerifyPeer {
-		if b.ClientCert != "" && b.ClientKey != "" {
-			cert, e := ioutil.ReadFile(b.ClientCert)
-			if e != nil {
-				logFatalf("Failed to append %q to RootCAs: %v", b.ClientKey, e)
+	if configuration.VerifyPeer {
+		if configuration.ClientCert != "" && configuration.ClientKey != "" {
+			cert, err := ioutil.ReadFile(configuration.ClientCert)
+			if err != nil {
+				return nil, err
 			}
-			key, e := ioutil.ReadFile(b.ClientKey)
-			if e != nil {
-				logFatalf("Failed to append %q to RootCAs: %v", b.ClientKey, e)
+			key, err := ioutil.ReadFile(configuration.ClientKey)
+			if err != nil {
+				return nil, err
 			}
-
-			if certs, e := tls.X509KeyPair(cert, key); e == nil {
-				cfg.Certificates = append(cfg.Certificates, certs)
+			certs, err := tls.X509KeyPair(cert, key)
+			if err != nil {
+				return nil, err
 			}
-
+			tlsConfig.Certificates = append(tlsConfig.Certificates, certs)
 		} else {
 			logFatalf("No certificates supplied")
 		}
 	}
-	return cfg
+	return &tlsConfig, nil
 }
 
-// // One would typically keep a channel of publishings, a sequence number, and a
-// // set of unacknowledged sequence numbers and loop until the publishing channel
-// // is closed.
+// One would typically keep a channel of publishings, a sequence number, and a
+// set of unacknowledged sequence numbers and loop until the publishing channel
+// is closed.
 func confirmOne(confirms <-chan amqp.Confirmation) {
 	confirmed := <-confirms
 	if !confirmed.Ack {

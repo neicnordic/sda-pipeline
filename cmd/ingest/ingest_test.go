@@ -42,7 +42,7 @@ func (suite *TestSuite) SetupTest() {
 func (suite *TestSuite) TestTryDecrypt_keyError() {
 
 	viper.Set("c4gh.filepath", "/tmp/foo")
-	config, err := config.New("verify")
+	config, err := config.NewConfig("verify")
 	assert.NotNil(suite.T(), config)
 	assert.NoError(suite.T(), err)
 
@@ -56,7 +56,7 @@ func (suite *TestSuite) TestTryDecrypt_keyError() {
 func (suite *TestSuite) TestTryDecrypt_passError() {
 
 	viper.Set("c4gh.passphrase", "asdf")
-	config, err := config.New("verify")
+	config, err := config.NewConfig("verify")
 	assert.NotNil(suite.T(), config)
 	assert.NoError(suite.T(), err)
 
@@ -68,7 +68,7 @@ func (suite *TestSuite) TestTryDecrypt_passError() {
 }
 
 func (suite *TestSuite) TestTryDecrypt_wrongFile() {
-	config, err := config.New("verify")
+	config, err := config.NewConfig("verify")
 	assert.NotNil(suite.T(), config)
 	assert.NoError(suite.T(), err)
 
@@ -85,7 +85,7 @@ func (suite *TestSuite) TestTryDecrypt_wrongFile() {
 }
 
 func (suite *TestSuite) TestTryDecrypt() {
-	config, err := config.New("verify")
+	config, err := config.NewConfig("verify")
 	assert.NotNil(suite.T(), config)
 	assert.NoError(suite.T(), err)
 

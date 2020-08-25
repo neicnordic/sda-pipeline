@@ -2,13 +2,14 @@ package config
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"path"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 
 	"sda-pipeline/internal/broker"
-	"sda-pipeline/internal/postgres"
+	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
 	"github.com/spf13/viper"
@@ -27,10 +28,10 @@ var (
 // Config is a parent object for all the different configuration parts
 type Config struct {
 	Archive  storage.Conf
-	Broker   broker.Mqconf
+	Broker   broker.MQConf
 	Crypt4gh Crypt4gh
 	Inbox    storage.Conf
-	Postgres postgres.Pgconf
+	Database database.DBConf
 }
 
 // Crypt4gh holds c4gh related config info
@@ -39,9 +40,9 @@ type Crypt4gh struct {
 	Passphrase string
 }
 
-// New initializes and parses the config file and/or environment using
+// NewConfig initializes and parses the config file and/or environment using
 // the viper library.
-func New(app string) (*Config, error) {
+func NewConfig(app string) (*Config, error) {
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	viper.AutomaticEnv()
@@ -96,7 +97,10 @@ func New(app string) (*Config, error) {
 
 	c := &Config{}
 	c.configBroker()
-	c.configDatabase()
+	err := c.configDatabase()
+	if err != nil {
+		return nil, err
+	}
 
 	switch app {
 	case "ingest":
@@ -172,7 +176,7 @@ func (c *Config) configInbox() {
 
 func (c *Config) configBroker() {
 	// Setup broker
-	b := broker.Mqconf{}
+	b := broker.MQConf{}
 
 	b.Host = viper.GetString("broker.host")
 	b.Port = viper.GetInt("broker.port")
@@ -213,14 +217,14 @@ func (c *Config) configBroker() {
 		}
 	}
 	if viper.IsSet("broker.cacert") {
-		b.Cacert = viper.GetString("broker.cacert")
+		b.CACert = viper.GetString("broker.cacert")
 	}
 
 	c.Broker = b
 }
 
-func (c *Config) configDatabase() {
-	db := postgres.Pgconf{}
+func (c *Config) configDatabase() error {
+	db := database.DBConf{}
 
 	// All these are required
 	db.Host = viper.GetString("db.host")
@@ -234,7 +238,7 @@ func (c *Config) configDatabase() {
 	if db.SslMode == "verify-full" {
 		// Since verify-full is specified, these are required.
 		if !(viper.IsSet("db.clientCert") && viper.IsSet("db.clientKey")) {
-			panic(fmt.Errorf("when db.sslMode is set to verify-full both db.clientCert and db.clientKey are needed"))
+			return errors.New("when db.sslMode is set to verify-full both db.clientCert and db.clientKey are needed")
 		}
 	}
 	if viper.IsSet("db.clientKey") {
@@ -244,10 +248,11 @@ func (c *Config) configDatabase() {
 		db.ClientCert = viper.GetString("db.clientCert")
 	}
 	if viper.IsSet("db.cacert") {
-		db.Cacert = viper.GetString("db.cacert")
+		db.CACert = viper.GetString("db.cacert")
 	}
 
-	c.Postgres = db
+	c.Database = db
+	return nil
 }
 
 func (c *Config) configCrypt4gh() {

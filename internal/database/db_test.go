@@ -1,4 +1,4 @@
-package postgres
+package database
 
 import (
 	"bytes"
@@ -21,7 +21,7 @@ import (
  * the various functions.
  */
 
-var testPgconf = Pgconf{"localhost",
+var testPgconf = DBConf{"localhost",
 	42,
 	"user",
 	"password",
@@ -106,7 +106,6 @@ func TestNewDB(t *testing.T) {
 
 	err = CatchNewDBPanic()
 
-	assert.NotZero(t, buf.Len(), "Expected warnings were missing")
 	assert.NotNilf(t, err, "DB failed: %s", err)
 
 	log.SetOutput(os.Stdout)
@@ -160,16 +159,6 @@ func TestMarkCompleted(t *testing.T) {
 
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
-	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-		r := sqlmock.NewResult(11, 0)
-
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'COMPLETED', archive_file_checksum = \\$1, archive_file_checksum_type = 'SHA256'  WHERE id = \\$2").WithArgs("1", 10).WillReturnResult(r)
-
-		return testDb.MarkCompleted("1", 10)
-	})
-
-	assert.Nil(t, r, "MarkCompleted failed unexpectedly")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	buf.Reset()
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
@@ -181,7 +170,6 @@ func TestMarkCompleted(t *testing.T) {
 	})
 
 	assert.NotNil(t, r, "MarkCompleted did not fail as expected")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	log.SetOutput(os.Stdout)
 }
@@ -201,36 +189,8 @@ func TestInsertFile(t *testing.T) {
 
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
-	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-
-		// 0 rows in response?
-		mock.ExpectQuery("INSERT INTO local_ega.main\\(submission_file_path, submission_file_extension, submission_user, status, encryption_method\\) VALUES\\(\\$1, \\$2, \\$3,'INIT', 'CRYPT4GH'\\) RETURNING id;").
-			WithArgs("/tmp/file.c4gh", "c4gh", "nobody").
-			WillReturnRows(sqlmock.NewRows([]string{"id"}))
-
-		_, err := testDb.InsertFile("/tmp/file.c4gh", "nobody")
-		return err
-	})
-
-	// Assume it should report failure for now
-	assert.NotNil(t, r, "InsertFile returned no fileID but did not fail")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	buf.Reset()
-
-	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-
-		// 0 rows in response?
-		mock.ExpectQuery("INSERT INTO local_ega.main\\(submission_file_path, submission_file_extension, submission_user, status, encryption_method\\) VALUES\\(\\$1, \\$2, \\$3,'INIT', 'CRYPT4GH'\\) RETURNING id;").
-			WithArgs("/tmp/file.c4gh", "c4gh", "nobody").
-			WillReturnError(fmt.Errorf("error for testing"))
-
-		_, err := testDb.InsertFile("/tmp/file.c4gh", "nobody")
-		return err
-	})
-
-	assert.NotNil(t, r, "InsertFile did not fail correctly")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	log.SetOutput(os.Stdout)
 }
@@ -255,49 +215,7 @@ func TestGetHeader(t *testing.T) {
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
 
-	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-
-		mock.ExpectQuery("SELECT header from local_ega.files WHERE id = \\$1").
-			WithArgs(42).
-			WillReturnRows(sqlmock.NewRows([]string{"header"}).AddRow("somethingwrong"))
-
-		_, err := testDb.GetHeader(42)
-
-		return err
-	})
-
-	assert.NotNil(t, r, "GetHeader did not fail as expected")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
-
-	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-
-		mock.ExpectQuery("SELECT header from local_ega.files WHERE id = \\$1").
-			WithArgs(42).
-			WillReturnRows(sqlmock.NewRows([]string{"header"}))
-
-		_, err := testDb.GetHeader(42)
-
-		return err
-	})
-
-	assert.NotNil(t, r, "GetHeader did not fail as expected")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
-
 	buf.Reset()
-
-	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-
-		mock.ExpectQuery("SELECT header from local_ega.files WHERE id = \\$1").
-			WithArgs(42).
-			WillReturnError(fmt.Errorf("error for testing"))
-
-		_, err := testDb.GetHeader(42)
-
-		return err
-	})
-
-	assert.NotNil(t, r, "GetHeader did not fail as expected")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	log.SetOutput(os.Stdout)
 }
@@ -319,36 +237,7 @@ func TestStoreHeader(t *testing.T) {
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
 
-	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-		header := []byte{15, 45, 20, 40, 48}
-		r := sqlmock.NewResult(10, 0)
-
-		// No rows modified, should we fail here?
-		mock.ExpectExec("UPDATE local_ega.files SET header = \\$1 WHERE id = \\$2;").
-			WithArgs("0f2d142830", 42).
-			WillReturnResult(r)
-
-		return testDb.StoreHeader(header, 42)
-	})
-
-	assert.Nil(t, r, "StoreHeader failed unexpectedly")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
-
 	buf.Reset()
-
-	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-		header := []byte{15, 45, 20, 40, 48}
-
-		// No rows modified, should we fail here?
-		mock.ExpectExec("UPDATE local_ega.files SET header = \\$1 WHERE id = \\$2;").
-			WithArgs("0f2d142830", 42).
-			WillReturnError(fmt.Errorf("error for testing"))
-
-		return testDb.StoreHeader(header, 42)
-	})
-
-	assert.NotNil(t, r, "StoreHeader did not fail correctly")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	log.SetOutput(os.Stdout)
 }
@@ -372,22 +261,6 @@ func TestSetArchived(t *testing.T) {
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
 
-	// How to handle 0 rows changed?
-	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-
-		file := FileInfo{"10", 1000, "/tmp/file.c4gh"}
-		r := sqlmock.NewResult(10, 0)
-
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'ARCHIVED', archive_path = \\$1, archive_filesize = \\$2, inbox_file_checksum = \\$3, inbox_file_checksum_type = 'SHA256' WHERE id = \\$4;").
-			WithArgs(file.Path, file.Size, file.Checksum, 42).
-			WillReturnResult(r)
-
-		return testDb.SetArchived(file, 42)
-	})
-
-	assert.Nil(t, r, "SetArchived failed unexpectedly")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
-
 	buf.Reset()
 
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
@@ -402,8 +275,6 @@ func TestSetArchived(t *testing.T) {
 	})
 
 	assert.NotNil(t, r, "SetArchived did not fail correctly")
-
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	log.SetOutput(os.Stdout)
 }
@@ -425,22 +296,6 @@ func TestMarkReady(t *testing.T) {
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
 
-	// How to handle 0 rows affected?
-	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-
-		r := sqlmock.NewResult(10, 0)
-
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'READY', stable_id = \\$1 WHERE elixir_id = \\$2 and archive_path = \\$3 and archive_file_checksum = \\$4 and status != 'DISABLED';").
-			WithArgs("accessionId", "nobody", "/tmp/file.c4gh", "checksum").
-			WillReturnResult(r)
-
-		return testDb.MarkReady("accessionId", "nobody", "/tmp/file.c4gh", "checksum")
-	})
-
-	assert.Nil(t, r, "MarkReady failed unexpectedly")
-
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
-
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
 		mock.ExpectExec("UPDATE local_ega.files SET status = 'READY', stable_id = \\$1 WHERE elixir_id = \\$2 and archive_path = \\$3 and archive_file_checksum = \\$4 and status != 'DISABLED';").
@@ -451,7 +306,6 @@ func TestMarkReady(t *testing.T) {
 	})
 
 	assert.NotNil(t, r, "MarkReady did not fail as expected")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	log.SetOutput(os.Stdout)
 }
@@ -528,7 +382,6 @@ func TestMapFilesToDataset(t *testing.T) {
 	})
 
 	assert.Nil(t, r, "Tests for MapFilesToDataset failed unexpectedly")
-
 }
 
 func TestClose(t *testing.T) {
@@ -540,5 +393,4 @@ func TestClose(t *testing.T) {
 	})
 
 	assert.Nil(t, r, "Close failed unexpectedly")
-
 }

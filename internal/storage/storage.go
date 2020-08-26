@@ -182,7 +182,7 @@ func (sb *s3Backend) GetFileSize(filePath string) (int64, error) {
 }
 
 // transportConfigS3 is a helper method to setup TLS for the S3 client.
-func transportConfigS3(configuration S3Conf) http.RoundTripper {
+func transportConfigS3(config S3Conf) http.RoundTripper {
 	cfg := new(tls.Config)
 
 	// Enforce TLS1.2 or higher
@@ -196,8 +196,8 @@ func transportConfigS3(configuration S3Conf) http.RoundTripper {
 	}
 	cfg.RootCAs = systemCAs
 
-	if configuration.Cacert != "" {
-		cacert, e := ioutil.ReadFile(configuration.Cacert) // #nosec this file comes from our configuration
+	if config.Cacert != "" {
+		cacert, e := ioutil.ReadFile(config.Cacert) // #nosec this file comes from our config
 		if e != nil {
 			log.Fatalf("failed to append %q to RootCAs: %v", cacert, e)
 		}

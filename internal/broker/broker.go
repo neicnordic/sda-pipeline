@@ -148,7 +148,7 @@ func buildMQURI(mqHost, mqUser, mqPassword, mqVhost string, mqPort int, ssl bool
 }
 
 // TLSConfigBroker is a helper method to setup TLS for the message broker
-func TLSConfigBroker(configuration MQConf) (*tls.Config, error) {
+func TLSConfigBroker(config MQConf) (*tls.Config, error) {
 	// Read system CAs
 	systemCAs, err := x509.SystemCertPool()
 	if err != nil {
@@ -161,11 +161,11 @@ func TLSConfigBroker(configuration MQConf) (*tls.Config, error) {
 	}
 
 	// Add CAs for broker and database
-	for _, cacert := range []string{configuration.CACert} {
+	for _, cacert := range []string{config.CACert} {
 		if cacert == "" {
 			continue
 		}
-		cacert, e := ioutil.ReadFile(cacert) // #nosec this file comes from our configuration
+		cacert, e := ioutil.ReadFile(cacert) // #nosec this file comes from our config
 		if e != nil {
 			return nil, err
 		}
@@ -176,17 +176,17 @@ func TLSConfigBroker(configuration MQConf) (*tls.Config, error) {
 
 	// If the server URI difers from the hostname in the certificate
 	// we need to set the hostname to match our certificates against.
-	if configuration.ServerName != "" {
-		tlsConfig.ServerName = configuration.ServerName
+	if config.ServerName != "" {
+		tlsConfig.ServerName = config.ServerName
 	}
 	//nolint:nestif
-	if configuration.VerifyPeer {
-		if configuration.ClientCert != "" && configuration.ClientKey != "" {
-			cert, err := ioutil.ReadFile(configuration.ClientCert)
+	if config.VerifyPeer {
+		if config.ClientCert != "" && config.ClientKey != "" {
+			cert, err := ioutil.ReadFile(config.ClientCert)
 			if err != nil {
 				return nil, err
 			}
-			key, err := ioutil.ReadFile(configuration.ClientKey)
+			key, err := ioutil.ReadFile(config.ClientKey)
 			if err != nil {
 				return nil, err
 			}

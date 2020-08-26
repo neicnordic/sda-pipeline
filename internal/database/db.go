@@ -68,24 +68,24 @@ func NewDB(configuration DBConf) (*SQLdb, error) {
 	return &SQLdb{DB: db}, nil
 }
 
-func buildConnInfo(configuration DBConf) string {
+func buildConnInfo(config DBConf) string {
 	connInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		configuration.Host, configuration.Port, configuration.User, configuration.Password, configuration.Database, configuration.SslMode)
+		config.Host, config.Port, config.User, config.Password, config.Database, config.SslMode)
 
-	if configuration.SslMode == "disable" {
+	if config.SslMode == "disable" {
 		return connInfo
 	}
 
-	if configuration.CACert != "" {
-		connInfo += fmt.Sprintf(" sslrootcert=%s", configuration.CACert)
+	if config.CACert != "" {
+		connInfo += fmt.Sprintf(" sslrootcert=%s", config.CACert)
 	}
 
-	if configuration.ClientCert != "" {
-		connInfo += fmt.Sprintf(" sslcert=%s", configuration.ClientCert)
+	if config.ClientCert != "" {
+		connInfo += fmt.Sprintf(" sslcert=%s", config.ClientCert)
 	}
 
-	if configuration.ClientKey != "" {
-		connInfo += fmt.Sprintf(" sslkey=%s", configuration.ClientKey)
+	if config.ClientKey != "" {
+		connInfo += fmt.Sprintf(" sslkey=%s", config.ClientKey)
 	}
 
 	return connInfo

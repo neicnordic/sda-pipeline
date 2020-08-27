@@ -137,7 +137,7 @@ func newS3Backend(c S3Conf) *s3Backend {
 
 			if aerr.Code() != s3.ErrCodeBucketAlreadyOwnedByYou &&
 				aerr.Code() != s3.ErrCodeBucketAlreadyExists {
-				log.Warning("Unexpected issue while creating bucket", err)
+				log.Error("Unexpected issue while creating bucket", err)
 			}
 		}
 	}

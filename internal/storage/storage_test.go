@@ -210,7 +210,7 @@ func setupFakeS3() (err error) {
 
 			if aerr.Code() != s3.ErrCodeBucketAlreadyOwnedByYou &&
 				aerr.Code() != s3.ErrCodeBucketAlreadyExists {
-				log.Warning("Unexpected issue while creating bucket: ", err)
+				log.Error("Unexpected issue while creating bucket: ", err)
 			} else {
 				// Do not flag an error for this
 				err = nil

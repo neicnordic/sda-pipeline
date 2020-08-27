@@ -10,7 +10,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	// Needed implicitly to enable Database driver
+	// Needed implicitly to enable Postgres driver
 	_ "github.com/lib/pq"
 )
 
@@ -52,8 +52,8 @@ type FileInfo struct {
 var sqlOpen = sql.Open
 
 // NewDB creates a new DB connection
-func NewDB(configuration DBConf) (*SQLdb, error) {
-	connInfo := buildConnInfo(configuration)
+func NewDB(config DBConf) (*SQLdb, error) {
+	connInfo := buildConnInfo(config)
 
 	log.Debugf("Connecting to DB with <%s>", connInfo)
 	db, err := sqlOpen("postgres", connInfo)

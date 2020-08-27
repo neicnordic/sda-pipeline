@@ -96,8 +96,11 @@ func NewConfig(app string) (*Config, error) {
 	}
 
 	c := &Config{}
-	c.configBroker()
-	err := c.configDatabase()
+	err := c.configBroker()
+	if err != nil {
+		return nil, err
+	}
+	err = c.configDatabase()
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +125,6 @@ func NewConfig(app string) (*Config, error) {
 }
 
 func configS3Storage(prefix string) storage.S3Conf {
-
 	s3 := storage.S3Conf{}
 	// All these are required
 	s3.URL = viper.GetString(prefix + ".url")
@@ -174,53 +176,55 @@ func (c *Config) configInbox() {
 	}
 }
 
-func (c *Config) configBroker() {
+func (c *Config) configBroker() error {
 	// Setup broker
-	b := broker.MQConf{}
+	broker := broker.MQConf{}
 
-	b.Host = viper.GetString("broker.host")
-	b.Port = viper.GetInt("broker.port")
-	b.User = viper.GetString("broker.user")
-	b.Password = viper.GetString("broker.password")
-	b.RoutingKey = viper.GetString("broker.routingkey")
-	b.Queue = viper.GetString("broker.queue")
-	b.ServerName = viper.GetString("broker.serverName")
+	broker.Host = viper.GetString("broker.host")
+	broker.Port = viper.GetInt("broker.port")
+	broker.User = viper.GetString("broker.user")
+	broker.Password = viper.GetString("broker.password")
+	broker.RoutingKey = viper.GetString("broker.routingkey")
+	broker.Queue = viper.GetString("broker.queue")
+	broker.ServerName = viper.GetString("broker.serverName")
 
 	if viper.IsSet("broker.durable") {
-		b.Durable = viper.GetBool("broker.durable")
+		broker.Durable = viper.GetBool("broker.durable")
 	}
 	if viper.IsSet("broker.routingerror") {
-		b.RoutingError = viper.GetString("broker.routingerror")
+		broker.RoutingError = viper.GetString("broker.routingerror")
 	}
 	if viper.IsSet("broker.vhost") {
 		if strings.HasPrefix(viper.GetString("broker.vhost"), "/") {
-			b.Vhost = viper.GetString("broker.vhost")
+			broker.Vhost = viper.GetString("broker.vhost")
 		} else {
-			b.Vhost = "/" + viper.GetString("broker.vhost")
+			broker.Vhost = "/" + viper.GetString("broker.vhost")
 		}
 	} else {
-		b.Vhost = "/"
+		broker.Vhost = "/"
 	}
 
 	if viper.IsSet("broker.ssl") {
-		b.Ssl = viper.GetBool("broker.ssl")
+		broker.Ssl = viper.GetBool("broker.ssl")
 	}
 	if viper.IsSet("broker.verifyPeer") {
-		b.VerifyPeer = viper.GetBool("broker.verifyPeer")
-		if b.VerifyPeer {
+		broker.VerifyPeer = viper.GetBool("broker.verifyPeer")
+		if broker.VerifyPeer {
 			// Since verifyPeer is specified, these are required.
 			if !(viper.IsSet("broker.clientCert") && viper.IsSet("broker.clientKey")) {
-				log.Panicln("when broker.verifyPeer is set both broker.clientCert and broker.clientKey is needed")
+				return errors.New("when broker.verifyPeer is set both broker.clientCert and broker.clientKey is needed")
 			}
-			b.ClientCert = viper.GetString("broker.clientCert")
-			b.ClientKey = viper.GetString("broker.clientKey")
+			broker.ClientCert = viper.GetString("broker.clientCert")
+			broker.ClientKey = viper.GetString("broker.clientKey")
 		}
 	}
 	if viper.IsSet("broker.cacert") {
-		b.CACert = viper.GetString("broker.cacert")
+		broker.CACert = viper.GetString("broker.cacert")
 	}
 
-	c.Broker = b
+	c.Broker = broker
+
+	return nil
 }
 
 func (c *Config) configDatabase() error {

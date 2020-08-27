@@ -46,17 +46,17 @@ type posixConf struct {
 }
 
 // NewBackend initiates a storage backend
-func NewBackend(configuration Conf) Backend {
-	switch configuration.Type {
+func NewBackend(config Conf) Backend {
+	switch config.Type {
 	case "s3":
-		return newS3Backend(configuration.S3)
+		return newS3Backend(config.S3)
 	default:
-		return newPosixBackend(configuration.Posix)
+		return newPosixBackend(config.Posix)
 	}
 }
 
-func newPosixBackend(configuration posixConf) *posixBackend {
-	return &posixBackend{Location: configuration.Location}
+func newPosixBackend(config posixConf) *posixBackend {
+	return &posixBackend{Location: config.Location}
 }
 
 // NewFileReader returns an io.Reader instance
@@ -111,25 +111,25 @@ type S3Conf struct {
 	Cacert            string
 }
 
-func newS3Backend(configuration S3Conf) *s3Backend {
-	s3Transport := transportConfigS3(configuration)
+func newS3Backend(config S3Conf) *s3Backend {
+	s3Transport := transportConfigS3(config)
 	client := http.Client{Transport: s3Transport}
 	s3Session := session.Must(session.NewSession(
 		&aws.Config{
-			Endpoint:         aws.String(fmt.Sprintf("%s:%d", configuration.URL, configuration.Port)),
-			Region:           aws.String(configuration.Region),
+			Endpoint:         aws.String(fmt.Sprintf("%s:%d", config.URL, config.Port)),
+			Region:           aws.String(config.Region),
 			HTTPClient:       &client,
 			S3ForcePathStyle: aws.Bool(true),
-			DisableSSL:       aws.Bool(strings.HasPrefix(configuration.URL, "http:")),
-			Credentials:      credentials.NewStaticCredentials(configuration.AccessKey, configuration.SecretKey, ""),
+			DisableSSL:       aws.Bool(strings.HasPrefix(config.URL, "http:")),
+			Credentials:      credentials.NewStaticCredentials(config.AccessKey, config.SecretKey, ""),
 		},
 	))
 
 	return &s3Backend{
-		Bucket: configuration.Bucket,
+		Bucket: config.Bucket,
 		Uploader: s3manager.NewUploader(s3Session, func(u *s3manager.Uploader) {
-			u.PartSize = int64(configuration.Chunksize)
-			u.Concurrency = configuration.UploadConcurrency
+			u.PartSize = int64(config.Chunksize)
+			u.Concurrency = config.UploadConcurrency
 			u.LeavePartsOnError = false
 		}),
 		Client: s3.New(s3Session)}

@@ -199,7 +199,8 @@ func (suite *TestSuite) TestConfigBroker() {
 	viper.Set("broker.vhost", "test")
 	viper.Set("broker.ssl", true)
 	viper.Set("broker.verifyPeer", true)
-	assert.Panics(suite.T(), func() { NewConfig("ingest") }) // nolint
+	_, err := NewConfig("ingest")
+	assert.Error(suite.T(), err, "Error expected")
 	viper.Set("broker.clientCert", "test")
 	viper.Set("broker.clientKey", "test")
 	viper.Set("broker.cacert", "test")

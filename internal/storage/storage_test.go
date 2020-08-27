@@ -107,10 +107,10 @@ func TestPosixBackend(t *testing.T) {
 
 	defer doCleanup()
 	testConf.Type = "posix"
-	p := NewBackend(testConf)
+	backend := NewBackend(testConf)
 	var buf bytes.Buffer
 
-	assert.IsType(t, p, &posixBackend{}, "Wrong type from NewBackend with posix")
+	assert.IsType(t, backend, &posixBackend{}, "Wrong type from NewBackend with posix")
 
 	log.SetOutput(os.Stdout)
 
@@ -120,7 +120,7 @@ func TestPosixBackend(t *testing.T) {
 		return
 	}
 
-	writer, err := p.NewFileWriter(writable)
+	writer, err := backend.NewFileWriter(writable)
 
 	assert.NotNil(t, writer, "Got a nil reader for writer from posix")
 	assert.Nil(t, err, "posix NewFileWriter failed when it shouldn't")
@@ -132,7 +132,7 @@ func TestPosixBackend(t *testing.T) {
 	writer.Close()
 
 	log.SetOutput(&buf)
-	writer, err = p.NewFileWriter(posixNotCreatable)
+	writer, err = backend.NewFileWriter(posixNotCreatable)
 
 	assert.Nil(t, writer, "Got a non-nil reader for writer from posix")
 	assert.NotNil(t, err, "posix NewFileWriter worked when it shouldn't")
@@ -140,7 +140,7 @@ func TestPosixBackend(t *testing.T) {
 
 	log.SetOutput(os.Stdout)
 
-	reader, err := p.NewFileReader(writable)
+	reader, err := backend.NewFileReader(writable)
 	assert.Nil(t, err, "posix NewFileReader failed when it should work")
 	assert.NotNil(t, reader, "Got a nil reader for posix")
 
@@ -156,20 +156,20 @@ func TestPosixBackend(t *testing.T) {
 	assert.Equal(t, writeData, readBackBuffer[:readBack], "did not read back data as expected")
 	assert.Nil(t, err, "unexpected error when reading back data")
 
-	size, err := p.GetFileSize(writable)
+	size, err := backend.GetFileSize(writable)
 	assert.Nil(t, err, "posix NewFileReader failed when it should work")
 	assert.NotNil(t, size, "Got a nil size for posix")
 
 	log.SetOutput(&buf)
 
-	reader, err = p.NewFileReader(posixDoesNotExist)
+	reader, err = backend.NewFileReader(posixDoesNotExist)
 	assert.NotNil(t, err, "posix NewFileReader worked when it should not")
 	assert.Nil(t, reader, "Got a non-nil reader for posix")
 	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	buf.Reset()
 
-	_, err = p.GetFileSize(posixDoesNotExist) // nolint
+	_, err = backend.GetFileSize(posixDoesNotExist) // nolint
 	assert.NotNil(t, err, "posix GetFileSize worked when it should not")
 	assert.NotZero(t, buf.Len(), "Expected warning missing")
 

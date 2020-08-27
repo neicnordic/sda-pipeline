@@ -49,17 +49,17 @@ type MQConf struct {
 
 // NewMQ creates a new Broker that can communicate with a backend
 // amqp server.
-func NewMQ(configuration MQConf) (*AMQPBroker, error) {
-	brokerURI := buildMQURI(configuration.Host, configuration.User, configuration.Password, configuration.Vhost, configuration.Port, configuration.Ssl)
+func NewMQ(config MQConf) (*AMQPBroker, error) {
+	brokerURI := buildMQURI(config.Host, config.User, config.Password, config.Vhost, config.Port, config.Ssl)
 
 	var Connection *amqp.Connection
 	var Channel *amqp.Channel
 	var err error
 
 	log.Debugf("Connecting to broker with <%s>", brokerURI)
-	if configuration.Ssl {
+	if config.Ssl {
 		var tlsConfig *tls.Config
-		tlsConfig, err = TLSConfigBroker(configuration)
+		tlsConfig, err = TLSConfigBroker(config)
 		if err != nil {
 			return nil, err
 		}
@@ -78,12 +78,12 @@ func NewMQ(configuration MQConf) (*AMQPBroker, error) {
 
 	// The queues already exists so we can safely do a passive declaration
 	_, err = Channel.QueueDeclarePassive(
-		configuration.Queue, // name
-		true,                // durable
-		false,               // auto-deleted
-		false,               // internal
-		false,               // noWait
-		nil,                 // arguments
+		config.Queue, // name
+		true,         // durable
+		false,        // auto-deleted
+		false,        // internal
+		false,        // noWait
+		nil,          // arguments
 	)
 	if err != nil {
 		return nil, err

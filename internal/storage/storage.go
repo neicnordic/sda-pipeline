@@ -45,18 +45,18 @@ type posixConf struct {
 	Location string
 }
 
-// NewBackend initates a storage backend
-func NewBackend(c Conf) Backend {
-	switch c.Type {
+// NewBackend initiates a storage backend
+func NewBackend(config Conf) Backend {
+	switch config.Type {
 	case "s3":
-		return newS3Backend(c.S3)
+		return newS3Backend(config.S3)
 	default:
-		return newPosixBackend(c.Posix)
+		return newPosixBackend(config.Posix)
 	}
 }
 
-func newPosixBackend(c posixConf) *posixBackend {
-	return &posixBackend{Location: c.Location}
+func newPosixBackend(config posixConf) *posixBackend {
+	return &posixBackend{Location: config.Location}
 }
 
 // NewFileReader returns an io.Reader instance
@@ -111,28 +111,28 @@ type S3Conf struct {
 	Cacert            string
 }
 
-func newS3Backend(c S3Conf) *s3Backend {
-	trConf := transportConfigS3(c)
-	client := http.Client{Transport: trConf}
-	session := session.Must(session.NewSession(
+func newS3Backend(config S3Conf) *s3Backend {
+	s3Transport := transportConfigS3(config)
+	client := http.Client{Transport: s3Transport}
+	s3Session := session.Must(session.NewSession(
 		&aws.Config{
-			Endpoint:         aws.String(fmt.Sprintf("%s:%d", c.URL, c.Port)),
-			Region:           aws.String(c.Region),
+			Endpoint:         aws.String(fmt.Sprintf("%s:%d", config.URL, config.Port)),
+			Region:           aws.String(config.Region),
 			HTTPClient:       &client,
 			S3ForcePathStyle: aws.Bool(true),
-			DisableSSL:       aws.Bool(strings.HasPrefix(c.URL, "http:")),
-			Credentials:      credentials.NewStaticCredentials(c.AccessKey, c.SecretKey, ""),
+			DisableSSL:       aws.Bool(strings.HasPrefix(config.URL, "http:")),
+			Credentials:      credentials.NewStaticCredentials(config.AccessKey, config.SecretKey, ""),
 		},
 	))
 
 	return &s3Backend{
-		Bucket: c.Bucket,
-		Uploader: s3manager.NewUploader(session, func(u *s3manager.Uploader) {
-			u.PartSize = int64(c.Chunksize)
-			u.Concurrency = c.UploadConcurrency
+		Bucket: config.Bucket,
+		Uploader: s3manager.NewUploader(s3Session, func(u *s3manager.Uploader) {
+			u.PartSize = int64(config.Chunksize)
+			u.Concurrency = config.UploadConcurrency
 			u.LeavePartsOnError = false
 		}),
-		Client: s3.New(session)}
+		Client: s3.New(s3Session)}
 }
 
 // NewFileReader returns an io.Reader instance
@@ -182,7 +182,7 @@ func (sb *s3Backend) GetFileSize(filePath string) (int64, error) {
 }
 
 // transportConfigS3 is a helper method to setup TLS for the S3 client.
-func transportConfigS3(c S3Conf) http.RoundTripper {
+func transportConfigS3(config S3Conf) http.RoundTripper {
 	cfg := new(tls.Config)
 
 	// Enforce TLS1.2 or higher
@@ -196,8 +196,8 @@ func transportConfigS3(c S3Conf) http.RoundTripper {
 	}
 	cfg.RootCAs = systemCAs
 
-	if c.Cacert != "" {
-		cacert, e := ioutil.ReadFile(c.Cacert) // #nosec this file comes from our configuration
+	if config.Cacert != "" {
+		cacert, e := ioutil.ReadFile(config.Cacert) // #nosec this file comes from our config
 		if e != nil {
 			log.Fatalf("failed to append %q to RootCAs: %v", cacert, e)
 		}

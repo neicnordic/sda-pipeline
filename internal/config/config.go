@@ -8,9 +8,10 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"sda-pipeline/internal/broker"
-	"sda-pipeline/internal/postgres"
+	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 )
 
@@ -27,10 +28,10 @@ var (
 // Config is a parent object for all the different configuration parts
 type Config struct {
 	Archive  storage.Conf
-	Broker   broker.Mqconf
+	Broker   broker.MQConf
 	Crypt4gh Crypt4gh
 	Inbox    storage.Conf
-	Postgres postgres.Pgconf
+	Database database.DBConf
 }
 
 // Crypt4gh holds c4gh related config info
@@ -39,9 +40,9 @@ type Crypt4gh struct {
 	Passphrase string
 }
 
-// New initializes and parses the config file and/or environment using
+// NewConfig initializes and parses the config file and/or environment using
 // the viper library.
-func New(app string) (*Config, error) {
+func NewConfig(app string) (*Config, error) {
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	viper.AutomaticEnv()
@@ -95,8 +96,14 @@ func New(app string) (*Config, error) {
 	}
 
 	c := &Config{}
-	c.configBroker()
-	c.configDatabase()
+	err := c.configBroker()
+	if err != nil {
+		return nil, err
+	}
+	err = c.configDatabase()
+	if err != nil {
+		return nil, err
+	}
 
 	switch app {
 	case "ingest":
@@ -118,7 +125,6 @@ func New(app string) (*Config, error) {
 }
 
 func configS3Storage(prefix string) storage.S3Conf {
-
 	s3 := storage.S3Conf{}
 	// All these are required
 	s3.URL = viper.GetString(prefix + ".url")
@@ -170,57 +176,59 @@ func (c *Config) configInbox() {
 	}
 }
 
-func (c *Config) configBroker() {
+func (c *Config) configBroker() error {
 	// Setup broker
-	b := broker.Mqconf{}
+	broker := broker.MQConf{}
 
-	b.Host = viper.GetString("broker.host")
-	b.Port = viper.GetInt("broker.port")
-	b.User = viper.GetString("broker.user")
-	b.Password = viper.GetString("broker.password")
-	b.RoutingKey = viper.GetString("broker.routingkey")
-	b.Queue = viper.GetString("broker.queue")
-	b.ServerName = viper.GetString("broker.serverName")
+	broker.Host = viper.GetString("broker.host")
+	broker.Port = viper.GetInt("broker.port")
+	broker.User = viper.GetString("broker.user")
+	broker.Password = viper.GetString("broker.password")
+	broker.RoutingKey = viper.GetString("broker.routingkey")
+	broker.Queue = viper.GetString("broker.queue")
+	broker.ServerName = viper.GetString("broker.serverName")
 
 	if viper.IsSet("broker.durable") {
-		b.Durable = viper.GetBool("broker.durable")
+		broker.Durable = viper.GetBool("broker.durable")
 	}
 	if viper.IsSet("broker.routingerror") {
-		b.RoutingError = viper.GetString("broker.routingerror")
+		broker.RoutingError = viper.GetString("broker.routingerror")
 	}
 	if viper.IsSet("broker.vhost") {
 		if strings.HasPrefix(viper.GetString("broker.vhost"), "/") {
-			b.Vhost = viper.GetString("broker.vhost")
+			broker.Vhost = viper.GetString("broker.vhost")
 		} else {
-			b.Vhost = "/" + viper.GetString("broker.vhost")
+			broker.Vhost = "/" + viper.GetString("broker.vhost")
 		}
 	} else {
-		b.Vhost = "/"
+		broker.Vhost = "/"
 	}
 
 	if viper.IsSet("broker.ssl") {
-		b.Ssl = viper.GetBool("broker.ssl")
+		broker.Ssl = viper.GetBool("broker.ssl")
 	}
 	if viper.IsSet("broker.verifyPeer") {
-		b.VerifyPeer = viper.GetBool("broker.verifyPeer")
-		if b.VerifyPeer {
+		broker.VerifyPeer = viper.GetBool("broker.verifyPeer")
+		if broker.VerifyPeer {
 			// Since verifyPeer is specified, these are required.
 			if !(viper.IsSet("broker.clientCert") && viper.IsSet("broker.clientKey")) {
-				log.Panicln("when broker.verifyPeer is set both broker.clientCert and broker.clientKey is needed")
+				return errors.New("when broker.verifyPeer is set both broker.clientCert and broker.clientKey is needed")
 			}
-			b.ClientCert = viper.GetString("broker.clientCert")
-			b.ClientKey = viper.GetString("broker.clientKey")
+			broker.ClientCert = viper.GetString("broker.clientCert")
+			broker.ClientKey = viper.GetString("broker.clientKey")
 		}
 	}
 	if viper.IsSet("broker.cacert") {
-		b.Cacert = viper.GetString("broker.cacert")
+		broker.CACert = viper.GetString("broker.cacert")
 	}
 
-	c.Broker = b
+	c.Broker = broker
+
+	return nil
 }
 
-func (c *Config) configDatabase() {
-	db := postgres.Pgconf{}
+func (c *Config) configDatabase() error {
+	db := database.DBConf{}
 
 	// All these are required
 	db.Host = viper.GetString("db.host")
@@ -234,7 +242,7 @@ func (c *Config) configDatabase() {
 	if db.SslMode == "verify-full" {
 		// Since verify-full is specified, these are required.
 		if !(viper.IsSet("db.clientCert") && viper.IsSet("db.clientKey")) {
-			panic(fmt.Errorf("when db.sslMode is set to verify-full both db.clientCert and db.clientKey are needed"))
+			return errors.New("when db.sslMode is set to verify-full both db.clientCert and db.clientKey are needed")
 		}
 	}
 	if viper.IsSet("db.clientKey") {
@@ -244,10 +252,11 @@ func (c *Config) configDatabase() {
 		db.ClientCert = viper.GetString("db.clientCert")
 	}
 	if viper.IsSet("db.cacert") {
-		db.Cacert = viper.GetString("db.cacert")
+		db.CACert = viper.GetString("db.cacert")
 	}
 
-	c.Postgres = db
+	c.Database = db
+	return nil
 }
 
 func (c *Config) configCrypt4gh() {

@@ -10,7 +10,7 @@ import (
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
-	"sda-pipeline/internal/postgres"
+	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
 	"github.com/elixir-oslo/crypt4gh/keys"
@@ -43,12 +43,15 @@ type checksums struct {
 }
 
 func main() {
-	conf, err := config.New("ingest")
+	conf, err := config.NewConfig("ingest")
 	if err != nil {
 		log.Fatal(err)
 	}
-	mq := broker.NewMQ(conf.Broker)
-	db, err := postgres.NewDB(conf.Postgres)
+	mq, err := broker.NewMQ(conf.Broker)
+	if err != nil {
+		log.Fatal(err)
+	}
+	db, err := database.NewDB(conf.Database)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,7 +68,11 @@ func main() {
 	var message trigger
 
 	go func() {
-		for delivered := range broker.GetMessages(mq, conf.Broker.Queue) {
+		messages, err := broker.GetMessages(mq, conf.Broker.Queue)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for delivered := range messages {
 			res, err := gojsonschema.Validate(ingestTrigger, gojsonschema.NewBytesLoader(delivered.Body))
 			if err != nil {
 				log.Error(err)
@@ -91,7 +98,7 @@ func main() {
 			fileID, err := db.InsertFile(message.Filepath, message.User)
 			if err != nil {
 				log.Errorf("InsertFile failed, reason: %v", err)
-				// This should really be hadled by the DB retry mechanism
+				// This should really be handled by the DB retry mechanism
 			}
 
 			file, err := inbox.NewFileReader(message.Filepath)
@@ -152,7 +159,7 @@ func main() {
 					log.Debugln("store header")
 					if err := db.StoreHeader(header, fileID); err != nil {
 						log.Error("StoreHeader failed")
-						// This should really be hadled by the DB retry mechanism
+						// This should really be handled by the DB retry mechanism
 					}
 
 					if _, err = byteBuf.Write(readBuffer); err != nil {
@@ -187,13 +194,13 @@ func main() {
 			file.Close()
 			dest.Close()
 			log.Debugln("Mark as archived")
-			fileInfo := postgres.FileInfo{}
+			fileInfo := database.FileInfo{}
 			fileInfo.Path = archivedFile
 			fileInfo.Size = fileSize
 			fileInfo.Checksum = fmt.Sprintf("%x", hash.Sum(nil))
 			if err := db.SetArchived(fileInfo, fileID); err != nil {
 				log.Error("SetArchived failed")
-				// This should really be hadled by the DB retry mechanism
+				// This should really be handled by the DB retry mechanism
 			}
 
 			// Send message to archived
@@ -225,7 +232,7 @@ func main() {
 			brokerMsg, _ := json.Marshal(&msg)
 
 			if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, brokerMsg); err != nil {
-				// TODO fix resend mechainsm
+				// TODO fix resend mechanism
 				log.Errorln("We need to fix this resend stuff ...")
 			}
 			if err := delivered.Ack(false); err != nil {

@@ -107,10 +107,10 @@ func TestPosixBackend(t *testing.T) {
 
 	defer doCleanup()
 	testConf.Type = "posix"
-	p := NewBackend(testConf)
+	backend := NewBackend(testConf)
 	var buf bytes.Buffer
 
-	assert.IsType(t, p, &posixBackend{}, "Wrong type from NewBackend with posix")
+	assert.IsType(t, backend, &posixBackend{}, "Wrong type from NewBackend with posix")
 
 	log.SetOutput(os.Stdout)
 
@@ -120,7 +120,7 @@ func TestPosixBackend(t *testing.T) {
 		return
 	}
 
-	writer, err := p.NewFileWriter(writable)
+	writer, err := backend.NewFileWriter(writable)
 
 	assert.NotNil(t, writer, "Got a nil reader for writer from posix")
 	assert.Nil(t, err, "posix NewFileWriter failed when it shouldn't")
@@ -132,7 +132,7 @@ func TestPosixBackend(t *testing.T) {
 	writer.Close()
 
 	log.SetOutput(&buf)
-	writer, err = p.NewFileWriter(posixNotCreatable)
+	writer, err = backend.NewFileWriter(posixNotCreatable)
 
 	assert.Nil(t, writer, "Got a non-nil reader for writer from posix")
 	assert.NotNil(t, err, "posix NewFileWriter worked when it shouldn't")
@@ -140,7 +140,7 @@ func TestPosixBackend(t *testing.T) {
 
 	log.SetOutput(os.Stdout)
 
-	reader, err := p.NewFileReader(writable)
+	reader, err := backend.NewFileReader(writable)
 	assert.Nil(t, err, "posix NewFileReader failed when it should work")
 	assert.NotNil(t, reader, "Got a nil reader for posix")
 
@@ -156,20 +156,20 @@ func TestPosixBackend(t *testing.T) {
 	assert.Equal(t, writeData, readBackBuffer[:readBack], "did not read back data as expected")
 	assert.Nil(t, err, "unexpected error when reading back data")
 
-	size, err := p.GetFileSize(writable)
+	size, err := backend.GetFileSize(writable)
 	assert.Nil(t, err, "posix NewFileReader failed when it should work")
 	assert.NotNil(t, size, "Got a nil size for posix")
 
 	log.SetOutput(&buf)
 
-	reader, err = p.NewFileReader(posixDoesNotExist)
+	reader, err = backend.NewFileReader(posixDoesNotExist)
 	assert.NotNil(t, err, "posix NewFileReader worked when it should not")
 	assert.Nil(t, reader, "Got a non-nil reader for posix")
 	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	buf.Reset()
 
-	_, err = p.GetFileSize(posixDoesNotExist) // nolint
+	_, err = backend.GetFileSize(posixDoesNotExist) // nolint
 	assert.NotNil(t, err, "posix GetFileSize worked when it should not")
 	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
@@ -223,13 +223,13 @@ func setupFakeS3() (err error) {
 func TestS3Backend(t *testing.T) {
 
 	testConf.Type = "s3"
-	s3 := NewBackend(testConf).(*s3Backend)
+	backend := NewBackend(testConf).(*s3Backend)
 
 	var buf bytes.Buffer
 
-	assert.IsType(t, s3, &s3Backend{}, "Wrong type from NewBackend with s3")
+	assert.IsType(t, backend, &s3Backend{}, "Wrong type from NewBackend with s3")
 
-	writer, err := s3.NewFileWriter(s3Creatable)
+	writer, err := backend.NewFileWriter(s3Creatable)
 
 	assert.NotNil(t, writer, "Got a nil reader for writer from s3")
 	assert.Nil(t, err, "posix NewFileWriter failed when it shouldn't")
@@ -243,11 +243,11 @@ func TestS3Backend(t *testing.T) {
 	// Give things some time to happen.
 	time.Sleep(1e9)
 
-	reader, err := s3.NewFileReader(s3Creatable)
+	reader, err := backend.NewFileReader(s3Creatable)
 	assert.Nil(t, err, "s3 NewFileReader failed when it should work")
 	assert.NotNil(t, reader, "Got a nil reader for s3")
 
-	size, err := s3.GetFileSize(s3Creatable)
+	size, err := backend.GetFileSize(s3Creatable)
 	assert.Nil(t, err, "s3 GetFileSize failed when it should work")
 	assert.Equal(t, int64(len(writeData)), size, "Got an incorrect file size")
 
@@ -270,13 +270,13 @@ func TestS3Backend(t *testing.T) {
 
 	log.SetOutput(&buf)
 
-	_, err = s3.GetFileSize(s3DoesNotExist)
+	_, err = backend.GetFileSize(s3DoesNotExist)
 	assert.NotNil(t, err, "s3 GetFileSize worked when it should not")
 	assert.NotZero(t, buf.Len(), "Expected warning missing")
 
 	buf.Reset()
 
-	reader, err = s3.NewFileReader(s3DoesNotExist)
+	reader, err = backend.NewFileReader(s3DoesNotExist)
 	assert.NotNil(t, err, "s3 NewFileReader worked when it should not")
 	assert.Nil(t, reader, "Got a non-nil reader for s3")
 	assert.NotZero(t, buf.Len(), "Expected warning missing")

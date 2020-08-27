@@ -12,7 +12,7 @@ import (
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
-	"sda-pipeline/internal/postgres"
+	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
 	"github.com/elixir-oslo/crypt4gh/keys"
@@ -46,12 +46,15 @@ type Checksums struct {
 }
 
 func main() {
-	conf, err := config.New("verify")
+	conf, err := config.NewConfig("verify")
 	if err != nil {
 		log.Fatal(err)
 	}
-	mq := broker.NewMQ(conf.Broker)
-	db, err := postgres.NewDB(conf.Postgres)
+	mq, err := broker.NewMQ(conf.Broker)
+	if err != nil {
+		log.Fatal(err)
+	}
+	db, err := database.NewDB(conf.Database)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,7 +72,11 @@ func main() {
 	log.Info("starting verify service")
 
 	go func() {
-		for delivered := range broker.GetMessages(mq, conf.Broker.Queue) {
+		messages, err := broker.GetMessages(mq, conf.Broker.Queue)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for delivered := range messages {
 			log.Debugf("received a message: %s", delivered.Body)
 			res, err := gojsonschema.Validate(ingestVerification, gojsonschema.NewBytesLoader(delivered.Body))
 			if err != nil {
@@ -192,7 +199,7 @@ func main() {
 					verified, _ := json.Marshal(&c)
 
 					if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, verified); err != nil {
-						// TODO fix resend mechainsm
+						// TODO fix resend mechanism
 						log.Errorln("We need to fix this resend stuff ...")
 					}
 					if err := delivered.Ack(false); err != nil {

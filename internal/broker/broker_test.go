@@ -76,10 +76,8 @@ func TestGetMessages_Error(t *testing.T) {
 	var str bytes.Buffer
 	log.SetOutput(&str)
 
-	GetMessages(&b, "queue")
-	assert.NotZero(t, str.Len(), "Expected warnings were missing")
-	assert.Contains(t, str.String(), "Error reading from channel")
-
+	_, err := GetMessages(&b, "queue")
+	assert.Error(t, err, "Must be an error")
 }
 
 func CatchSendMessage(b *AMQPBroker, corrID, exchange, routingkey string, reliable bool, body []byte) (err error) {
@@ -119,7 +117,7 @@ func TestSendMessage(t *testing.T) {
 
 }
 
-var tMqconf = Mqconf{"127.0.0.1",
+var tMqconf = MQConf{"127.0.0.1",
 	6565,
 	"user",
 	"password",
@@ -137,9 +135,9 @@ var tMqconf = Mqconf{"127.0.0.1",
 	true}
 
 func TestBuildMqURI(t *testing.T) {
-	amqps := buildMqURI("localhost", "user", "pass", "/vhost", 5555, true)
+	amqps := buildMQURI("localhost", "user", "pass", "/vhost", 5555, true)
 	assert.Equal(t, "amqps://user:pass@localhost:5555/vhost", amqps)
-	amqp := buildMqURI("localhost", "user", "pass", "/vhost", 5555, false)
+	amqp := buildMQURI("localhost", "user", "pass", "/vhost", 5555, false)
 	assert.Equal(t, "amqp://user:pass@localhost:5555/vhost", amqp)
 }
 
@@ -155,7 +153,7 @@ func TestNewMQ(t *testing.T) {
 	noSslConf.Port = noSSLPort
 
 	go handleOneConnection(s.Sessions, false, false)
-	b := NewMQ(noSslConf)
+	b, _ := NewMQ(noSslConf)
 
 	assert.NotNil(t, b, "NewMQ without ssl did not return a broker")
 
@@ -184,14 +182,14 @@ func TestNewMQ(t *testing.T) {
 
 	go handleOneConnection(ss.Sessions, false, false)
 
-	b = NewMQ(sslConf)
+	b, _ = NewMQ(sslConf)
 	assert.NotNil(t, b, "NewMQ with ssl did not return a broker")
 
 	ss.Close()
 
 }
 
-func CatchNewMQPanic(t *testing.T, conf Mqconf) (err error) {
+func CatchNewMQPanic(t *testing.T, conf MQConf) (err error) {
 	// Recover if NewMQ panics
 	// Allow both panic and error return here, so use a custom function rather
 	// than assert.Panics
@@ -203,7 +201,7 @@ func CatchNewMQPanic(t *testing.T, conf Mqconf) (err error) {
 		}
 	}()
 
-	b := NewMQ(conf)
+	b, _ := NewMQ(conf)
 
 	if b == nil {
 		return fmt.Errorf("NewMQ did not return a broker")
@@ -216,7 +214,7 @@ func CatchNewMQPanic(t *testing.T, conf Mqconf) (err error) {
 // broker
 func TestNewMQConn_Error(t *testing.T) {
 
-	brokerURI := buildMqURI(tMqconf.Host, tMqconf.User, tMqconf.Password, tMqconf.Vhost, tMqconf.Port, tMqconf.Ssl)
+	brokerURI := buildMQURI(tMqconf.Host, tMqconf.User, tMqconf.Password, tMqconf.Vhost, tMqconf.Port, tMqconf.Ssl)
 
 	expectedMsg := "dial tcp 127.0.0.1:6565: connect: connection refused"
 
@@ -236,7 +234,7 @@ func TestNewMQConn_Error(t *testing.T) {
 	}
 }
 
-func CatchTLSConfigBrokerPanic(b Mqconf) (cfg *tls.Config, err error) {
+func CatchTLSConfigBrokerPanic(b MQConf) (cfg *tls.Config, err error) {
 	defer func() {
 		r := recover()
 		if r != nil {
@@ -244,43 +242,39 @@ func CatchTLSConfigBrokerPanic(b Mqconf) (cfg *tls.Config, err error) {
 		}
 	}()
 
-	cfg = TLSConfigBroker(b)
+	cfg, _ = TLSConfigBroker(b)
 
 	return cfg, nil
 }
 
 func TestTLSConfigBroker(t *testing.T) {
-
-	assert.NotPanics(t, func() { TLSConfigBroker(tMqconf) })
-	tls := TLSConfigBroker(tMqconf)
-	assert.NotZero(t, tls.Certificates, "Expected warnings were missing")
-	assert.EqualValues(t, tls.ServerName, "servername")
+	tlsConfig, err := TLSConfigBroker(tMqconf)
+	assert.NoError(t, err, "Unexpected error")
+	assert.NotZero(t, tlsConfig.Certificates, "Expected warnings were missing")
+	assert.EqualValues(t, tlsConfig.ServerName, "servername")
 
 	noSslConf := tMqconf
 	noSslConf.Ssl = false
 	noSslConf.VerifyPeer = false
-	noSslConf.Cacert = ""
+	noSslConf.CACert = ""
 	noSslConf.ClientCert = ""
 	noSslConf.ClientKey = ""
 
-	notls := TLSConfigBroker(noSslConf)
-
+	notls, err := TLSConfigBroker(noSslConf)
+	assert.NoError(t, err, "Unexpected error")
 	assert.Zero(t, notls.Certificates, "Expected warnings were missing")
 
 	sslConf := noSslConf
-	sslConf.Cacert = doesNotExist
+	sslConf.CACert = doesNotExist
 
-	_, err := CatchTLSConfigBrokerPanic(sslConf)
-	assert.NotNil(t, err, "Expected failure was missing")
-
-	sslConf.Cacert = readableFile
+	sslConf.CACert = readableFile
 
 	_, _ = CatchTLSConfigBrokerPanic(sslConf)
 	// Should we fail here?
 	//	assert.NotNil(t, err, "Expected failure was missing")
 
 	sslConf.VerifyPeer = true
-	sslConf.Cacert = ""
+	sslConf.CACert = ""
 	sslConf.ClientKey = doesNotExist
 	sslConf.ClientCert = doesNotExist
 
@@ -289,7 +283,7 @@ func TestTLSConfigBroker(t *testing.T) {
 	//	assert.NotNil(t, err, "Expected failure was missing")
 
 	sslConf.VerifyPeer = true
-	sslConf.Cacert = ""
+	sslConf.CACert = ""
 	sslConf.ClientKey = doesNotExist
 	sslConf.ClientCert = readableFile
 
@@ -297,7 +291,7 @@ func TestTLSConfigBroker(t *testing.T) {
 	// Should we fail here?
 	//	assert.NotNil(t, err, "Expected failure was missing")
 
-	sslConf.Cacert = ""
+	sslConf.CACert = ""
 	sslConf.ClientKey = ""
 	sslConf.ClientCert = ""
 

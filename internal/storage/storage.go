@@ -128,8 +128,8 @@ func newS3Backend(config S3Conf) *s3Backend {
 
 	// Attempt to create a bucket, but we really expect an error here
 	// (BucketAlreadyOwnedByYou)
-	_, err := s3.New(session).CreateBucket(&s3.CreateBucketInput{
-		Bucket: aws.String(c.Bucket),
+	_, err := s3.New(s3Session).CreateBucket(&s3.CreateBucketInput{
+		Bucket: aws.String(config.Bucket),
 	})
 
 	if err != nil {

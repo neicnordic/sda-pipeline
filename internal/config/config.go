@@ -100,24 +100,37 @@ func NewConfig(app string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = c.configDatabase()
-	if err != nil {
-		return nil, err
-	}
-
 	switch app {
 	case "ingest":
 		c.configInbox()
 		c.configArchive()
 		c.configCrypt4gh()
+		err = c.configDatabase()
+		if err != nil {
+			return nil, err
+		}
+		return c, nil
+	case "intercept":
 		return c, nil
 	case "verify":
 		c.configArchive()
 		c.configCrypt4gh()
+		err = c.configDatabase()
+		if err != nil {
+			return nil, err
+		}
 		return c, nil
 	case "finalize":
+		err = c.configDatabase()
+		if err != nil {
+			return nil, err
+		}
 		return c, nil
 	case "mapper":
+		err = c.configDatabase()
+		if err != nil {
+			return nil, err
+		}
 		return c, nil
 	}
 

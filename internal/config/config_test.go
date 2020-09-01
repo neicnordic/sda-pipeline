@@ -337,6 +337,18 @@ func (suite *TestSuite) TestIngestConfiguration() {
 	assert.Equal(suite.T(), "test", config.Crypt4gh.Passphrase)
 }
 
+func (suite *TestSuite) TestINterceptConfiguration() {
+	config, err := NewConfig("intercept")
+	assert.NotNil(suite.T(), config)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config.Broker)
+	assert.Equal(suite.T(), "test", config.Broker.Host)
+	assert.Equal(suite.T(), 123, config.Broker.Port)
+	assert.Equal(suite.T(), "test", config.Broker.User)
+	assert.Equal(suite.T(), "test", config.Broker.Password)
+	assert.Equal(suite.T(), "test", config.Broker.Queue)
+	assert.Equal(suite.T(), "test", config.Broker.RoutingKey)
+}
 func (suite *TestSuite) TestDefaultLogLevel() {
 	viper.Set("log.level", "test")
 	config, err := NewConfig("test")

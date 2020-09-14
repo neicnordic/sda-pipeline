@@ -1,0 +1,64 @@
+name: Create godocs
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: code
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v2
+        with:
+          path: gh-pages
+          ref: gh-pages
+
+      - name: Set up Go 1.14
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14
+        id: go
+
+      - name: Get godoc
+        run: |
+             go get golang.org/x/tools/cmd/godoc 
+             go install golang.org/x/tools/cmd/godoc 
+      - name: Run server
+        run: |
+             cd "${GITHUB_WORKSPACE}/code"
+             nohup $HOME/go/bin/godoc -templates .github/workflows/godoc_templates &
+      - name: Fetch pages
+        run: |
+             cd /tmp
+             count=0
+             until wget -r -np -N -E -p -k http://localhost:6060/pkg/sda-pipeline/?m=all; do
+               if [ "$count" -eq 10 ] ; then
+                 exit 1
+               fi
+               sleep 10
+               count=$((count+1))
+             done
+             wget -r -np -N -E -p -k http://localhost:6060/lib/ || true
+             mv localhost:6060 localhost
+             find localhost -name index.html?m=all.html | while read p; do
+               mv "$p" "${p%?m=all.html}"
+             done
+             find localhost -type f | xargs sed -i -e 's/%3Fm=all.html//'
+             mkdir -p "${GITHUB_WORKSPACE}/gh-pages/pkg/sda-pipeline/"
+             rsync -av localhost/pkg/sda-pipeline/ "${GITHUB_WORKSPACE}/gh-pages/pkg/sda-pipeline/"
+             rsync -av localhost/lib/ "${GITHUB_WORKSPACE}/gh-pages/lib/"
+      - name: Commit updated pages
+        run: |
+            cd "${GITHUB_WORKSPACE}/gh-pages"
+            git config user.name github-actions
+            git config user.email github-actions@github.com
+            git add .
+            git commit -m "Generated documentation"
+            git push origin gh-pages

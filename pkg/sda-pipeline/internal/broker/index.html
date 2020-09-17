@@ -26,7 +26,7 @@
 <div id="topbar" class="wide"><div class="container">
 <div class="top-heading" id="heading-wide"><a href="http://localhost:6060/pkg/">Go Documentation Server</a></div>
 <div class="top-heading" id="heading-narrow"><a href="http://localhost:6060/pkg/">GoDoc</a></div>
-<a href="index.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+<a href="index.html%3Fm=all.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
 <form method="GET" action="http://localhost:6060/search">
 <div id="menu">
 
@@ -80,8 +80,8 @@
 			<dd><code>import "sda-pipeline/internal/broker"</code></dd>
 			</dl>
 			<dl>
-			<dd><a href="index.html#pkg-overview" class="overviewLink">Overview</a></dd>
-			<dd><a href="index.html#pkg-index" class="indexLink">Index</a></dd>
+			<dd><a href="index.html%3Fm=all.html#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="index.html%3Fm=all.html#pkg-index" class="indexLink">Index</a></dd>
 			
 			
 			</dl>
@@ -110,32 +110,40 @@
 			<dl>
 			
 			
-			
-				
-				<dd><a href="index.html#GetMessages">func GetMessages(broker *AMQPBroker, queue string) (&lt;-chan amqp.Delivery, error)</a></dd>
-			
-				
-				<dd><a href="index.html#SendMessage">func SendMessage(broker *AMQPBroker, corrID, exchange, routingKey string, reliable bool, body []byte) error</a></dd>
-			
-				
-				<dd><a href="index.html#TLSConfigBroker">func TLSConfigBroker(config MQConf) (*tls.Config, error)</a></dd>
+				<dd><a href="index.html%3Fm=all.html#pkg-variables">Variables</a></dd>
 			
 			
 				
-				<dd><a href="index.html#AMQPBroker">type AMQPBroker</a></dd>
+				<dd><a href="index.html%3Fm=all.html#GetMessages">func GetMessages(broker *AMQPBroker, queue string) (&lt;-chan amqp.Delivery, error)</a></dd>
+			
+				
+				<dd><a href="index.html%3Fm=all.html#SendMessage">func SendMessage(broker *AMQPBroker, corrID, exchange, routingKey string, reliable bool, body []byte) error</a></dd>
+			
+				
+				<dd><a href="index.html%3Fm=all.html#TLSConfigBroker">func TLSConfigBroker(config MQConf) (*tls.Config, error)</a></dd>
+			
+				
+				<dd><a href="index.html%3Fm=all.html#buildMQURI">func buildMQURI(mqHost, mqUser, mqPassword, mqVhost string, mqPort int, ssl bool) string</a></dd>
+			
+				
+				<dd><a href="index.html%3Fm=all.html#confirmOne">func confirmOne(confirms &lt;-chan amqp.Confirmation)</a></dd>
+			
+			
+				
+				<dd><a href="index.html%3Fm=all.html#AMQPBroker">type AMQPBroker</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="index.html#NewMQ">func NewMQ(config MQConf) (*AMQPBroker, error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="index.html%3Fm=all.html#NewMQ">func NewMQ(config MQConf) (*AMQPBroker, error)</a></dd>
 				
 				
 			
 				
-				<dd><a href="index.html#AMQPChannel">type AMQPChannel</a></dd>
+				<dd><a href="index.html%3Fm=all.html#AMQPChannel">type AMQPChannel</a></dd>
 				
 				
 			
 				
-				<dd><a href="index.html#MQConf">type MQConf</a></dd>
+				<dd><a href="index.html%3Fm=all.html#MQConf">type MQConf</a></dd>
 				
 				
 			
@@ -162,15 +170,21 @@
 
 		
 		
+			<h2 id="pkg-variables">Variables</h2>
+			
+				
+				<pre>var <span id="logFatalf">logFatalf</span> = <a href="http://localhost:6060/pkg/github.com/sirupsen/logrus/">log</a>.<a href="http://localhost:6060/pkg/github.com/sirupsen/logrus/#Fatalf">Fatalf</a></pre>
+			
+		
 		
 			
 			
 			<h2 id="GetMessages">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=2217:2297#L86">GetMessages</a>
-				<a class="permalink" href="index.html#GetMessages">&#xb6;</a>
+				<a class="permalink" href="index.html%3Fm=all.html#GetMessages">&#xb6;</a>
 				
 				
 			</h2>
-			<pre>func GetMessages(broker *<a href="index.html#AMQPBroker">AMQPBroker</a>, queue <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (&lt;-chan <a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Delivery">Delivery</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+			<pre>func GetMessages(broker *<a href="index.html%3Fm=all.html#AMQPBroker">AMQPBroker</a>, queue <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (&lt;-chan <a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Delivery">Delivery</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
 			<p>
 GetMessages reads messages from the queue
 </p>
@@ -182,11 +196,11 @@ GetMessages reads messages from the queue
 			
 			
 			<h2 id="SendMessage">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=2555:2662#L100">SendMessage</a>
-				<a class="permalink" href="index.html#SendMessage">&#xb6;</a>
+				<a class="permalink" href="index.html%3Fm=all.html#SendMessage">&#xb6;</a>
 				
 				
 			</h2>
-			<pre>func SendMessage(broker *<a href="index.html#AMQPBroker">AMQPBroker</a>, corrID, exchange, routingKey <a href="http://localhost:6060/pkg/builtin/#string">string</a>, reliable <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>, body []<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+			<pre>func SendMessage(broker *<a href="index.html%3Fm=all.html#AMQPBroker">AMQPBroker</a>, corrID, exchange, routingKey <a href="http://localhost:6060/pkg/builtin/#string">string</a>, reliable <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>, body []<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
 			<p>
 SendMessage sends message to RabbitMQ if the upload is finished
 </p>
@@ -198,13 +212,47 @@ SendMessage sends message to RabbitMQ if the upload is finished
 			
 			
 			<h2 id="TLSConfigBroker">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=3887:3943#L141">TLSConfigBroker</a>
-				<a class="permalink" href="index.html#TLSConfigBroker">&#xb6;</a>
+				<a class="permalink" href="index.html%3Fm=all.html#TLSConfigBroker">&#xb6;</a>
 				
 				
 			</h2>
-			<pre>func TLSConfigBroker(config <a href="index.html#MQConf">MQConf</a>) (*<a href="http://localhost:6060/pkg/crypto/tls/">tls</a>.<a href="http://localhost:6060/pkg/crypto/tls/#Config">Config</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+			<pre>func TLSConfigBroker(config <a href="index.html%3Fm=all.html#MQConf">MQConf</a>) (*<a href="http://localhost:6060/pkg/crypto/tls/">tls</a>.<a href="http://localhost:6060/pkg/crypto/tls/#Config">Config</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
 			<p>
 TLSConfigBroker is a helper method to setup TLS for the message broker
+</p>
+
+			
+			
+
+		
+			
+			
+			<h2 id="buildMQURI">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=3470:3558#L130">buildMQURI</a>
+				<a class="permalink" href="index.html%3Fm=all.html#buildMQURI">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func buildMQURI(mqHost, mqUser, mqPassword, mqVhost <a href="http://localhost:6060/pkg/builtin/#string">string</a>, mqPort <a href="http://localhost:6060/pkg/builtin/#int">int</a>, ssl <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>) <a href="http://localhost:6060/pkg/builtin/#string">string</a></pre>
+			<p>
+buildMQURI builds the MQ URI
+</p>
+
+			
+			
+
+		
+			
+			
+			<h2 id="confirmOne">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=5414:5464#L198">confirmOne</a>
+				<a class="permalink" href="index.html%3Fm=all.html#confirmOne">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func confirmOne(confirms &lt;-chan <a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Confirmation">Confirmation</a>)</pre>
+			<p>
+One would typically keep a channel of publishings, a sequence number, and a
+set of unacknowledged sequence numbers and loop until the publishing channel
+is closed.
 </p>
 
 			
@@ -215,7 +263,7 @@ TLSConfigBroker is a helper method to setup TLS for the message broker
 			
 			
 			<h2 id="AMQPBroker">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=593:672#L15">AMQPBroker</a>
-				<a class="permalink" href="index.html#AMQPBroker">&#xb6;</a>
+				<a class="permalink" href="index.html%3Fm=all.html#AMQPBroker">&#xb6;</a>
 				
 				
 			</h2>
@@ -225,7 +273,7 @@ AMQPBroker is a Broker that reads messages from a local AMQP broker
 
 			<pre>type AMQPBroker struct {
 <span id="AMQPBroker.Connection"></span>    Connection *<a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Connection">Connection</a>
-<span id="AMQPBroker.Channel"></span>    Channel    <a href="index.html#AMQPChannel">AMQPChannel</a>
+<span id="AMQPBroker.Channel"></span>    Channel    <a href="index.html%3Fm=all.html#AMQPChannel">AMQPChannel</a>
 }
 </pre>
 
@@ -240,11 +288,11 @@ AMQPBroker is a Broker that reads messages from a local AMQP broker
 			
 				
 				<h3 id="NewMQ">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1161:1207#L42">NewMQ</a>
-					<a class="permalink" href="index.html#NewMQ">&#xb6;</a>
+					<a class="permalink" href="index.html%3Fm=all.html#NewMQ">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func NewMQ(config <a href="index.html#MQConf">MQConf</a>) (*<a href="index.html#AMQPBroker">AMQPBroker</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<pre>func NewMQ(config <a href="index.html%3Fm=all.html#MQConf">MQConf</a>) (*<a href="index.html%3Fm=all.html#AMQPBroker">AMQPBroker</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
 				<p>
 NewMQ creates a new Broker that can communicate with a backend
 amqp server.
@@ -259,7 +307,7 @@ amqp server.
 			
 			
 			<h2 id="AMQPChannel">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=170:520#L6">AMQPChannel</a>
-				<a class="permalink" href="index.html#AMQPChannel">&#xb6;</a>
+				<a class="permalink" href="index.html%3Fm=all.html#AMQPChannel">&#xb6;</a>
 				
 				
 			</h2>
@@ -287,7 +335,7 @@ amqp server.
 			
 			
 			<h2 id="MQConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=728:1077#L21">MQConf</a>
-				<a class="permalink" href="index.html#MQConf">&#xb6;</a>
+				<a class="permalink" href="index.html%3Fm=all.html#MQConf">&#xb6;</a>
 				
 				
 			</h2>

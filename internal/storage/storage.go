@@ -1,3 +1,4 @@
+// Package storage provides interface for storage areas, e.g. s3 or POSIX file system.
 package storage
 
 import (

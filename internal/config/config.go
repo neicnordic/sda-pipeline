@@ -1,3 +1,4 @@
+// Package config manages configuration
 package config
 
 import (
@@ -19,6 +20,7 @@ const POSIX = "posix"
 const S3 = "s3"
 
 var (
+	// requiredConfVars determines what needs to be provided as a minimum
 	requiredConfVars = []string{
 		"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "broker.routingkey",
 		"db.host", "db.port", "db.user", "db.password", "db.database",
@@ -137,6 +139,8 @@ func NewConfig(app string) (*Config, error) {
 	return nil, fmt.Errorf("application '%s' doesn't exist", app)
 }
 
+// configS3Storage populates and returns a S3Conf from the
+// configuration
 func configS3Storage(prefix string) storage.S3Conf {
 	s3 := storage.S3Conf{}
 	// All these are required
@@ -169,6 +173,7 @@ func configS3Storage(prefix string) storage.S3Conf {
 	return s3
 }
 
+// configArchive provides configuration for the archive storage
 func (c *Config) configArchive() {
 	if viper.GetString("archive.type") == S3 {
 		c.Archive.Type = S3
@@ -179,6 +184,7 @@ func (c *Config) configArchive() {
 	}
 }
 
+// configInbox provides configuration for the inbox storage
 func (c *Config) configInbox() {
 	if viper.GetString("inbox.type") == S3 {
 		c.Inbox.Type = S3
@@ -189,6 +195,7 @@ func (c *Config) configInbox() {
 	}
 }
 
+// configBroker provides configuration for the message broker
 func (c *Config) configBroker() error {
 	// Setup broker
 	broker := broker.MQConf{}
@@ -240,6 +247,7 @@ func (c *Config) configBroker() error {
 	return nil
 }
 
+// configDatabase provides configuration for the database
 func (c *Config) configDatabase() error {
 	db := database.DBConf{}
 
@@ -272,6 +280,7 @@ func (c *Config) configDatabase() error {
 	return nil
 }
 
+// configCrypt4gh provides configuration for c4gh operations
 func (c *Config) configCrypt4gh() {
 	c.Crypt4gh.KeyPath = viper.GetString("c4gh.filepath")
 	c.Crypt4gh.Passphrase = viper.GetString("c4gh.passphrase")

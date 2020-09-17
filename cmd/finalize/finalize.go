@@ -1,3 +1,5 @@
+// The finalize command accepts messages with accessionIDs for
+// ingested files and registers them in the database.
 package main
 
 import (

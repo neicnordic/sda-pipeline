@@ -1,3 +1,6 @@
+// The ingest service accepts messages for files uploaded to the inbox,
+// registers the files in the database with their headers, and stores them
+// header-stripped in the archive storage.
 package main
 
 import (
@@ -28,6 +31,8 @@ type trigger struct {
 	Filepath string `json:"filepath"`
 }
 
+// archived holds what should go in an message to inform about
+// archival of files
 type archived struct {
 	User               string      `json:"user"`
 	FilePath           string      `json:"filepath"`
@@ -244,6 +249,7 @@ func main() {
 	<-forever
 }
 
+// tryDecrypt tries to decrypt the start of buf.
 func tryDecrypt(c config.Crypt4gh, buf []byte) ([]byte, error) {
 	keyFile, err := os.Open(c.KeyPath)
 	if err != nil {

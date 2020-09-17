@@ -1,3 +1,4 @@
+// Package broker contains logic for communicating with a message broker
 package broker
 
 import (
@@ -11,8 +12,10 @@ import (
 	"github.com/streadway/amqp"
 )
 
+// This is an internal helper variable to make testing easier
 var logFatalf = log.Fatalf
 
+// The AMQPChannel interface gives access to the functions provided
 type AMQPChannel interface {
 	Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error)
 	Confirm(noWait bool) error
@@ -21,7 +24,7 @@ type AMQPChannel interface {
 	Close() error
 }
 
-// AMQPBroker is a Broker that reads messages from a local AMQP broker
+// AMQPBroker is a Broker that reads messages from an AMQP broker
 type AMQPBroker struct {
 	Connection *amqp.Connection
 	Channel    AMQPChannel
@@ -106,7 +109,7 @@ func GetMessages(broker *AMQPBroker, queue string) (<-chan amqp.Delivery, error)
 	)
 }
 
-// SendMessage sends message to RabbitMQ if the upload is finished
+// SendMessage sends a message to RabbitMQ
 func SendMessage(broker *AMQPBroker, corrID, exchange, routingKey string, reliable bool, body []byte) error {
 	if reliable {
 		// Set channel
@@ -136,7 +139,7 @@ func SendMessage(broker *AMQPBroker, corrID, exchange, routingKey string, reliab
 	return err
 }
 
-// buildMQURI builds the MQ URI
+// buildMQURI builds the MQ connection URI
 func buildMQURI(mqHost, mqUser, mqPassword, mqVhost string, mqPort int, ssl bool) string {
 	brokerURI := ""
 	if ssl {
@@ -202,6 +205,8 @@ func TLSConfigBroker(config MQConf) (*tls.Config, error) {
 	return &tlsConfig, nil
 }
 
+// confirmOne accepts confirmation for a message sent with reliable.
+//
 // One would typically keep a channel of publishings, a sequence number, and a
 // set of unacknowledged sequence numbers and loop until the publishing channel
 // is closed.

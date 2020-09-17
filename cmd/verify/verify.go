@@ -1,3 +1,5 @@
+// The verify service reads and decrypts ingested files from the archive
+// storage and sends accession requests.
 package main
 
 import (

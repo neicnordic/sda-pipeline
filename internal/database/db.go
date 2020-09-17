@@ -1,3 +1,5 @@
+// Package database provides functionalities for using the database,
+// providing high level functions
 package database
 
 import (
@@ -40,15 +42,14 @@ type DBConf struct {
 	ClientKey  string
 }
 
-// FileInfo is used by ingest
+// FileInfo is used by ingest for file metadata (path, size, checksum)
 type FileInfo struct {
 	Checksum string
 	Size     int64
 	Path     string
 }
 
-// For testing
-
+// Internal variable to ease testing
 var sqlOpen = sql.Open
 
 // NewDB creates a new DB connection
@@ -68,6 +69,7 @@ func NewDB(config DBConf) (*SQLdb, error) {
 	return &SQLdb{DB: db}, nil
 }
 
+// buildConnInfo builds a connection string for the database
 func buildConnInfo(config DBConf) string {
 	connInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		config.Host, config.Port, config.User, config.Password, config.Database, config.SslMode)

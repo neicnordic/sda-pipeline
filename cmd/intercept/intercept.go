@@ -1,3 +1,5 @@
+// The intercept service relays message between the queue
+// provided from the federated service and local queues.
 package main
 
 import (
@@ -77,6 +79,7 @@ func main() {
 	<-forever
 }
 
+// Validate the JSON in a received message
 func validateJSON(body []byte) (string, *gojsonschema.Result, error) {
 	message := make(map[string]interface{})
 	err := json.Unmarshal(body, &message)

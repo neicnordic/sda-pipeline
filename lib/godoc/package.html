@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+
+  <title>Go Documentation Server</title>
+
+<link type="text/css" rel="stylesheet" href="style.css">
+
+<script>window.initFuncs = [];</script>
+<script src="jquery.js" defer></script>
+
+
+
+<script>var goVersion = "go1.14.9";</script>
+<script src="godocs.js" defer></script>
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="http://localhost:6060/pkg/">Go Documentation Server</a></div>
+<div class="top-heading" id="heading-narrow"><a href="http://localhost:6060/pkg/">GoDoc</a></div>
+<a href="package.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+<form method="GET" action="http://localhost:6060/search">
+<div id="menu">
+
+<span class="search-box"><input type="search" id="search" name="q" placeholder="Search" aria-label="Search" required><button type="submit"><span><!-- magnifying glass: --><svg width="24" height="24" viewBox="0 0 24 24"><title>submit search</title><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path d="M0 0h24v24H0z" fill="none"/></svg></span></button></span>
+</div>
+</form>
+
+</div></div>
+
+
+
+<div id="page">
+<div class="container">
+
+
+
+
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+{{with .PDoc}}
+	<script>
+	document.ANALYSIS_DATA = {{$.AnalysisData}};
+	document.CALLGRAPH = {{$.CallGraph}};
+	</script>
+
+	{{if $.IsMain}}
+		{{/* command documentation */}}
+		{{comment_html .Doc}}
+	{{else}}
+		{{/* package documentation */}}
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "{{html .ImportPath}}"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="package.html#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="package.html#pkg-index" class="indexLink">Index</a></dd>
+			{{if $.Examples}}
+				<dd><a href="package.html#pkg-examples" class="examplesLink">Examples</a></dd>
+			{{end}}
+			{{if $.Dirs}}
+				<dd><a href="package.html#pkg-subdirectories">Subdirectories</a></dd>
+			{{end}}
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="pkg-overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+				{{comment_html .Doc}}
+				{{example_html $ ""}}
+			</div>
+		</div>
+
+		<div id="pkg-index" class="toggleVisible">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
+		</div>
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
+
+		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
+			<div id="manual-nav">
+			<dl>
+			{{if .Consts}}
+				<dd><a href="package.html#pkg-constants">Constants</a></dd>
+			{{end}}
+			{{if .Vars}}
+				<dd><a href="package.html#pkg-variables">Variables</a></dd>
+			{{end}}
+			{{range .Funcs}}
+				{{$name_html := html .Name}}
+				<dd><a href="package.html#{{$name_html}}">{{node_html $ .Decl false | sanitize}}</a></dd>
+			{{end}}
+			{{range .Types}}
+				{{$tname_html := html .Name}}
+				<dd><a href="package.html#{{$tname_html}}">type {{$tname_html}}</a></dd>
+				{{range .Funcs}}
+					{{$name_html := html .Name}}
+					<dd>&nbsp; &nbsp; <a href="package.html#{{$name_html}}">{{node_html $ .Decl false | sanitize}}</a></dd>
+				{{end}}
+				{{range .Methods}}
+					{{$name_html := html .Name}}
+					<dd>&nbsp; &nbsp; <a href="package.html#{{$tname_html}}.{{$name_html}}">{{node_html $ .Decl false | sanitize}}</a></dd>
+				{{end}}
+			{{end}}
+			{{if $.Notes}}
+				{{range $marker, $item := $.Notes}}
+				<dd><a href="package.html#pkg-note-{{$marker}}">{{noteTitle $marker | html}}s</a></dd>
+				{{end}}
+			{{end}}
+			</dl>
+			</div><!-- #manual-nav -->
+
+		{{if $.Examples}}
+		<div id="pkg-examples">
+			<h3>Examples</h3>
+			<div class="js-expandAll expandAll collapsed">(Expand All)</div>
+			<dl>
+			{{range $.Examples}}
+			<dd><a class="exampleLink" href="package.html#example_{{.Name}}">{{example_name .Name}}</a></dd>
+			{{end}}
+			</dl>
+		</div>
+		{{end}}
+
+		{{with .Filenames}}
+			<h3>Package files</h3>
+			<p>
+			<span style="font-size:90%">
+			{{range .}}
+				<a href="http://localhost:6060/lib/godoc/{{.|srcLink|html}}">{{.|filename|html}}</a>
+			{{end}}
+			</span>
+			</p>
+		{{end}}
+		</div><!-- .expanded -->
+		</div><!-- #pkg-index -->
+
+		{{if ne $.CallGraph "null"}}
+		<div id="pkg-callgraph" class="toggle" style="display: none">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Internal Call Graph section">Internal call graph ▹</h2>
+		</div> <!-- .expanded -->
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Internal Call Graph section">Internal call graph ▾</h2>
+			<p>
+			  In the call graph viewer below, each node
+			  is a function belonging to this package
+			  and its children are the functions it
+			  calls&mdash;perhaps dynamically.
+			</p>
+			<p>
+			  The root nodes are the entry points of the
+			  package: functions that may be called from
+			  outside the package.
+			  There may be non-exported or anonymous
+			  functions among them if they are called
+			  dynamically from another package.
+			</p>
+			<p>
+			  Click a node to visit that function's source code.
+			  From there you can visit its callers by
+			  clicking its declaring <code>func</code>
+			  token.
+			</p>
+			<p>
+			  Functions may be omitted if they were
+			  determined to be unreachable in the
+			  particular programs or tests that were
+			  analyzed.
+			</p>
+			<!-- Zero means show all package entry points. -->
+			<ul style="margin-left: 0.5in" id="callgraph-0" class="treeview"></ul>
+		</div>
+		</div> <!-- #pkg-callgraph -->
+		{{end}}
+
+		{{with .Consts}}
+			<h2 id="pkg-constants">Constants</h2>
+			{{range .}}
+				{{comment_html .Doc}}
+				<pre>{{node_html $ .Decl true}}</pre>
+			{{end}}
+		{{end}}
+		{{with .Vars}}
+			<h2 id="pkg-variables">Variables</h2>
+			{{range .}}
+				{{comment_html .Doc}}
+				<pre>{{node_html $ .Decl true}}</pre>
+			{{end}}
+		{{end}}
+		{{range .Funcs}}
+			{{/* Name is a string - no need for FSet */}}
+			{{$name_html := html .Name}}
+			<h2 id="{{$name_html}}">func <a href="http://localhost:6060/lib/godoc/{{posLink_url&#32;$&#32;.Decl}}">{{$name_html}}</a>
+				<a class="permalink" href="package.html#{{$name_html}}">&#xb6;</a>
+				{{$since := since "func" "" .Name $.PDoc.ImportPath}}
+				{{if $since}}<span title="Added in Go {{$since}}">{{$since}}</span>{{end}}
+			</h2>
+			<pre>{{node_html $ .Decl true}}</pre>
+			{{comment_html .Doc}}
+			{{example_html $ .Name}}
+			{{callgraph_html $ "" .Name}}
+
+		{{end}}
+		{{range .Types}}
+			{{$tname := .Name}}
+			{{$tname_html := html .Name}}
+			<h2 id="{{$tname_html}}">type <a href="http://localhost:6060/lib/godoc/{{posLink_url&#32;$&#32;.Decl}}">{{$tname_html}}</a>
+				<a class="permalink" href="package.html#{{$tname_html}}">&#xb6;</a>
+				{{$since := since "type" "" .Name $.PDoc.ImportPath}}
+				{{if $since}}<span title="Added in Go {{$since}}">{{$since}}</span>{{end}}
+			</h2>
+			{{comment_html .Doc}}
+			<pre>{{node_html $ .Decl true}}</pre>
+
+			{{range .Consts}}
+				{{comment_html .Doc}}
+				<pre>{{node_html $ .Decl true}}</pre>
+			{{end}}
+
+			{{range .Vars}}
+				{{comment_html .Doc}}
+				<pre>{{node_html $ .Decl true}}</pre>
+			{{end}}
+
+			{{example_html $ $tname}}
+			{{implements_html $ $tname}}
+			{{methodset_html $ $tname}}
+
+			{{range .Funcs}}
+				{{$name_html := html .Name}}
+				<h3 id="{{$name_html}}">func <a href="http://localhost:6060/lib/godoc/{{posLink_url&#32;$&#32;.Decl}}">{{$name_html}}</a>
+					<a class="permalink" href="package.html#{{$name_html}}">&#xb6;</a>
+					{{$since := since "func" "" .Name $.PDoc.ImportPath}}
+					{{if $since}}<span title="Added in Go {{$since}}">{{$since}}</span>{{end}}
+				</h3>
+				<pre>{{node_html $ .Decl true}}</pre>
+				{{comment_html .Doc}}
+				{{example_html $ .Name}}
+				{{callgraph_html $ "" .Name}}
+			{{end}}
+
+			{{range .Methods}}
+				{{$name_html := html .Name}}
+				<h3 id="{{$tname_html}}.{{$name_html}}">func ({{html .Recv}}) <a href="http://localhost:6060/lib/godoc/{{posLink_url&#32;$&#32;.Decl}}">{{$name_html}}</a>
+					<a class="permalink" href="package.html#{{$tname_html}}.{{$name_html}}">&#xb6;</a>
+					{{$since := since "method" .Recv .Name $.PDoc.ImportPath}}
+					{{if $since}}<span title="Added in Go {{$since}}">{{$since}}</span>{{end}}
+				</h3>
+				<pre>{{node_html $ .Decl true}}</pre>
+				{{comment_html .Doc}}
+				{{$name := printf "%s_%s" $tname .Name}}
+				{{example_html $ $name}}
+				{{callgraph_html $ .Recv .Name}}
+			{{end}}
+		{{end}}
+	{{end}}
+
+	{{with $.Notes}}
+		{{range $marker, $content := .}}
+			<h2 id="pkg-note-{{$marker}}">{{noteTitle $marker | html}}s</h2>
+			<ul style="list-style: none; padding: 0;">
+			{{range .}}
+			<li><a href="http://localhost:6060/lib/godoc/{{posLink_url&#32;$&#32;.}}" style="float: left;">&#x261e;</a> {{comment_html .Body}}</li>
+			{{end}}
+			</ul>
+		{{end}}
+	{{end}}
+{{end}}
+
+{{with .PAst}}
+	{{range $filename, $ast := .}}
+		<a href="http://localhost:6060/lib/godoc/{{$filename|srcLink|html}}">{{$filename|filename|html}}</a>:<pre>{{node_html $ $ast false}}</pre>
+	{{end}}
+{{end}}
+
+{{with .Dirs}}
+	{{/* DirList entries are numbers and strings - no need for FSet */}}
+	{{if $.PDoc}}
+		<h2 id="pkg-subdirectories">Subdirectories</h2>
+	{{end}}
+	<div class="pkg-dir">
+		<table>
+			<tr>
+				<th class="pkg-name">Name</th>
+				<th class="pkg-synopsis">Synopsis</th>
+			</tr>
+
+			{{if not (or (eq $.Dirname "/src/cmd") $.DirFlat)}}
+			<tr>
+				<td colspan="2"><a href="../index.html">..</a></td>
+			</tr>
+			{{end}}
+
+			{{range .List}}
+				<tr>
+				{{if $.DirFlat}}
+					{{if .HasPkg}}
+						<td class="pkg-name">
+							<a href="http://localhost:6060/lib/godoc/{{html&#32;.Path}}/{{modeQueryString&#32;$.Mode&#32;|&#32;html}}">{{html .Path}}</a>
+						</td>
+					{{end}}
+				{{else}}
+					<td class="pkg-name" style="padding-left: {{multiply .Depth 20}}px;">
+						<a href="http://localhost:6060/lib/godoc/{{html&#32;.Path}}/{{modeQueryString&#32;$.Mode&#32;|&#32;html}}">{{html .Name}}</a>
+					</td>
+				{{end}}
+					<td class="pkg-synopsis">
+						{{html .Synopsis}}
+					</td>
+				</tr>
+			{{end}}
+		</table>
+	</div>
+{{end}}
+
+
+<div id="footer">
+Build version go1.14.9.<br>
+Except as <a href="https://developers.google.com/site-policies#restrictions">noted</a>,
+the content of this page is licensed under the
+Creative Commons Attribution 3.0 License,
+and code is licensed under a <a href="http://localhost:6060/LICENSE">BSD license</a>.<br>
+<a href="http://localhost:6060/doc/tos.html">Terms of Service</a> |
+<a href="http://www.google.com/intl/en/policies/privacy/">Privacy Policy</a>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+</body>
+</html>

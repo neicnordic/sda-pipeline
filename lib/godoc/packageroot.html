@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+
+  <title>Go Documentation Server</title>
+
+<link type="text/css" rel="stylesheet" href="style.css">
+
+<script>window.initFuncs = [];</script>
+<script src="jquery.js" defer></script>
+
+
+
+<script>var goVersion = "go1.14.9";</script>
+<script src="godocs.js" defer></script>
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="http://localhost:6060/pkg/">Go Documentation Server</a></div>
+<div class="top-heading" id="heading-narrow"><a href="http://localhost:6060/pkg/">GoDoc</a></div>
+<a href="packageroot.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+<form method="GET" action="http://localhost:6060/search">
+<div id="menu">
+
+<span class="search-box"><input type="search" id="search" name="q" placeholder="Search" aria-label="Search" required><button type="submit"><span><!-- magnifying glass: --><svg width="24" height="24" viewBox="0 0 24 24"><title>submit search</title><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path d="M0 0h24v24H0z" fill="none"/></svg></span></button></span>
+</div>
+</form>
+
+</div></div>
+
+
+
+<div id="page">
+<div class="container">
+
+
+
+
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2018 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+{{with .PAst}}
+	{{range $filename, $ast := .}}
+		<a href="http://localhost:6060/lib/godoc/{{$filename|srcLink|html}}">{{$filename|filename|html}}</a>:<pre>{{node_html $ $ast false}}</pre>
+	{{end}}
+{{end}}
+
+{{with .Dirs}}
+	{{/* DirList entries are numbers and strings - no need for FSet */}}
+	{{if $.PDoc}}
+		<h2 id="pkg-subdirectories">Subdirectories</h2>
+	{{end}}
+		<div id="manual-nav">
+			<dl>
+				<dt><a href="packageroot.html#stdlib">Standard library</a></dt>
+				{{if hasThirdParty .List }}
+					<dt><a href="packageroot.html#thirdparty">Third party</a></dt>
+				{{end}}
+				<dt><a href="packageroot.html#other">Other packages</a></dt>
+				<dd><a href="packageroot.html#subrepo">Sub-repositories</a></dd>
+				<dd><a href="packageroot.html#community">Community</a></dd>
+			</dl>
+		</div>
+
+		<div id="stdlib" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Standard library section">Standard library ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Standard library section">Standard library ▾</h2>
+				<img alt="" class="gopher" src="../../doc/gopher/pkg.png"/>
+				<div class="pkg-dir">
+					<table>
+						<tr>
+							<th class="pkg-name">Name</th>
+							<th class="pkg-synopsis">Synopsis</th>
+						</tr>
+
+						{{range .List}}
+							<tr>
+							{{if eq .RootType "GOROOT"}}
+							{{if $.DirFlat}}
+								{{if .HasPkg}}
+										<td class="pkg-name">
+											<a href="http://localhost:6060/lib/godoc/{{html&#32;.Path}}/{{modeQueryString&#32;$.Mode&#32;|&#32;html}}">{{html .Path}}</a>
+										</td>
+								{{end}}
+							{{else}}
+									<td class="pkg-name" style="padding-left: {{multiply .Depth 20}}px;">
+										<a href="http://localhost:6060/lib/godoc/{{html&#32;.Path}}/{{modeQueryString&#32;$.Mode&#32;|&#32;html}}">{{html .Name}}</a>
+									</td>
+							{{end}}
+								<td class="pkg-synopsis">
+									{{html .Synopsis}}
+								</td>
+							{{end}}
+							</tr>
+						{{end}}
+					</table>
+				</div> <!-- .pkg-dir -->
+			</div> <!-- .expanded -->
+		</div> <!-- #stdlib .toggleVisible -->
+
+	{{if hasThirdParty .List }}
+		<div id="thirdparty" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Third party section">Third party ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Third party section">Third party ▾</h2>
+				<div class="pkg-dir">
+					<table>
+						<tr>
+							<th class="pkg-name">Name</th>
+							<th class="pkg-synopsis">Synopsis</th>
+						</tr>
+
+						{{range .List}}
+							<tr>
+								{{if eq .RootType "GOPATH"}}
+								{{if $.DirFlat}}
+									{{if .HasPkg}}
+											<td class="pkg-name">
+												<a href="http://localhost:6060/lib/godoc/{{html&#32;.Path}}/{{modeQueryString&#32;$.Mode&#32;|&#32;html}}">{{html .Path}}</a>
+											</td>
+									{{end}}
+								{{else}}
+										<td class="pkg-name" style="padding-left: {{multiply .Depth 20}}px;">
+											<a href="http://localhost:6060/lib/godoc/{{html&#32;.Path}}/{{modeQueryString&#32;$.Mode&#32;|&#32;html}}">{{html .Name}}</a>
+										</td>
+								{{end}}
+									<td class="pkg-synopsis">
+										{{html .Synopsis}}
+									</td>
+								{{end}}
+							</tr>
+						{{end}}
+					</table>
+				</div> <!-- .pkg-dir -->
+			</div> <!-- .expanded -->
+		</div> <!-- #stdlib .toggleVisible -->
+	{{end}}
+
+	<h2 id="other">Other packages</h2>
+	<h3 id="subrepo">Sub-repositories</h3>
+	<p>
+	These packages are part of the Go Project but outside the main Go tree.
+	They are developed under looser <a href="http://localhost:6060/doc/go1compat">compatibility requirements</a> than the Go core.
+	Install them with "<a href="http://localhost:6060/cmd/go/#hdr-Download_and_install_packages_and_dependencies">go get</a>".
+	</p>
+	<ul>
+		<li><a href="http://godoc.org/golang.org/x/benchmarks">benchmarks</a> — benchmarks to measure Go as it is developed.</li>
+		<li><a href="http://godoc.org/golang.org/x/blog">blog</a> — <a href="http://blog.golang.org/">blog.golang.org</a>'s implementation.</li>
+		<li><a href="http://godoc.org/golang.org/x/build">build</a> — <a href="http://build.golang.org/">build.golang.org</a>'s implementation.</li>
+		<li><a href="http://godoc.org/golang.org/x/crypto">crypto</a> — additional cryptography packages.</li>
+		<li><a href="http://godoc.org/golang.org/x/debug">debug</a> — an experimental debugger for Go.</li>
+		<li><a href="http://godoc.org/golang.org/x/image">image</a> — additional imaging packages.</li>
+		<li><a href="http://godoc.org/golang.org/x/mobile">mobile</a> — experimental support for Go on mobile platforms.</li>
+		<li><a href="http://godoc.org/golang.org/x/net">net</a> — additional networking packages.</li>
+		<li><a href="http://godoc.org/golang.org/x/perf">perf</a> — packages and tools for performance measurement, storage, and analysis.</li>
+		<li><a href="http://godoc.org/golang.org/x/review">review</a> — a tool for working with Gerrit code reviews.</li>
+		<li><a href="http://godoc.org/golang.org/x/sync">sync</a> — additional concurrency primitives.</li>
+		<li><a href="http://godoc.org/golang.org/x/sys">sys</a> — packages for making system calls.</li>
+		<li><a href="http://godoc.org/golang.org/x/text">text</a> — packages for working with text.</li>
+		<li><a href="http://godoc.org/golang.org/x/time">time</a> — additional time packages.</li>
+		<li><a href="http://godoc.org/golang.org/x/tools">tools</a> — godoc, goimports, gorename, and other tools.</li>
+		<li><a href="http://godoc.org/golang.org/x/tour">tour</a> — <a href="http://tour.golang.org/">tour.golang.org</a>'s implementation.</li>
+		<li><a href="http://godoc.org/golang.org/x/exp">exp</a> — experimental and deprecated packages (handle with care; may change without warning).</li>
+	</ul>
+
+	<h3 id="community">Community</h3>
+	<p>
+	These services can help you find Open Source packages provided by the community.
+	</p>
+	<ul>
+		<li><a href="http://godoc.org/">GoDoc</a> - a package index and search engine.</li>
+		<li><a href="http://go-search.org">Go Search</a> - a code search engine.</li>
+		<li><a href="http://localhost:6060/wiki/Projects">Projects at the Go Wiki</a> - a curated list of Go projects.</li>
+	</ul>
+{{end}}
+
+
+<div id="footer">
+Build version go1.14.9.<br>
+Except as <a href="https://developers.google.com/site-policies#restrictions">noted</a>,
+the content of this page is licensed under the
+Creative Commons Attribution 3.0 License,
+and code is licensed under a <a href="http://localhost:6060/LICENSE">BSD license</a>.<br>
+<a href="http://localhost:6060/doc/tos.html">Terms of Service</a> |
+<a href="http://www.google.com/intl/en/policies/privacy/">Privacy Policy</a>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+</body>
+</html>

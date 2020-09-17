@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+
+  <title>broker - Go Documentation Server</title>
+
+<link type="text/css" rel="stylesheet" href="../../../../lib/godoc/style.css">
+
+<script>window.initFuncs = [];</script>
+<script src="../../../../lib/godoc/jquery.js" defer></script>
+
+
+
+<script>var goVersion = "go1.14.9";</script>
+<script src="../../../../lib/godoc/godocs.js" defer></script>
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="http://localhost:6060/pkg/">Go Documentation Server</a></div>
+<div class="top-heading" id="heading-narrow"><a href="http://localhost:6060/pkg/">GoDoc</a></div>
+<a href="index.html%3Fm=all.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+<form method="GET" action="http://localhost:6060/search">
+<div id="menu">
+
+<span class="search-box"><input type="search" id="search" name="q" placeholder="Search" aria-label="Search" required><button type="submit"><span><!-- magnifying glass: --><svg width="24" height="24" viewBox="0 0 24 24"><title>submit search</title><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path d="M0 0h24v24H0z" fill="none"/></svg></span></button></span>
+</div>
+</form>
+
+</div></div>
+
+
+
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Package broker
+    <span class="text-muted"></span>
+  </h1>
+
+
+
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+
+	<script>
+	document.ANALYSIS_DATA = null;
+	document.CALLGRAPH = null;
+	</script>
+
+	
+		
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "sda-pipeline/internal/broker"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="index.html%3Fm=all.html#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="index.html%3Fm=all.html#pkg-index" class="indexLink">Index</a></dd>
+			
+			
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="pkg-overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+				
+				
+			</div>
+		</div>
+
+		<div id="pkg-index" class="toggleVisible">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
+		</div>
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
+
+		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
+			<div id="manual-nav">
+			<dl>
+			
+			
+				<dd><a href="index.html%3Fm=all.html#pkg-variables">Variables</a></dd>
+			
+			
+				
+				<dd><a href="index.html%3Fm=all.html#GetMessages">func GetMessages(broker *AMQPBroker, queue string) (&lt;-chan amqp.Delivery, error)</a></dd>
+			
+				
+				<dd><a href="index.html%3Fm=all.html#SendMessage">func SendMessage(broker *AMQPBroker, corrID, exchange, routingKey string, reliable bool, body []byte) error</a></dd>
+			
+				
+				<dd><a href="index.html%3Fm=all.html#TLSConfigBroker">func TLSConfigBroker(config MQConf) (*tls.Config, error)</a></dd>
+			
+				
+				<dd><a href="index.html%3Fm=all.html#buildMQURI">func buildMQURI(mqHost, mqUser, mqPassword, mqVhost string, mqPort int, ssl bool) string</a></dd>
+			
+				
+				<dd><a href="index.html%3Fm=all.html#confirmOne">func confirmOne(confirms &lt;-chan amqp.Confirmation)</a></dd>
+			
+			
+				
+				<dd><a href="index.html%3Fm=all.html#AMQPBroker">type AMQPBroker</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html%3Fm=all.html#NewMQ">func NewMQ(config MQConf) (*AMQPBroker, error)</a></dd>
+				
+				
+			
+				
+				<dd><a href="index.html%3Fm=all.html#AMQPChannel">type AMQPChannel</a></dd>
+				
+				
+			
+				
+				<dd><a href="index.html%3Fm=all.html#MQConf">type MQConf</a></dd>
+				
+				
+			
+			
+			</dl>
+			</div><!-- #manual-nav -->
+
+		
+
+		
+			<h3>Package files</h3>
+			<p>
+			<span style="font-size:90%">
+			
+				<a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go">broker.go</a>
+			
+			</span>
+			</p>
+		
+		</div><!-- .expanded -->
+		</div><!-- #pkg-index -->
+
+		
+
+		
+		
+			<h2 id="pkg-variables">Variables</h2>
+			
+				
+				<pre>var <span id="logFatalf">logFatalf</span> = <a href="http://localhost:6060/pkg/github.com/sirupsen/logrus/">log</a>.<a href="http://localhost:6060/pkg/github.com/sirupsen/logrus/#Fatalf">Fatalf</a></pre>
+			
+		
+		
+			
+			
+			<h2 id="GetMessages">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=2217:2297#L86">GetMessages</a>
+				<a class="permalink" href="index.html%3Fm=all.html#GetMessages">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func GetMessages(broker *<a href="index.html%3Fm=all.html#AMQPBroker">AMQPBroker</a>, queue <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (&lt;-chan <a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Delivery">Delivery</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+			<p>
+GetMessages reads messages from the queue
+</p>
+
+			
+			
+
+		
+			
+			
+			<h2 id="SendMessage">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=2555:2662#L100">SendMessage</a>
+				<a class="permalink" href="index.html%3Fm=all.html#SendMessage">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func SendMessage(broker *<a href="index.html%3Fm=all.html#AMQPBroker">AMQPBroker</a>, corrID, exchange, routingKey <a href="http://localhost:6060/pkg/builtin/#string">string</a>, reliable <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>, body []<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+			<p>
+SendMessage sends message to RabbitMQ if the upload is finished
+</p>
+
+			
+			
+
+		
+			
+			
+			<h2 id="TLSConfigBroker">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=3887:3943#L141">TLSConfigBroker</a>
+				<a class="permalink" href="index.html%3Fm=all.html#TLSConfigBroker">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func TLSConfigBroker(config <a href="index.html%3Fm=all.html#MQConf">MQConf</a>) (*<a href="http://localhost:6060/pkg/crypto/tls/">tls</a>.<a href="http://localhost:6060/pkg/crypto/tls/#Config">Config</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+			<p>
+TLSConfigBroker is a helper method to setup TLS for the message broker
+</p>
+
+			
+			
+
+		
+			
+			
+			<h2 id="buildMQURI">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=3470:3558#L130">buildMQURI</a>
+				<a class="permalink" href="index.html%3Fm=all.html#buildMQURI">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func buildMQURI(mqHost, mqUser, mqPassword, mqVhost <a href="http://localhost:6060/pkg/builtin/#string">string</a>, mqPort <a href="http://localhost:6060/pkg/builtin/#int">int</a>, ssl <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>) <a href="http://localhost:6060/pkg/builtin/#string">string</a></pre>
+			<p>
+buildMQURI builds the MQ URI
+</p>
+
+			
+			
+
+		
+			
+			
+			<h2 id="confirmOne">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=5414:5464#L198">confirmOne</a>
+				<a class="permalink" href="index.html%3Fm=all.html#confirmOne">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func confirmOne(confirms &lt;-chan <a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Confirmation">Confirmation</a>)</pre>
+			<p>
+One would typically keep a channel of publishings, a sequence number, and a
+set of unacknowledged sequence numbers and loop until the publishing channel
+is closed.
+</p>
+
+			
+			
+
+		
+		
+			
+			
+			<h2 id="AMQPBroker">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=593:672#L15">AMQPBroker</a>
+				<a class="permalink" href="index.html%3Fm=all.html#AMQPBroker">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+AMQPBroker is a Broker that reads messages from a local AMQP broker
+</p>
+
+			<pre>type AMQPBroker struct {
+<span id="AMQPBroker.Connection"></span>    Connection *<a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Connection">Connection</a>
+<span id="AMQPBroker.Channel"></span>    Channel    <a href="index.html%3Fm=all.html#AMQPChannel">AMQPChannel</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewMQ">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1161:1207#L42">NewMQ</a>
+					<a class="permalink" href="index.html%3Fm=all.html#NewMQ">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewMQ(config <a href="index.html%3Fm=all.html#MQConf">MQConf</a>) (*<a href="index.html%3Fm=all.html#AMQPBroker">AMQPBroker</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<p>
+NewMQ creates a new Broker that can communicate with a backend
+amqp server.
+</p>
+
+				
+				
+			
+
+			
+		
+			
+			
+			<h2 id="AMQPChannel">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=170:520#L6">AMQPChannel</a>
+				<a class="permalink" href="index.html%3Fm=all.html#AMQPChannel">&#xb6;</a>
+				
+				
+			</h2>
+			
+			<pre>type AMQPChannel interface {
+    Consume(queue, consumer <a href="http://localhost:6060/pkg/builtin/#string">string</a>, autoAck, exclusive, noLocal, noWait <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>, args <a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Table">Table</a>) (&lt;-chan <a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Delivery">Delivery</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)
+    Confirm(noWait <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a>
+    NotifyPublish(confirm chan <a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Confirmation">Confirmation</a>) chan <a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Confirmation">Confirmation</a>
+    Publish(exchange, key <a href="http://localhost:6060/pkg/builtin/#string">string</a>, mandatory, immediate <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>, msg <a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Publishing">Publishing</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a>
+    Close() <a href="http://localhost:6060/pkg/builtin/#error">error</a>
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="MQConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=728:1077#L21">MQConf</a>
+				<a class="permalink" href="index.html%3Fm=all.html#MQConf">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+MQConf stores information about the message broker
+</p>
+
+			<pre>type MQConf struct {
+<span id="MQConf.Host"></span>    Host         <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Port"></span>    Port         <a href="http://localhost:6060/pkg/builtin/#int">int</a>
+<span id="MQConf.User"></span>    User         <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Password"></span>    Password     <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Vhost"></span>    Vhost        <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Queue"></span>    Queue        <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Exchange"></span>    Exchange     <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.RoutingKey"></span>    RoutingKey   <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.RoutingError"></span>    RoutingError <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Ssl"></span>    Ssl          <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
+<span id="MQConf.VerifyPeer"></span>    VerifyPeer   <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
+<span id="MQConf.CACert"></span>    CACert       <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.ClientCert"></span>    ClientCert   <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.ClientKey"></span>    ClientKey    <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.ServerName"></span>    ServerName   <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Durable"></span>    Durable      <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+	
+
+	
+
+
+
+
+
+
+
+<div id="footer">
+Build version go1.14.9.<br>
+Except as <a href="https://developers.google.com/site-policies#restrictions">noted</a>,
+the content of this page is licensed under the
+Creative Commons Attribution 3.0 License,
+and code is licensed under a <a href="http://localhost:6060/LICENSE">BSD license</a>.<br>
+<a href="http://localhost:6060/doc/tos.html">Terms of Service</a> |
+<a href="http://www.google.com/intl/en/policies/privacy/">Privacy Policy</a>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+</body>
+</html>

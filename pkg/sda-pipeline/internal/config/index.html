@@ -4,9 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#375EAB">
-
-  <title>config - Go Documentation Server</title>
-
+  <title>NeIC sda-pipeline - go documentation</title>
 <link type="text/css" rel="stylesheet" href="../../../../lib/godoc/style.css">
 
 <script>window.initFuncs = [];</script>
@@ -24,20 +22,18 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="http://localhost:6060/pkg/">Go Documentation Server</a></div>
-<div class="top-heading" id="heading-narrow"><a href="http://localhost:6060/pkg/">GoDoc</a></div>
+<div class="top-heading" id="heading-wide"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">Go Documentation Server</a></div>
+<div class="top-heading" id="heading-narrow"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">GoDoc</a></div>
 <a href="index.html%3Fm=all.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
-<form method="GET" action="http://localhost:6060/search">
-<div id="menu">
 
-<span class="search-box"><input type="search" id="search" name="q" placeholder="Search" aria-label="Search" required><button type="submit"><span><!-- magnifying glass: --><svg width="24" height="24" viewBox="0 0 24 24"><title>submit search</title><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path d="M0 0h24v24H0z" fill="none"/></svg></span></button></span>
-</div>
-</form>
 
 </div></div>
 
-
-
+<div class="container" style="padding: 1em">
+  Please see <a href="https://github.com/neicnordic/sda-pipeline/">https://github.com/neicnordic/sda-pipeline/</a> for the code
+  repository.
+</div>
+  
 <div id="page" class="wide">
 <div class="container">
 
@@ -93,7 +89,10 @@
 			</div>
 			<div class="expanded">
 				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
-				
+				<p>
+Package config manages configuration
+</p>
+
 				
 			</div>
 		</div>
@@ -183,6 +182,7 @@
 			
 				
 				<pre>var (
+    <span class="comment">// requiredConfVars determines what needs to be provided as a minimum</span>
     <span id="requiredConfVars">requiredConfVars</span> = []<a href="http://localhost:6060/pkg/builtin/#string">string</a>{
         &#34;broker.host&#34;, &#34;broker.port&#34;, &#34;broker.user&#34;, &#34;broker.password&#34;, &#34;broker.queue&#34;, &#34;broker.routingkey&#34;,
         &#34;db.host&#34;, &#34;db.port&#34;, &#34;db.user&#34;, &#34;db.password&#34;, &#34;db.database&#34;,
@@ -193,13 +193,17 @@
 		
 			
 			
-			<h2 id="configS3Storage">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=3364:3414#L130">configS3Storage</a>
+			<h2 id="configS3Storage">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=3551:3601#L134">configS3Storage</a>
 				<a class="permalink" href="index.html%3Fm=all.html#configS3Storage">&#xb6;</a>
 				
 				
 			</h2>
 			<pre>func configS3Storage(prefix <a href="http://localhost:6060/pkg/builtin/#string">string</a>) <a href="../storage/index.html">storage</a>.<a href="../storage/index.html#S3Conf">S3Conf</a></pre>
-			
+			<p>
+configS3Storage populates and returns a S3Conf from the
+configuration
+</p>
+
 			
 			
 
@@ -207,7 +211,7 @@
 		
 			
 			
-			<h2 id="Config">type <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=561:698#L19">Config</a>
+			<h2 id="Config">type <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=672:809#L21">Config</a>
 				<a class="permalink" href="index.html%3Fm=all.html#Config">&#xb6;</a>
 				
 				
@@ -235,7 +239,7 @@ Config is a parent object for all the different configuration parts
 
 			
 				
-				<h3 id="NewConfig">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=906:949#L35">NewConfig</a>
+				<h3 id="NewConfig">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=1017:1060#L37">NewConfig</a>
 					<a class="permalink" href="index.html%3Fm=all.html#NewConfig">&#xb6;</a>
 					
 					
@@ -252,61 +256,76 @@ the viper library.
 
 			
 				
-				<h3 id="Config.configArchive">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4134:4166#L162">configArchive</a>
+				<h3 id="Config.configArchive">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4385:4417#L167">configArchive</a>
 					<a class="permalink" href="index.html%3Fm=all.html#Config.configArchive">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (c *<a href="index.html%3Fm=all.html#Config">Config</a>) configArchive()</pre>
-				
+				<p>
+configArchive provides configuration for the archive storage
+</p>
+
 				
 				
 				
 			
 				
-				<h3 id="Config.configBroker">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4620:4657#L182">configBroker</a>
+				<h3 id="Config.configBroker">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4993:5030#L189">configBroker</a>
 					<a class="permalink" href="index.html%3Fm=all.html#Config.configBroker">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (c *<a href="index.html%3Fm=all.html#Config">Config</a>) configBroker() <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
-				
+				<p>
+configBroker provides configuration for the message broker
+</p>
+
 				
 				
 				
 			
 				
-				<h3 id="Config.configCrypt4gh">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=7135:7168#L265">configCrypt4gh</a>
+				<h3 id="Config.configCrypt4gh">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=7627:7660#L274">configCrypt4gh</a>
 					<a class="permalink" href="index.html%3Fm=all.html#Config.configCrypt4gh">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (c *<a href="index.html%3Fm=all.html#Config">Config</a>) configCrypt4gh()</pre>
-				
+				<p>
+configCrypt4gh provides configuration for c4gh operations
+</p>
+
 				
 				
 				
 			
 				
-				<h3 id="Config.configDatabase">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=6208:6247#L233">configDatabase</a>
+				<h3 id="Config.configDatabase">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=6639:6678#L241">configDatabase</a>
 					<a class="permalink" href="index.html%3Fm=all.html#Config.configDatabase">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (c *<a href="index.html%3Fm=all.html#Config">Config</a>) configDatabase() <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
-				
+				<p>
+configDatabase provides configuration for the database
+</p>
+
 				
 				
 				
 			
 				
-				<h3 id="Config.configInbox">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4385:4415#L172">configInbox</a>
+				<h3 id="Config.configInbox">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4696:4726#L178">configInbox</a>
 					<a class="permalink" href="index.html%3Fm=all.html#Config.configInbox">&#xb6;</a>
 					
 					
 				</h3>
 				<pre>func (c *<a href="index.html%3Fm=all.html#Config">Config</a>) configInbox()</pre>
-				
+				<p>
+configInbox provides configuration for the inbox storage
+</p>
+
 				
 				
 				
@@ -314,7 +333,7 @@ the viper library.
 		
 			
 			
-			<h2 id="Crypt4gh">type <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=743:805#L28">Crypt4gh</a>
+			<h2 id="Crypt4gh">type <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=854:916#L30">Crypt4gh</a>
 				<a class="permalink" href="index.html%3Fm=all.html#Crypt4gh">&#xb6;</a>
 				
 				

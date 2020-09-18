@@ -4,9 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#375EAB">
-
-  <title>storage - Go Documentation Server</title>
-
+  <title>NeIC sda-pipeline - go documentation</title>
 <link type="text/css" rel="stylesheet" href="../../../../lib/godoc/style.css">
 
 <script>window.initFuncs = [];</script>
@@ -24,20 +22,18 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="http://localhost:6060/pkg/">Go Documentation Server</a></div>
-<div class="top-heading" id="heading-narrow"><a href="http://localhost:6060/pkg/">GoDoc</a></div>
+<div class="top-heading" id="heading-wide"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">Go Documentation Server</a></div>
+<div class="top-heading" id="heading-narrow"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">GoDoc</a></div>
 <a href="index.html%3Fm=all.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
-<form method="GET" action="http://localhost:6060/search">
-<div id="menu">
 
-<span class="search-box"><input type="search" id="search" name="q" placeholder="Search" aria-label="Search" required><button type="submit"><span><!-- magnifying glass: --><svg width="24" height="24" viewBox="0 0 24 24"><title>submit search</title><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path d="M0 0h24v24H0z" fill="none"/></svg></span></button></span>
-</div>
-</form>
 
 </div></div>
 
-
-
+<div class="container" style="padding: 1em">
+  Please see <a href="https://github.com/neicnordic/sda-pipeline/">https://github.com/neicnordic/sda-pipeline/</a> for the code
+  repository.
+</div>
+  
 <div id="page" class="wide">
 <div class="container">
 
@@ -93,7 +89,10 @@
 			</div>
 			<div class="expanded">
 				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
-				
+				<p>
+Package storage provides interface for storage areas, e.g. s3 or POSIX file system.
+</p>
+
 				
 			</div>
 		</div>
@@ -198,7 +197,7 @@
 		
 			
 			
-			<h2 id="transportConfigS3">func <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=5037:5092#L192">transportConfigS3</a>
+			<h2 id="transportConfigS3">func <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=5124:5179#L193">transportConfigS3</a>
 				<a class="permalink" href="index.html%3Fm=all.html#transportConfigS3">&#xb6;</a>
 				
 				
@@ -215,7 +214,7 @@ transportConfigS3 is a helper method to setup TLS for the S3 client.
 		
 			
 			
-			<h2 id="Backend">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=501:683#L16">Backend</a>
+			<h2 id="Backend">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=588:770#L17">Backend</a>
 				<a class="permalink" href="index.html%3Fm=all.html#Backend">&#xb6;</a>
 				
 				
@@ -240,7 +239,7 @@ Backend defines methods to be implemented by PosixBackend and S3Backend
 
 			
 				
-				<h3 id="NewBackend">func <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=975:1011#L40">NewBackend</a>
+				<h3 id="NewBackend">func <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=1062:1098#L41">NewBackend</a>
 					<a class="permalink" href="index.html%3Fm=all.html#NewBackend">&#xb6;</a>
 					
 					
@@ -258,7 +257,7 @@ NewBackend initiates a storage backend
 		
 			
 			
-			<h2 id="Conf">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=729:794#L23">Conf</a>
+			<h2 id="Conf">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=816:881#L24">Conf</a>
 				<a class="permalink" href="index.html%3Fm=all.html#Conf">&#xb6;</a>
 				
 				
@@ -288,7 +287,7 @@ Conf is a wrapper for the storage config
 		
 			
 			
-			<h2 id="S3Conf">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=2269:2516#L93">S3Conf</a>
+			<h2 id="S3Conf">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=2356:2603#L94">S3Conf</a>
 				<a class="permalink" href="index.html%3Fm=all.html#S3Conf">&#xb6;</a>
 				
 				
@@ -324,7 +323,7 @@ S3Conf stores information about the S3 storage backend
 		
 			
 			
-			<h2 id="posixBackend">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=796:887#L29">posixBackend</a>
+			<h2 id="posixBackend">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=883:974#L30">posixBackend</a>
 				<a class="permalink" href="index.html%3Fm=all.html#posixBackend">&#xb6;</a>
 				
 				
@@ -347,7 +346,7 @@ S3Conf stores information about the S3 storage backend
 
 			
 				
-				<h3 id="newPosixBackend">func <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=1136:1188#L49">newPosixBackend</a>
+				<h3 id="newPosixBackend">func <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=1223:1275#L50">newPosixBackend</a>
 					<a class="permalink" href="index.html%3Fm=all.html#newPosixBackend">&#xb6;</a>
 					
 					
@@ -360,7 +359,7 @@ S3Conf stores information about the S3 storage backend
 
 			
 				
-				<h3 id="posixBackend.GetFileSize">func (*posixBackend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=1892:1959#L76">GetFileSize</a>
+				<h3 id="posixBackend.GetFileSize">func (*posixBackend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=1979:2046#L77">GetFileSize</a>
 					<a class="permalink" href="index.html%3Fm=all.html#posixBackend.GetFileSize">&#xb6;</a>
 					
 					
@@ -375,7 +374,7 @@ GetFileSize returns the size of the file
 				
 			
 				
-				<h3 id="posixBackend.NewFileReader">func (*posixBackend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=1290:1367#L54">NewFileReader</a>
+				<h3 id="posixBackend.NewFileReader">func (*posixBackend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=1377:1454#L55">NewFileReader</a>
 					<a class="permalink" href="index.html%3Fm=all.html#posixBackend.NewFileReader">&#xb6;</a>
 					
 					
@@ -390,7 +389,7 @@ NewFileReader returns an io.Reader instance
 				
 			
 				
-				<h3 id="posixBackend.NewFileWriter">func (*posixBackend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=1570:1648#L65">NewFileWriter</a>
+				<h3 id="posixBackend.NewFileWriter">func (*posixBackend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=1657:1735#L66">NewFileWriter</a>
 					<a class="permalink" href="index.html%3Fm=all.html#posixBackend.NewFileWriter">&#xb6;</a>
 					
 					
@@ -407,7 +406,7 @@ NewFileWriter returns an io.Writer instance
 		
 			
 			
-			<h2 id="posixConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=889:931#L35">posixConf</a>
+			<h2 id="posixConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=976:1018#L36">posixConf</a>
 				<a class="permalink" href="index.html%3Fm=all.html#posixConf">&#xb6;</a>
 				
 				
@@ -432,7 +431,7 @@ NewFileWriter returns an io.Writer instance
 		
 			
 			
-			<h2 id="s3Backend">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=2120:2209#L86">s3Backend</a>
+			<h2 id="s3Backend">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=2207:2296#L87">s3Backend</a>
 				<a class="permalink" href="index.html%3Fm=all.html#s3Backend">&#xb6;</a>
 				
 				
@@ -455,7 +454,7 @@ NewFileWriter returns an io.Writer instance
 
 			
 				
-				<h3 id="newS3Backend">func <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=2518:2561#L105">newS3Backend</a>
+				<h3 id="newS3Backend">func <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=2605:2648#L106">newS3Backend</a>
 					<a class="permalink" href="index.html%3Fm=all.html#newS3Backend">&#xb6;</a>
 					
 					
@@ -468,7 +467,7 @@ NewFileWriter returns an io.Writer instance
 
 			
 				
-				<h3 id="s3Backend.GetFileSize">func (*s3Backend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=4689:4753#L178">GetFileSize</a>
+				<h3 id="s3Backend.GetFileSize">func (*s3Backend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=4776:4840#L179">GetFileSize</a>
 					<a class="permalink" href="index.html%3Fm=all.html#s3Backend.GetFileSize">&#xb6;</a>
 					
 					
@@ -483,7 +482,7 @@ GetFileSize returns the size of a specific object
 				
 			
 				
-				<h3 id="s3Backend.NewFileReader">func (*s3Backend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=3853:3927#L146">NewFileReader</a>
+				<h3 id="s3Backend.NewFileReader">func (*s3Backend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=3940:4014#L147">NewFileReader</a>
 					<a class="permalink" href="index.html%3Fm=all.html#s3Backend.NewFileReader">&#xb6;</a>
 					
 					
@@ -498,7 +497,7 @@ NewFileReader returns an io.Reader instance
 				
 			
 				
-				<h3 id="s3Backend.NewFileWriter">func (*s3Backend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=4199:4274#L161">NewFileWriter</a>
+				<h3 id="s3Backend.NewFileWriter">func (*s3Backend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=4286:4361#L162">NewFileWriter</a>
 					<a class="permalink" href="index.html%3Fm=all.html#s3Backend.NewFileWriter">&#xb6;</a>
 					
 					

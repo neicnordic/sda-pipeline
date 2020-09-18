@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#375EAB">
   <title>NeIC sda-pipeline - go documentation</title>
-<link type="text/css" rel="stylesheet" href="../../../../lib/godoc/style.css">
+<link type="text/css" rel="stylesheet" href="style.css">
 
 <script>window.initFuncs = [];</script>
-<script src="../../../../lib/godoc/jquery.js" defer></script>
+<script src="jquery.js" defer></script>
 
 
 
 <script>var goVersion = "go1.14.9";</script>
-<script src="../../../../lib/godoc/godocs.js" defer></script>
+<script src="godocs.js" defer></script>
 </head>
 <body>
 
@@ -24,7 +24,7 @@
 <div id="topbar" class="wide"><div class="container">
 <div class="top-heading" id="heading-wide"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">Go Documentation Server</a></div>
 <div class="top-heading" id="heading-narrow"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">GoDoc</a></div>
-<a href="index.html%3Fm=all.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+<a href="doc.go.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
 
 
 </div></div>
@@ -39,52 +39,34 @@
 
 
   <h1>
-    Command mapper
-    <span class="text-muted"></span>
+    Source file
+    <a href="http://localhost:6060/lib">lib</a>/<a href="../godoc.html">godoc</a>/<span class="text-muted">doc.go</span>
   </h1>
 
 
 
 
 
+  <h2>
+    Documentation: <a href="http://localhost:6060/pkg/lib/godoc">lib/godoc</a>
+  </h2>
+
 
 
 <div id="nav"></div>
 
 
-<!--
-	Copyright 2009 The Go Authors. All rights reserved.
-	Use of this source code is governed by a BSD-style
-	license that can be found in the LICENSE file.
--->
-<!--
-	Note: Static (i.e., not template-generated) href and id
-	attributes start with "pkg-" to make it impossible for
-	them to conflict with generated attributes (some of which
-	correspond to Go identifiers).
--->
-
-	<script>
-	document.ANALYSIS_DATA = null;
-	document.CALLGRAPH = null;
-	</script>
-
-	
-		
-		<p>
-The mapper service register mapping of accessionIDs
-(stable ids for files) to datasetIDs.
-</p>
-
-	
-
-	
-
-
-
-
-
-
+<script type='text/javascript'>document.ANALYSIS_DATA = null;</script>
+<pre><span id="L1" class="ln">     1&nbsp;&nbsp;</span><span class="comment">// Copyright 2013 The Go Authors. All rights reserved.</span>
+<span id="L2" class="ln">     2&nbsp;&nbsp;</span><span class="comment">// Use of this source code is governed by a BSD-style</span>
+<span id="L3" class="ln">     3&nbsp;&nbsp;</span><span class="comment">// license that can be found in the LICENSE file.</span>
+<span id="L4" class="ln">     4&nbsp;&nbsp;</span>
+<span id="L5" class="ln">     5&nbsp;&nbsp;</span><span class="comment">// Package static exports a map of static file content that supports the godoc</span>
+<span id="L6" class="ln">     6&nbsp;&nbsp;</span><span class="comment">// user interface. The map should be used with the mapfs package, see</span>
+<span id="L7" class="ln">     7&nbsp;&nbsp;</span><span class="comment">// golang.org/x/tools/godoc/vfs/mapfs.</span>
+<span id="L8" class="ln">     8&nbsp;&nbsp;</span>package static <span class="comment">// import &#34;golang.org/x/tools/godoc/static&#34;</span>
+<span id="L9" class="ln">     9&nbsp;&nbsp;</span>
+</pre><p><a href="doc.go%3Fm=text">View as plain text</a></p>
 
 <div id="footer">
 Build version go1.14.9.<br>

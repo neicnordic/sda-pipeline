@@ -4,9 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#375EAB">
-
-  <title>broker - Go Documentation Server</title>
-
+  <title>NeIC sda-pipeline - go documentation</title>
 <link type="text/css" rel="stylesheet" href="../../../../lib/godoc/style.css">
 
 <script>window.initFuncs = [];</script>
@@ -24,20 +22,18 @@
 </div><!-- #lowframe -->
 
 <div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="http://localhost:6060/pkg/">Go Documentation Server</a></div>
-<div class="top-heading" id="heading-narrow"><a href="http://localhost:6060/pkg/">GoDoc</a></div>
+<div class="top-heading" id="heading-wide"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">Go Documentation Server</a></div>
+<div class="top-heading" id="heading-narrow"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">GoDoc</a></div>
 <a href="index.html%3Fm=all.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
-<form method="GET" action="http://localhost:6060/search">
-<div id="menu">
 
-<span class="search-box"><input type="search" id="search" name="q" placeholder="Search" aria-label="Search" required><button type="submit"><span><!-- magnifying glass: --><svg width="24" height="24" viewBox="0 0 24 24"><title>submit search</title><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path d="M0 0h24v24H0z" fill="none"/></svg></span></button></span>
-</div>
-</form>
 
 </div></div>
 
-
-
+<div class="container" style="padding: 1em">
+  Please see <a href="https://github.com/neicnordic/sda-pipeline/">https://github.com/neicnordic/sda-pipeline/</a> for the code
+  repository.
+</div>
+  
 <div id="page" class="wide">
 <div class="container">
 
@@ -93,7 +89,10 @@
 			</div>
 			<div class="expanded">
 				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
-				
+				<p>
+Package broker contains logic for communicating with a message broker
+</p>
+
 				
 			</div>
 		</div>
@@ -172,14 +171,17 @@
 		
 			<h2 id="pkg-variables">Variables</h2>
 			
-				
+				<p>
+This is an internal helper variable to make testing easier
+</p>
+
 				<pre>var <span id="logFatalf">logFatalf</span> = <a href="http://localhost:6060/pkg/github.com/sirupsen/logrus/">log</a>.<a href="http://localhost:6060/pkg/github.com/sirupsen/logrus/#Fatalf">Fatalf</a></pre>
 			
 		
 		
 			
 			
-			<h2 id="GetMessages">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=2217:2297#L86">GetMessages</a>
+			<h2 id="GetMessages">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=2415:2495#L89">GetMessages</a>
 				<a class="permalink" href="index.html%3Fm=all.html#GetMessages">&#xb6;</a>
 				
 				
@@ -195,14 +197,14 @@ GetMessages reads messages from the queue
 		
 			
 			
-			<h2 id="SendMessage">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=2555:2662#L100">SendMessage</a>
+			<h2 id="SendMessage">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=2729:2836#L103">SendMessage</a>
 				<a class="permalink" href="index.html%3Fm=all.html#SendMessage">&#xb6;</a>
 				
 				
 			</h2>
 			<pre>func SendMessage(broker *<a href="index.html%3Fm=all.html#AMQPBroker">AMQPBroker</a>, corrID, exchange, routingKey <a href="http://localhost:6060/pkg/builtin/#string">string</a>, reliable <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>, body []<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
 			<p>
-SendMessage sends message to RabbitMQ if the upload is finished
+SendMessage sends a message to RabbitMQ
 </p>
 
 			
@@ -211,7 +213,7 @@ SendMessage sends message to RabbitMQ if the upload is finished
 		
 			
 			
-			<h2 id="TLSConfigBroker">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=3887:3943#L141">TLSConfigBroker</a>
+			<h2 id="TLSConfigBroker">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=4072:4128#L144">TLSConfigBroker</a>
 				<a class="permalink" href="index.html%3Fm=all.html#TLSConfigBroker">&#xb6;</a>
 				
 				
@@ -227,14 +229,14 @@ TLSConfigBroker is a helper method to setup TLS for the message broker
 		
 			
 			
-			<h2 id="buildMQURI">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=3470:3558#L130">buildMQURI</a>
+			<h2 id="buildMQURI">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=3655:3743#L133">buildMQURI</a>
 				<a class="permalink" href="index.html%3Fm=all.html#buildMQURI">&#xb6;</a>
 				
 				
 			</h2>
 			<pre>func buildMQURI(mqHost, mqUser, mqPassword, mqVhost <a href="http://localhost:6060/pkg/builtin/#string">string</a>, mqPort <a href="http://localhost:6060/pkg/builtin/#int">int</a>, ssl <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>) <a href="http://localhost:6060/pkg/builtin/#string">string</a></pre>
 			<p>
-buildMQURI builds the MQ URI
+buildMQURI builds the MQ connection URI
 </p>
 
 			
@@ -243,13 +245,16 @@ buildMQURI builds the MQ URI
 		
 			
 			
-			<h2 id="confirmOne">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=5414:5464#L198">confirmOne</a>
+			<h2 id="confirmOne">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=5671:5721#L203">confirmOne</a>
 				<a class="permalink" href="index.html%3Fm=all.html#confirmOne">&#xb6;</a>
 				
 				
 			</h2>
 			<pre>func confirmOne(confirms &lt;-chan <a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Confirmation">Confirmation</a>)</pre>
 			<p>
+confirmOne accepts confirmation for a message sent with reliable.
+</p>
+<p>
 One would typically keep a channel of publishings, a sequence number, and a
 set of unacknowledged sequence numbers and loop until the publishing channel
 is closed.
@@ -262,13 +267,13 @@ is closed.
 		
 			
 			
-			<h2 id="AMQPBroker">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=593:672#L15">AMQPBroker</a>
+			<h2 id="AMQPBroker">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=791:870#L18">AMQPBroker</a>
 				<a class="permalink" href="index.html%3Fm=all.html#AMQPBroker">&#xb6;</a>
 				
 				
 			</h2>
 			<p>
-AMQPBroker is a Broker that reads messages from a local AMQP broker
+AMQPBroker is a Broker that reads messages from an AMQP broker
 </p>
 
 			<pre>type AMQPBroker struct {
@@ -287,7 +292,7 @@ AMQPBroker is a Broker that reads messages from a local AMQP broker
 
 			
 				
-				<h3 id="NewMQ">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1161:1207#L42">NewMQ</a>
+				<h3 id="NewMQ">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1359:1405#L45">NewMQ</a>
 					<a class="permalink" href="index.html%3Fm=all.html#NewMQ">&#xb6;</a>
 					
 					
@@ -306,12 +311,15 @@ amqp server.
 		
 			
 			
-			<h2 id="AMQPChannel">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=170:520#L6">AMQPChannel</a>
+			<h2 id="AMQPChannel">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=373:723#L9">AMQPChannel</a>
 				<a class="permalink" href="index.html%3Fm=all.html#AMQPChannel">&#xb6;</a>
 				
 				
 			</h2>
-			
+			<p>
+The AMQPChannel interface gives access to the functions provided
+</p>
+
 			<pre>type AMQPChannel interface {
     Consume(queue, consumer <a href="http://localhost:6060/pkg/builtin/#string">string</a>, autoAck, exclusive, noLocal, noWait <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>, args <a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Table">Table</a>) (&lt;-chan <a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Delivery">Delivery</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)
     Confirm(noWait <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a>
@@ -334,7 +342,7 @@ amqp server.
 		
 			
 			
-			<h2 id="MQConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=728:1077#L21">MQConf</a>
+			<h2 id="MQConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=926:1275#L24">MQConf</a>
 				<a class="permalink" href="index.html%3Fm=all.html#MQConf">&#xb6;</a>
 				
 				

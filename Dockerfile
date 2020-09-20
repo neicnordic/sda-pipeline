@@ -22,6 +22,6 @@ LABEL org.label-schema.vcs-ref=$SOURCE_COMMIT
 COPY --from=builder /go/passwd /etc/passwd
 COPY --from=builder /go/sda-* /bin/
 COPY --from=builder /go/schemas /schemas
-COPY --from=builder /etc/ssl/certs/ /etc/ssl/certs/
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 USER 65534

@@ -95,22 +95,22 @@ func (pb *posixBackend) GetFileSize(filePath string) (int64, error) {
 }
 
 type s3Backend struct {
-	Client   *s3.S3
-	Uploader *s3manager.Uploader
-	Bucket   string
+	Client     *s3.S3
+	Downloader *s3manager.Downloader
+	Uploader   *s3manager.Uploader
+	Bucket     string
 }
 
 // S3Conf stores information about the S3 storage backend
 type S3Conf struct {
-	URL               string
-	Port              int
-	AccessKey         string
-	SecretKey         string
-	Bucket            string
-	Region            string
-	UploadConcurrency int
-	Chunksize         int
-	Cacert            string
+	URL       string
+	Port      int
+	AccessKey string
+	SecretKey string
+	Bucket    string
+	Region    string
+	Chunksize int
+	Cacert    string
 }
 
 func newS3Backend(config S3Conf) *s3Backend {
@@ -143,29 +143,94 @@ func newS3Backend(config S3Conf) *s3Backend {
 		}
 	}
 
+	s3client := s3.New(s3Session)
+
 	return &s3Backend{
 		Bucket: config.Bucket,
 		Uploader: s3manager.NewUploader(s3Session, func(u *s3manager.Uploader) {
 			u.PartSize = int64(config.Chunksize)
-			u.Concurrency = config.UploadConcurrency
+			u.Concurrency = 1
 			u.LeavePartsOnError = false
 		}),
-		Client: s3.New(s3Session)}
+		Client: s3client,
+		Downloader: s3manager.NewDownloaderWithClient(s3client, func(d *s3manager.Downloader) {
+			d.PartSize = int64(config.Chunksize)
+			d.Concurrency = 1
+		})}
 }
 
-// NewFileReader returns an io.Reader instance
-func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
-	r, err := sb.Client.GetObject(&s3.GetObjectInput{
-		Bucket: aws.String(sb.Bucket),
-		Key:    aws.String(filePath),
-	})
+// Helper writer to be used for downloader without concurrency
+type downloadWriterAt struct {
+	w       io.Writer
+	written int64
+}
 
+// Simple WriteAt that can only be used to channel through to a non-seekable Writer
+func (dwa downloadWriterAt) WriteAt(p []byte, offset int64) (n int, err error) {
+	// Verify offset so we get
+	if offset != dwa.written {
+		log.Errorf("Received write to unexpected offset for pipe")
+		return 0, fmt.Errorf("Can't do out-of-order writes to pipe, adjust concurrency")
+	}
+
+	writtenNow, err := dwa.w.Write(p)
+
+	dwa.written += int64(writtenNow)
+
+	return writtenNow, err
+}
+
+// Helper type to give a fake Close method
+type downloadReader struct {
+	r io.Reader
+}
+
+// Pass-through Read method for downloadReader
+func (dr downloadReader) Read(p []byte) (n int, err error) {
+	return dr.r.Read(p)
+}
+
+// Fake Closer, never fails
+func (dr downloadReader) Close() (err error) {
+	return nil
+}
+
+// NewFileReader returns an io.ReadCloser instance that's fed from the
+// object
+func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
+	_, err := sb.GetFileSize(filePath)
+
+	// Bail out early if the object does not exist, adds one roundtrip
+	// but probably still worth it
 	if err != nil {
 		log.Error(err)
 		return nil, err
 	}
+	var reader io.ReadCloser
+	var writer io.WriterAt
 
-	return r.Body, nil
+	if sb.Downloader.Concurrency != 1 {
+		return nil, fmt.Errorf("Concurrency is not supported")
+	}
+
+	// No concurrency - use a pipe
+	var pipeWriter io.Writer
+	reader, pipeWriter = io.Pipe()
+	writer = downloadWriterAt{pipeWriter, 0}
+
+	go func() {
+		_, err := sb.Downloader.Download(writer, &s3.GetObjectInput{
+			Bucket: aws.String(sb.Bucket),
+			Key:    aws.String(filePath),
+		})
+
+		if err != nil {
+			log.Error(err)
+		}
+
+	}()
+
+	return reader, nil
 }
 
 // NewFileWriter uploads the contents of an io.Reader to a S3 bucket

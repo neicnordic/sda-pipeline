@@ -223,65 +223,67 @@ func setupFakeS3() (err error) {
 
 func TestS3Backend(t *testing.T) {
 
-	testConf.Type = "s3"
-	backend := NewBackend(testConf).(*s3Backend)
+	for conc := 0; conc < 5; conc++ {
+		testConf.Type = "s3"
+		testConf.S3.Concurrency = conc
+		backend := NewBackend(testConf).(*s3Backend)
 
-	var buf bytes.Buffer
+		var buf bytes.Buffer
 
-	assert.IsType(t, backend, &s3Backend{}, "Wrong type from NewBackend with s3")
+		assert.IsType(t, backend, &s3Backend{}, "Wrong type from NewBackend with s3")
 
-	writer, err := backend.NewFileWriter(s3Creatable)
+		writer, err := backend.NewFileWriter(s3Creatable)
 
-	assert.NotNil(t, writer, "Got a nil reader for writer from s3")
-	assert.Nil(t, err, "posix NewFileWriter failed when it shouldn't")
+		assert.NotNil(t, writer, "Got a nil reader for writer from s3")
+		assert.Nil(t, err, "posix NewFileWriter failed when it shouldn't")
 
-	written, err := writer.Write(writeData)
+		written, err := writer.Write(writeData)
 
-	assert.Nil(t, err, "Failure when writing to s3 writer")
-	assert.Equal(t, len(writeData), written, "Did not write all writeData")
-	writer.Close()
+		assert.Nil(t, err, "Failure when writing to s3 writer")
+		assert.Equal(t, len(writeData), written, "Did not write all writeData")
+		writer.Close()
 
-	// Give things some time to happen.
-	time.Sleep(1e9)
+		// Give things some time to happen.
+		time.Sleep(1e9)
 
-	reader, err := backend.NewFileReader(s3Creatable)
-	assert.Nil(t, err, "s3 NewFileReader failed when it should work")
-	assert.NotNil(t, reader, "Got a nil reader for s3")
+		reader, err := backend.NewFileReader(s3Creatable)
+		assert.Nil(t, err, "s3 NewFileReader failed when it should work")
+		assert.NotNil(t, reader, "Got a nil reader for s3")
 
-	size, err := backend.GetFileSize(s3Creatable)
-	assert.Nil(t, err, "s3 GetFileSize failed when it should work")
-	assert.Equal(t, int64(len(writeData)), size, "Got an incorrect file size")
+		size, err := backend.GetFileSize(s3Creatable)
+		assert.Nil(t, err, "s3 GetFileSize failed when it should work")
+		assert.Equal(t, int64(len(writeData)), size, "Got an incorrect file size")
 
-	if reader == nil {
-		t.Error("reader that should be usable is not, bailing out")
-		return
+		if reader == nil {
+			t.Error("reader that should be usable is not, bailing out")
+			return
+		}
+
+		var readBackBuffer [4096]byte
+		readBack, err := reader.Read(readBackBuffer[0:4096])
+
+		assert.Equal(t, len(writeData), readBack, "did not read back data as expected")
+		assert.Equal(t, writeData, readBackBuffer[:readBack], "did not read back data as expected")
+
+		if err != nil && err != io.EOF {
+			assert.Nil(t, err, "unexpected error when reading back data")
+		}
+
+		buf.Reset()
+
+		log.SetOutput(&buf)
+
+		_, err = backend.GetFileSize(s3DoesNotExist)
+		assert.NotNil(t, err, "s3 GetFileSize worked when it should not")
+		assert.NotZero(t, buf.Len(), "Expected warning missing")
+
+		buf.Reset()
+
+		reader, err = backend.NewFileReader(s3DoesNotExist)
+		assert.NotNil(t, err, "s3 NewFileReader worked when it should not")
+		assert.Nil(t, reader, "Got a non-nil reader for s3")
+		assert.NotZero(t, buf.Len(), "Expected warning missing")
+
+		log.SetOutput(os.Stdout)
 	}
-
-	var readBackBuffer [4096]byte
-	readBack, err := reader.Read(readBackBuffer[0:4096])
-
-	assert.Equal(t, len(writeData), readBack, "did not read back data as expected")
-	assert.Equal(t, writeData, readBackBuffer[:readBack], "did not read back data as expected")
-
-	if err != nil && err != io.EOF {
-		assert.Nil(t, err, "unexpected error when reading back data")
-	}
-
-	buf.Reset()
-
-	log.SetOutput(&buf)
-
-	_, err = backend.GetFileSize(s3DoesNotExist)
-	assert.NotNil(t, err, "s3 GetFileSize worked when it should not")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
-
-	buf.Reset()
-
-	reader, err = backend.NewFileReader(s3DoesNotExist)
-	assert.NotNil(t, err, "s3 NewFileReader worked when it should not")
-	assert.Nil(t, reader, "Got a non-nil reader for s3")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
-
-	log.SetOutput(os.Stdout)
-
 }

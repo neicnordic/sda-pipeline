@@ -175,6 +175,10 @@ func configS3Storage(prefix string) storage.S3Conf {
 		s3.Chunksize = viper.GetInt(prefix+".chunksize") * 1024 * 1024
 	}
 
+	if viper.IsSet(prefix + ".concurrent") {
+		s3.Concurrency = viper.GetInt(prefix + ".concurrent")
+	}
+
 	if viper.IsSet(prefix + ".cacert") {
 		s3.Cacert = viper.GetString(prefix + ".cacert")
 	}

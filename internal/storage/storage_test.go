@@ -29,7 +29,6 @@ var testS3Conf = S3Conf{
 	"secretkey",
 	"bucket",
 	"region",
-	10,
 	5 * 1024 * 1024,
 	"../../dev_utils/certs/ca.pem"}
 

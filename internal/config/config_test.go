@@ -337,7 +337,7 @@ func (suite *TestSuite) TestIngestConfiguration() {
 	assert.Equal(suite.T(), "test", config.Crypt4gh.Passphrase)
 }
 
-func (suite *TestSuite) TestINterceptConfiguration() {
+func (suite *TestSuite) TestInterceptConfiguration() {
 	config, err := NewConfig("intercept")
 	assert.NotNil(suite.T(), config)
 	assert.NoError(suite.T(), err)

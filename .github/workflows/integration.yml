@@ -69,7 +69,7 @@ jobs:
 
       - name: get logs from ingest
         if: failure()
-        run: docker logs ingetst
+        run: docker logs ingest
 
       - name: wait for verification to complete
         run: |

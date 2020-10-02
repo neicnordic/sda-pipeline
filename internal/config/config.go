@@ -22,8 +22,12 @@ const S3 = "s3"
 var (
 	// requiredConfVars determines what needs to be provided as a minimum
 	requiredConfVars = []string{
-		"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "broker.routingkey",
-		"db.host", "db.port", "db.user", "db.password", "db.database",
+		"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue",
+	}
+
+	// requiredConfVarsExtra contains more variables required for most services
+	requiredConfVarsExtra = []string{
+		"broker.routingkey", "db.host", "db.port", "db.user", "db.password", "db.database",
 	}
 )
 
@@ -78,6 +82,11 @@ func NewConfig(app string) (*Config, error) {
 		requiredConfVars = append(requiredConfVars, []string{"inbox.url", "inbox.accesskey", "inbox.secretkey", "inbox.bucket"}...)
 	} else if viper.GetString("inbox.type") == POSIX {
 		requiredConfVars = append(requiredConfVars, []string{"inbox.location"}...)
+	}
+
+	if app != "intercept" {
+		// Intercept does not require these extra settings
+		requiredConfVars = append(requiredConfVars, requiredConfVarsExtra...)
 	}
 
 	for _, s := range requiredConfVars {
@@ -204,9 +213,13 @@ func (c *Config) configBroker() error {
 	broker.Port = viper.GetInt("broker.port")
 	broker.User = viper.GetString("broker.user")
 	broker.Password = viper.GetString("broker.password")
-	broker.RoutingKey = viper.GetString("broker.routingkey")
+
 	broker.Queue = viper.GetString("broker.queue")
 	broker.ServerName = viper.GetString("broker.serverName")
+
+	if viper.IsSet("broker.routingkey") {
+		broker.RoutingKey = viper.GetString("broker.routingkey")
+	}
 
 	if viper.IsSet("broker.durable") {
 		broker.Durable = viper.GetBool("broker.durable")

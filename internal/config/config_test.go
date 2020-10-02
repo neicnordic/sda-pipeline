@@ -259,6 +259,8 @@ func (suite *TestSuite) TestMapperConfiguration() {
 	// At this point we should fail because we lack configuration
 	config, err = NewConfig("mapper")
 	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
 	viper.Set("broker.host", "test")
 	viper.Set("broker.port", 123)
 	viper.Set("broker.user", "test")
@@ -303,6 +305,8 @@ func (suite *TestSuite) TestFinalizeConfiguration() {
 	// At this point we should fail because we lack configuration
 	config, err = NewConfig("finalize")
 	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
 	viper.Set("broker.host", "test")
 	viper.Set("broker.port", 123)
 	viper.Set("broker.user", "test")
@@ -356,6 +360,8 @@ func (suite *TestSuite) TestVerifyConfiguration() {
 	// At this point we should fail because we lack configuration
 	config, err = NewConfig("verify")
 	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
 	viper.Set("broker.host", "test")
 	viper.Set("broker.port", 123)
 	viper.Set("broker.user", "test")
@@ -413,6 +419,8 @@ func (suite *TestSuite) TestIngestConfiguration() {
 	// At this point we should fail because we lack configuration
 	config, err = NewConfig("ingest")
 	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
 	viper.Set("broker.host", "test")
 	viper.Set("broker.port", 123)
 	viper.Set("broker.user", "test")

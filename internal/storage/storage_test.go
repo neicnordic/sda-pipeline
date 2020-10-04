@@ -42,7 +42,7 @@ var ts *httptest.Server
 var s3DoesNotExist = "nothing such"
 var s3Creatable = "somename"
 
-var writeData = []byte("this is a test")
+var writeData = []byte(strings.Repeat("this is a test", 4000))
 
 var cleanupFilesBack [1000]string
 var cleanupFiles []string = cleanupFilesBack[0:0]

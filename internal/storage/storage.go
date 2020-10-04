@@ -2,7 +2,6 @@
 package storage
 
 import (
-	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -166,37 +165,33 @@ func newS3Backend(config S3Conf) *s3Backend {
 type downloadWriterAt struct {
 	w       io.Writer
 	written int64
+	cond    *sync.Cond
 }
 
 // Simple WriteAt that can only be used to channel through to a non-seekable Writer
 // could be expanded with a floating buffer if required
-func (dwa downloadWriterAt) WriteAt(p []byte, offset int64) (n int, err error) {
-	if offset != dwa.written {
-		log.Errorf("Received write to unexpected offset for pipe")
-		return 0, fmt.Errorf("Can't do out-of-order writes to pipe, adjust concurrency")
+func (dwa *downloadWriterAt) WriteAt(p []byte, offset int64) (n int, err error) {
+	// Ensure we have the lock
+	dwa.cond.L.Lock()
+
+	for offset != dwa.written {
+		dwa.cond.Wait()
 	}
-	return dwa.w.Write(p)
-}
 
-// Helper type to give a fake Close method
-type downloadReader struct {
-	r io.Reader
-}
+	writtenNow, err := dwa.w.Write(p)
 
-// Pass-through Read method for downloadReader
-func (dr downloadReader) Read(p []byte) (n int, err error) {
-	return dr.r.Read(p)
-}
+	dwa.written += int64(writtenNow)
 
-// Fake Closer, never fails
-func (dr downloadReader) Close() (err error) {
-	return nil
+	dwa.cond.Broadcast()
+	dwa.cond.L.Unlock()
+	return writtenNow, err
+
 }
 
 // NewFileReader returns an io.ReadCloser instance that's fed from the
 // object
 func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
-	fileSize, err := sb.GetFileSize(filePath)
+	_, err := sb.GetFileSize(filePath)
 
 	// Bail out early if the object does not exist, adds one roundtrip
 	// but probably still worth it
@@ -205,24 +200,16 @@ func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	var wg sync.WaitGroup
+	mutex := sync.Mutex{}
+
+	cond := sync.NewCond(&mutex)
 	var reader io.ReadCloser
 	var writer io.WriterAt
 
-	wg.Add(1)
-
-	if sb.Downloader.Concurrency == 1 {
-		// No concurrency - use a pipe
-		var pipeWriter io.Writer
-		reader, pipeWriter = io.Pipe()
-		writer = downloadWriterAt{pipeWriter, 0}
-	} else {
-		// Concurrent download, download to memory buffer (unclear how
-		// useful this is)
-		buf := make([]byte, fileSize)
-		writer = aws.NewWriteAtBuffer(buf)
-		reader = downloadReader{bytes.NewReader(buf)}
-	}
+	// No concurrency - use a pipe
+	var pipeWriter io.Writer
+	reader, pipeWriter = io.Pipe()
+	writer = &downloadWriterAt{pipeWriter, 0, cond}
 
 	go func() {
 		_, err := sb.Downloader.Download(writer, &s3.GetObjectInput{
@@ -235,13 +222,8 @@ func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 
 		}
 
-		wg.Done()
 	}()
 
-	if sb.Downloader.Concurrency != 1 {
-		// For memory downloads, wait until they are completed
-		wg.Wait()
-	}
 	return reader, nil
 }
 

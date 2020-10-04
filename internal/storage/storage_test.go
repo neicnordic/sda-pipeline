@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -223,6 +224,55 @@ func setupFakeS3() (err error) {
 	}
 
 	return err
+}
+
+func TestDownloadWriterAtOutOfOrder(t *testing.T) {
+
+	mutex := sync.Mutex{}
+	cond := sync.NewCond(&mutex)
+	var writer io.WriterAt
+
+	var runFirst, runSecond, runThird sync.WaitGroup
+
+	runFirst.Add(1)
+	runSecond.Add(1)
+	runThird.Add(1)
+
+	buf := new(bytes.Buffer)
+	writer = &downloadWriterAt{buf, 0, cond}
+
+	// Some goroutines to do delayed writes
+	go func() {
+		runThird.Wait()
+		_, _ = writer.WriteAt([]byte("This goes first. "), 0)
+	}()
+
+	go func() {
+		runSecond.Wait()
+		_, _ = writer.WriteAt([]byte("This goes last. "), 42)
+
+	}()
+
+	go func() {
+		runFirst.Wait()
+		_, _ = writer.WriteAt([]byte("This goes in the middle. "), 17)
+	}()
+
+	// Let them loose in our desired order
+	runFirst.Done()
+	time.Sleep(15000)
+	runSecond.Done()
+	time.Sleep(15000)
+	runThird.Done()
+
+	// Assume this is enough fot things to happen rather than doing anoter
+	// waitgroup
+	time.Sleep(15000)
+
+	assert.Equal(t, 58, buf.Len(), "Not expected amount of bytes written")
+	assert.Equal(t, []byte("This goes first. This goes in the middle. This goes last. "),
+		buf.Bytes(),
+		"Out of order writes do not appear as expected")
 }
 
 func TestS3Backend(t *testing.T) {

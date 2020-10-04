@@ -162,6 +162,7 @@ func configS3Storage(prefix string) storage.S3Conf {
 
 	s3.Port = 443
 	s3.Region = "us-east-1"
+	s3.Concurrency = 1
 
 	if viper.IsSet(prefix + ".port") {
 		s3.Port = viper.GetInt(prefix + ".port")

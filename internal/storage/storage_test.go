@@ -42,7 +42,8 @@ var ts *httptest.Server
 var s3DoesNotExist = "nothing such"
 var s3Creatable = "somename"
 
-var writeData = []byte(strings.Repeat("this is a test", 4000))
+// Test data to write, large enough to split to several objects
+var writeData = []byte(strings.Repeat("this is a test", 850000))
 
 var cleanupFilesBack [1000]string
 var cleanupFiles []string = cleanupFilesBack[0:0]
@@ -149,11 +150,15 @@ func TestPosixBackend(t *testing.T) {
 	}
 
 	var readBackBuffer [4096]byte
-	readBack, err := reader.Read(readBackBuffer[0:4096])
+	for offset := 0; offset < len(writeData); {
 
-	assert.Equal(t, len(writeData), readBack, "did not read back data as expected")
-	assert.Equal(t, writeData, readBackBuffer[:readBack], "did not read back data as expected")
-	assert.Nil(t, err, "unexpected error when reading back data")
+		readBack, err := reader.Read(readBackBuffer[0:4096])
+
+		assert.Equal(t, writeData[offset:offset+readBack], readBackBuffer[:readBack], "did not read back data as expected")
+		assert.Nil(t, err, "unexpected error when reading back data")
+
+		offset += readBack
+	}
 
 	size, err := backend.GetFileSize(writable)
 	assert.Nil(t, err, "posix NewFileReader failed when it should work")
@@ -257,10 +262,17 @@ func TestS3Backend(t *testing.T) {
 	}
 
 	var readBackBuffer [4096]byte
-	readBack, err := reader.Read(readBackBuffer[0:4096])
 
-	assert.Equal(t, len(writeData), readBack, "did not read back data as expected")
-	assert.Equal(t, writeData, readBackBuffer[:readBack], "did not read back data as expected")
+	for offset := 0; offset < len(writeData); {
+
+		readBack, err := reader.Read(readBackBuffer[0:4096])
+
+		s := writeData[offset : offset+readBack]
+		assert.Equal(t, s, readBackBuffer[:readBack], "did not read back data as expected")
+		assert.Nil(t, err, "unexpected error when reading back data")
+
+		offset += readBack
+	}
 
 	if err != nil && err != io.EOF {
 		assert.Nil(t, err, "unexpected error when reading back data")

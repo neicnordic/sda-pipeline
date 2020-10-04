@@ -43,7 +43,7 @@ var ts *httptest.Server
 var s3DoesNotExist = "nothing such"
 var s3Creatable = "somename"
 
-var writeData = []byte(strings.Repeat("this is a test", 575000))
+var writeData = []byte(strings.Repeat("this is a test, we want to use a not too small object to test some limits", 750000))
 
 var cleanupFilesBack [1000]string
 var cleanupFiles []string = cleanupFilesBack[0:0]
@@ -152,12 +152,12 @@ func TestPosixBackend(t *testing.T) {
 	var readBackBuffer [4096]byte
 	for offset := 0; offset < len(writeData); {
 
-			readBack, err := reader.Read(readBackBuffer[0:4096])
+		readBack, err := reader.Read(readBackBuffer[0:4096])
 
-			assert.Equal(t, writeData[offset:offset+readBack], readBackBuffer[:readBack], "did not read back data as expected")
-			assert.Nil(t, err, "unexpected error when reading back data")
+		assert.Equal(t, writeData[offset:offset+readBack], readBackBuffer[:readBack], "did not read back data as expected")
+		assert.Nil(t, err, "unexpected error when reading back data")
 
-			offset += readBack
+		offset += readBack
 	}
 
 	size, err := backend.GetFileSize(writable)

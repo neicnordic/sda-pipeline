@@ -166,7 +166,7 @@ type downloadWriterAt struct {
 }
 
 // Simple WriteAt that can only be used to channel through to a non-seekable Writer
-func (dwa downloadWriterAt) WriteAt(p []byte, offset int64) (n int, err error) {
+func (dwa *downloadWriterAt) WriteAt(p []byte, offset int64) (n int, err error) {
 	// Verify offset so we get things in order
 	if offset != dwa.written {
 		log.Errorf("Received write to unexpected offset (%d instead of %d(", offset, dwa.written)
@@ -201,7 +201,7 @@ func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 	// No concurrency - use a pipe
 	var pipeWriter io.Writer
 	reader, pipeWriter = io.Pipe()
-	writer = downloadWriterAt{pipeWriter, 0}
+	writer = &downloadWriterAt{pipeWriter, 0}
 
 	go func() {
 		_, err := sb.Downloader.Download(writer, &s3.GetObjectInput{

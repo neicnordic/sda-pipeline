@@ -12,12 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var (
-	defaultRequiredConfVars = []string{
-		"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "broker.routingkey",
-		"db.host", "db.port", "db.user", "db.password", "db.database",
-	}
-)
+var defaultRequiredConfVars = requiredConfVars
 
 type TestSuite struct {
 	suite.Suite
@@ -256,6 +251,33 @@ func (suite *TestSuite) TestMapperConfiguration() {
 	assert.Equal(suite.T(), "test", config.Database.User)
 	assert.Equal(suite.T(), "test", config.Database.Password)
 	assert.Equal(suite.T(), "test", config.Database.Database)
+
+	// Clear variables
+	viper.Reset()
+	requiredConfVars = defaultRequiredConfVars
+
+	// At this point we should fail because we lack configuration
+	config, err = NewConfig("mapper")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	viper.Set("broker.host", "test")
+	viper.Set("broker.port", 123)
+	viper.Set("broker.user", "test")
+	viper.Set("broker.password", "test")
+	viper.Set("broker.queue", "test")
+
+	// We should still fail here
+	config, err = NewConfig("mapper")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	suite.SetupTest()
+	// Now we should have enough
+	config, err = NewConfig("mapper")
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config)
+
 }
 
 func (suite *TestSuite) TestFinalizeConfiguration() {
@@ -275,6 +297,33 @@ func (suite *TestSuite) TestFinalizeConfiguration() {
 	assert.Equal(suite.T(), "test", config.Database.User)
 	assert.Equal(suite.T(), "test", config.Database.Password)
 	assert.Equal(suite.T(), "test", config.Database.Database)
+
+	// Clear variables
+	viper.Reset()
+	requiredConfVars = defaultRequiredConfVars
+
+	// At this point we should fail because we lack configuration
+	config, err = NewConfig("finalize")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	viper.Set("broker.host", "test")
+	viper.Set("broker.port", 123)
+	viper.Set("broker.user", "test")
+	viper.Set("broker.password", "test")
+	viper.Set("broker.queue", "test")
+
+	// We should still fail here
+	config, err = NewConfig("finalize")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	suite.SetupTest()
+	// Now we should have enough
+	config, err = NewConfig("finalize")
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config)
+
 }
 
 func (suite *TestSuite) TestVerifyConfiguration() {
@@ -303,6 +352,33 @@ func (suite *TestSuite) TestVerifyConfiguration() {
 	assert.NotNil(suite.T(), config.Crypt4gh)
 	assert.Equal(suite.T(), "test", config.Crypt4gh.KeyPath)
 	assert.Equal(suite.T(), "test", config.Crypt4gh.Passphrase)
+
+	// Clear variables
+	viper.Reset()
+	requiredConfVars = defaultRequiredConfVars
+
+	// At this point we should fail because we lack configuration
+	config, err = NewConfig("verify")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	viper.Set("broker.host", "test")
+	viper.Set("broker.port", 123)
+	viper.Set("broker.user", "test")
+	viper.Set("broker.password", "test")
+	viper.Set("broker.queue", "test")
+
+	// We should still fail here
+	config, err = NewConfig("verify")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	suite.SetupTest()
+	// Now we should have enough
+	config, err = NewConfig("verify")
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config)
+
 }
 
 func (suite *TestSuite) TestIngestConfiguration() {
@@ -335,9 +411,36 @@ func (suite *TestSuite) TestIngestConfiguration() {
 	assert.NotNil(suite.T(), config.Crypt4gh)
 	assert.Equal(suite.T(), "test", config.Crypt4gh.KeyPath)
 	assert.Equal(suite.T(), "test", config.Crypt4gh.Passphrase)
+
+	// Clear variables
+	viper.Reset()
+	requiredConfVars = defaultRequiredConfVars
+
+	// At this point we should fail because we lack configuration
+	config, err = NewConfig("ingest")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	viper.Set("broker.host", "test")
+	viper.Set("broker.port", 123)
+	viper.Set("broker.user", "test")
+	viper.Set("broker.password", "test")
+	viper.Set("broker.queue", "test")
+
+	// We should still fail here
+	config, err = NewConfig("ingest")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	suite.SetupTest()
+	// Now we should have enough
+	config, err = NewConfig("ingest")
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config)
+
 }
 
-func (suite *TestSuite) TestINterceptConfiguration() {
+func (suite *TestSuite) TestInterceptConfiguration() {
 	config, err := NewConfig("intercept")
 	assert.NotNil(suite.T(), config)
 	assert.NoError(suite.T(), err)
@@ -348,6 +451,26 @@ func (suite *TestSuite) TestINterceptConfiguration() {
 	assert.Equal(suite.T(), "test", config.Broker.Password)
 	assert.Equal(suite.T(), "test", config.Broker.Queue)
 	assert.Equal(suite.T(), "test", config.Broker.RoutingKey)
+
+	// Clear variables
+	viper.Reset()
+	requiredConfVars = defaultRequiredConfVars
+
+	// At this point we should fail because we lack configuration
+	config, err = NewConfig("intercept")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	viper.Set("broker.host", "test")
+	viper.Set("broker.port", 123)
+	viper.Set("broker.user", "test")
+	viper.Set("broker.password", "test")
+	viper.Set("broker.queue", "test")
+
+	// Now we should have enough
+	config, err = NewConfig("intercept")
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config)
 }
 func (suite *TestSuite) TestDefaultLogLevel() {
 	viper.Set("log.level", "test")

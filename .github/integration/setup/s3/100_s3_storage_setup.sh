@@ -9,4 +9,5 @@ s3cmd -c s3cmd.conf mb s3://inbox || true
 s3cmd -c s3cmd.conf mb s3://archive || true
 
 # Upload test file
-s3cmd -c s3cmd.conf put dummy_data.c4gh s3://inbox/dummy_data.c4gh
+s3cmd -c s3cmd.conf put dummy_data_copy.c4gh s3://inbox/dummy_data.c4gh
+s3cmd -c s3cmd.conf put largefile.c4gh s3://inbox/largefile.c4gh

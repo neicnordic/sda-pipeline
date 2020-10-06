@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
-	github.com/aws/aws-sdk-go v1.35.2
+	github.com/aws/aws-sdk-go v1.35.3
 	github.com/elixir-oslo/crypt4gh v1.0.1
 	github.com/google/uuid v1.1.2
 	github.com/johannesboyne/gofakes3 v0.0.0-20200716060623-6b2b4cb092cc

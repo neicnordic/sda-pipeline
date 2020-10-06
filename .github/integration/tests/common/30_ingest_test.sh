@@ -11,7 +11,7 @@ for file in dummy_data.c4gh large_file.c4gh; do
     md5sum=$(md5sum "$file" | cut -d' ' -f 1)
     sha256sum=$(sha256sum "$file" | cut -d' ' -f 1)
 
-    C4GH_PASSHPRASE=$(grep -F passphrase config.yaml | sed -e 's/.* //' -e 's/"//g')
+    C4GH_PASSPHRASE=$(grep -F passphrase config.yaml | sed -e 's/.* //' -e 's/"//g')
     export C4GH_PASSPHRASE
 
     decsha256sum=$(crypt4gh decrypt --sk c4gh.sec.pem < "$file" | sha256sum | cut -d' ' -f 1)

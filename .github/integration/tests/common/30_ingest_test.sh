@@ -4,7 +4,7 @@ cd dev_utils
 
 count=1
 
-for file in dummy_data.c4gh large_file.c4gh; do
+for file in dummy_data.c4gh largefile.c4gh; do
 	    
     now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 

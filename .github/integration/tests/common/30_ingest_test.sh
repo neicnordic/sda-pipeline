@@ -56,7 +56,10 @@ for file in dummy_data.c4gh largefile.c4gh; do
        fi
        sleep 10
     done
-    
+
+    # Wait some for things to settle
+    filesize=$(stat -c '%b' "$file")
+    sleep "$(($filesize/100000))"
 
     RETRY_TIMES=0
     until docker logs verify --since="$now" 2>&1 | grep "Mark completed"
@@ -71,6 +74,15 @@ for file in dummy_data.c4gh largefile.c4gh; do
 
     now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
     access=$(printf "EGAF%011d" "$count" )
+    
+
+
+    archivepath=$(curl -u test:test 'localhost:15672/api/queues/test/files.verified/get' \
+		   -H 'Content-Type: application/json;charset=UTF-8' \
+		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}' | \
+		  jq -r '.[0]["payload"]' |  jq -r '.["filepath"]'
+   )
+
     
     # Publish stable id
     curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
@@ -89,7 +101,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
                      "payload":"{
                                  \"type\":\"accession\",
                                  \"user\":\"test\",
-                                 \"filepath\":\"/FILENAME\",
+                                 \"filepath\":\"FILENAME\",
                                  \"accession_id\":\"ACCESSIONID\",
                                  \"decrypted_checksums\":[
                                                           {
@@ -102,13 +114,13 @@ for file in dummy_data.c4gh largefile.c4gh; do
                                                           }
                                                          ]
                                 }"
-                    }'| sed -e "s/FILENAME/$file/" -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/$access/"  )"
+                    }'| sed -e "s/FILENAME/$archivepath/" -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/$access/"  )"
 
     RETRY_TIMES=0
     until docker logs finalize --since="$now" 2>&1 | grep "Mark ready"
     do echo "waiting for finalize to complete"
        RETRY_TIMES=$((RETRY_TIMES+1));
-       if [ $RETRY_TIMES -eq 6 ]; then
+       if [ $RETRY_TIMES -eq 30 ]; then
 	   docker logs finalize
 	   exit 1
        fi

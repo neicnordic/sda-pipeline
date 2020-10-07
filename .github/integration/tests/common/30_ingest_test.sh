@@ -65,7 +65,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
     until docker logs verify --since="$now" 2>&1 | grep "Mark completed"
     do echo "waiting for verification to complete"
        RETRY_TIMES=$((RETRY_TIMES+1));
-       if [ "$RETRY_TIMES" -eq 6 ]; then
+       if [ "$RETRY_TIMES" -eq 30 ]; then
 	   docker logs verify
 	   exit 1
        fi

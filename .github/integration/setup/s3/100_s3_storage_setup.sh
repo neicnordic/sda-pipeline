@@ -11,3 +11,6 @@ s3cmd -c s3cmd.conf mb s3://archive || true
 # Upload test file
 s3cmd -c s3cmd.conf put dummy_data.c4gh s3://inbox/dummy_data.c4gh
 s3cmd -c s3cmd.conf put largefile.c4gh s3://inbox/largefile.c4gh
+s3cmd -c s3cmd.conf put empty.c4gh s3://inbox/empty.c4gh
+s3cmd -c s3cmd.conf put truncated1.c4gh s3://inbox/truncated1.c4gh
+s3cmd -c s3cmd.conf put truncated2.c4gh s3://inbox/truncated2.c4gh

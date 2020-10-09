@@ -21,6 +21,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// posixType is the configuration type used for posix backends
+const posixType = "posix"
+
+// s3Type is the configuration type used for posix backends
+const s3Type = "s3"
+
 var testS3Conf = S3Conf{
 	"http://127.0.0.1",
 	9000,
@@ -32,7 +38,7 @@ var testS3Conf = S3Conf{
 	5 * 1024 * 1024,
 	"../../dev_utils/certs/ca.pem"}
 
-var testConf = Conf{"posix", testS3Conf, testPosixConf}
+var testConf = Conf{posixType, testS3Conf, testPosixConf}
 
 var posixDoesNotExist = "/this/does/not/exist"
 var posixNotCreatable = posixDoesNotExist
@@ -73,11 +79,11 @@ func doCleanup() {
 }
 func TestNewBackend(t *testing.T) {
 
-	testConf.Type = "posix"
+	testConf.Type = posixType
 	p, err := NewBackend(testConf)
 	assert.Nil(t, err, "Backend posix failed")
 
-	testConf.Type = "s3"
+	testConf.Type = s3Type
 	s, err := NewBackend(testConf)
 	assert.Nil(t, err, "Backend s3 failed")
 
@@ -87,7 +93,7 @@ func TestNewBackend(t *testing.T) {
 	// test some extra ssl handling
 	testConf.S3.Cacert = "/dev/null"
 	s, err = NewBackend(testConf)
-
+	assert.Nil(t, err, "Backend s3 failed")
 	assert.IsType(t, s, &s3Backend{}, "Wrong type from NewBackend with S3")
 }
 
@@ -107,7 +113,7 @@ func TestMain(m *testing.M) {
 func TestPosixBackend(t *testing.T) {
 
 	defer doCleanup()
-	testConf.Type = "posix"
+	testConf.Type = posixType
 	backend, err := NewBackend(testConf)
 	assert.Nil(t, err, "POSIX backend failed unexpectedly")
 
@@ -196,7 +202,7 @@ func setupFakeS3() (err error) {
 
 	testConf.S3.URL = ts.URL[:portAt]
 	testConf.S3.Port, err = strconv.Atoi(ts.URL[portAt+1:])
-	testConf.Type = "s3"
+	testConf.Type = s3Type
 
 	if err != nil {
 		log.Error("Unexpected error while setting up fake s3")
@@ -204,6 +210,10 @@ func setupFakeS3() (err error) {
 	}
 
 	backEnd, err := NewBackend(testConf)
+	if err != nil {
+		return err
+	}
+
 	s3back := backEnd.(*s3Backend)
 
 	_, err = s3back.Client.CreateBucket(&s3.CreateBucketInput{
@@ -227,7 +237,7 @@ func setupFakeS3() (err error) {
 
 func TestS3Fail(t *testing.T) {
 
-	testConf.Type = "s3"
+	testConf.Type = s3Type
 
 	tmp := testConf.S3.URL
 
@@ -250,7 +260,7 @@ func TestS3Fail(t *testing.T) {
 }
 
 func TestPOSIXFail(t *testing.T) {
-	testConf.Type = "posix"
+	testConf.Type = posixType
 
 	tmp := testConf.Posix.Location
 
@@ -282,7 +292,7 @@ func TestPOSIXFail(t *testing.T) {
 
 func TestS3Backend(t *testing.T) {
 
-	testConf.Type = "s3"
+	testConf.Type = s3Type
 	backend, err := NewBackend(testConf)
 	assert.Nil(t, err, "Backend failed")
 

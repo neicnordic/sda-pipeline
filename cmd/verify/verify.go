@@ -60,7 +60,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	backend := storage.NewBackend(conf.Archive)
+	backend, err := storage.NewBackend(conf.Archive)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	key, err := readKey(conf.Crypt4gh)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
@@ -141,7 +149,7 @@ func main() {
 			hr := bytes.NewReader(header)
 			mr := io.MultiReader(hr, f)
 
-			c4ghr, err := streaming.NewCrypt4GHReader(mr, key, nil)
+			c4ghr, err := streaming.NewCrypt4GHReader(mr, *key, nil)
 			if err != nil {
 				log.Error(err)
 				continue
@@ -204,4 +212,21 @@ func main() {
 	}()
 
 	<-forever
+}
+
+// readKey reads and decrypts the c4gh key so it's ready for use
+func readKey(conf config.Crypt4gh) (*[32]byte, error) {
+	// Make sure the key path and passphrase is valid
+	keyFile, err := os.Open(conf.KeyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := keys.ReadPrivateKey(keyFile, []byte(conf.Passphrase))
+	if err != nil {
+		return nil, err
+	}
+
+	keyFile.Close()
+	return &key, nil
 }

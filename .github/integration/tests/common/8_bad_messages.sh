@@ -1,0 +1,44 @@
+#!/bin/bash
+
+#
+# Submit some messages that will trigger various failures. Do this
+# before the "real" work to verify that these failures are not top of
+# queue and handled again and again.
+#
+
+
+for routingkey in files archived verified completed stableIDs; do 
+    curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
+	 -H 'Content-Type: application/json;charset=UTF-8' \
+	 --data-binary '{
+                                  "vhost":"test",
+                               	  "name":"localega",
+    	                       	  "properties":{
+    	                                     "delivery_mode":2,
+    	                                     "correlation_id":"1",
+    	                                     "content_encoding":"UTF-8",
+    	                                     "content_type":"application/json"
+    	                                    },
+    	                       "routing_key":"'"$routingkey"'",
+    	                       "payload_encoding":"string",
+    	                       "payload":"{
+			                   I give you bad json!'
+done
+
+for routingkey in files archived verified completed stableIDs; do 
+    curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
+	 -H 'Content-Type: application/json;charset=UTF-8' \
+	 --data-binary '{
+                                  "vhost":"test",
+                               	  "name":"localega",
+    	                       	  "properties":{
+    	                                     "delivery_mode":2,
+    	                                     "correlation_id":"1",
+    	                                     "content_encoding":"UTF-8",
+    	                                     "content_type":"application/json"
+    	                                    },
+    	                       "routing_key":"'"$routingkey"'",
+    	                       "payload_encoding":"string",
+    	                       "payload":"{ \"json\":\"yes, but not localega\" }"'
+
+done

@@ -61,6 +61,23 @@ func main() {
 		log.Fatal(err)
 	}
 
+	key, err := readKey(conf.Crypt4gh)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	archive, err := storage.NewBackend(conf.Archive)
+	if err != nil {
+		log.Fatal(err)
+
+	}
+
+	inbox, err := storage.NewBackend(conf.Inbox)
+	if err != nil {
+		log.Fatal(err)
+
+	}
+
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
 	defer db.Close()
@@ -89,9 +106,6 @@ func main() {
 				// publish MQ error
 				continue
 			}
-
-			archive := storage.NewBackend(conf.Archive)
-			inbox := storage.NewBackend(conf.Inbox)
 
 			log.Debugf("Received a message: %s", delivered.Body)
 			if err := json.Unmarshal(delivered.Body, &message); err != nil {
@@ -156,7 +170,7 @@ func main() {
 
 				//nolint:nestif
 				if bytesRead <= int64(len(readBuffer)) {
-					header, err := tryDecrypt(conf.Crypt4gh, readBuffer)
+					header, err := tryDecrypt(key, readBuffer)
 					if err != nil {
 						log.Errorln(err)
 						continue
@@ -256,21 +270,29 @@ func main() {
 	<-forever
 }
 
+// readKey reads and decrypts the c4gh key so it's ready for use
+func readKey(conf config.Crypt4gh) (*[32]byte, error) {
+	// Make sure the key path and passphrase is valid
+	keyFile, err := os.Open(conf.KeyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := keys.ReadPrivateKey(keyFile, []byte(conf.Passphrase))
+	if err != nil {
+		return nil, err
+	}
+
+	keyFile.Close()
+	return &key, nil
+}
+
 // tryDecrypt tries to decrypt the start of buf.
-func tryDecrypt(c config.Crypt4gh, buf []byte) ([]byte, error) {
-	keyFile, err := os.Open(c.KeyPath)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-	key, err := keys.ReadPrivateKey(keyFile, []byte(c.Passphrase))
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
+func tryDecrypt(key *[32]byte, buf []byte) ([]byte, error) {
+
 	log.Debugln("Try decrypting the first data block")
 	a := bytes.NewReader(buf)
-	b, err := streaming.NewCrypt4GHReader(a, key, nil)
+	b, err := streaming.NewCrypt4GHReader(a, *key, nil)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -281,7 +303,6 @@ func tryDecrypt(c config.Crypt4gh, buf []byte) ([]byte, error) {
 		log.Error(err)
 		return nil, err
 	}
-	keyFile.Close()
 
 	f := bytes.NewReader(buf)
 	header, err := headers.ReadHeader(f)

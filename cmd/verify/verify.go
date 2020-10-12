@@ -65,7 +65,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	key, err := readKey(conf.Crypt4gh)
+	key, err := config.GetC4GHKey()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -212,21 +212,4 @@ func main() {
 	}()
 
 	<-forever
-}
-
-// readKey reads and decrypts the c4gh key so it's ready for use
-func readKey(conf config.Crypt4gh) (*[32]byte, error) {
-	// Make sure the key path and passphrase is valid
-	keyFile, err := os.Open(conf.KeyPath)
-	if err != nil {
-		return nil, err
-	}
-
-	key, err := keys.ReadPrivateKey(keyFile, []byte(conf.Passphrase))
-	if err != nil {
-		return nil, err
-	}
-
-	keyFile.Close()
-	return &key, nil
 }

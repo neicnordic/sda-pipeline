@@ -349,9 +349,6 @@ func (suite *TestSuite) TestVerifyConfiguration() {
 	assert.NotNil(suite.T(), config.Archive)
 	assert.NotNil(suite.T(), config.Archive.Posix)
 	assert.Equal(suite.T(), "test", config.Archive.Posix.Location)
-	assert.NotNil(suite.T(), config.Crypt4gh)
-	assert.Equal(suite.T(), "test", config.Crypt4gh.KeyPath)
-	assert.Equal(suite.T(), "test", config.Crypt4gh.Passphrase)
 
 	// Clear variables
 	viper.Reset()
@@ -408,9 +405,6 @@ func (suite *TestSuite) TestIngestConfiguration() {
 	assert.NotNil(suite.T(), config.Archive)
 	assert.NotNil(suite.T(), config.Archive.Posix)
 	assert.Equal(suite.T(), "test", config.Archive.Posix.Location)
-	assert.NotNil(suite.T(), config.Crypt4gh)
-	assert.Equal(suite.T(), "test", config.Crypt4gh.KeyPath)
-	assert.Equal(suite.T(), "test", config.Crypt4gh.Passphrase)
 
 	// Clear variables
 	viper.Reset()
@@ -487,4 +481,23 @@ func (suite *TestSuite) TestConfigPath() {
 	assert.Error(suite.T(), err)
 	absPath, _ := filepath.Abs("../../dev_utils/config.yaml")
 	assert.Equal(suite.T(), absPath, viper.ConfigFileUsed())
+}
+
+func (suite *TestSuite) TestGetC4GHKey_keyError() {
+
+	viper.Set("c4gh.filepath", "/doesnotexist")
+
+	byte, err := GetC4GHKey()
+	assert.Nil(suite.T(), byte)
+	assert.EqualError(suite.T(), err, "open /doesnotexist: no such file or directory")
+}
+
+func (suite *TestSuite) TestGetC4GHKey_passError() {
+
+	viper.Set("c4gh.filepath", "../../dev_utils/c4gh.sec.pem")
+	viper.Set("c4gh.passphrase", "asdf")
+
+	key, err := GetC4GHKey()
+	assert.Nil(suite.T(), key)
+	assert.EqualError(suite.T(), err, "chacha20poly1305: message authentication failed")
 }

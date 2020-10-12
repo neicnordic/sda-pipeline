@@ -3,9 +3,11 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"path"
 	"strings"
 
+	"github.com/elixir-oslo/crypt4gh/keys"
 	log "github.com/sirupsen/logrus"
 
 	"sda-pipeline/internal/broker"
@@ -35,15 +37,8 @@ var (
 type Config struct {
 	Archive  storage.Conf
 	Broker   broker.MQConf
-	Crypt4gh Crypt4gh
 	Inbox    storage.Conf
 	Database database.DBConf
-}
-
-// Crypt4gh holds c4gh related config info
-type Crypt4gh struct {
-	KeyPath    string
-	Passphrase string
 }
 
 // NewConfig initializes and parses the config file and/or environment using
@@ -115,7 +110,7 @@ func NewConfig(app string) (*Config, error) {
 	case "ingest":
 		c.configInbox()
 		c.configArchive()
-		c.configCrypt4gh()
+
 		err = c.configDatabase()
 		if err != nil {
 			return nil, err
@@ -125,7 +120,7 @@ func NewConfig(app string) (*Config, error) {
 		return c, nil
 	case "verify":
 		c.configArchive()
-		c.configCrypt4gh()
+
 		err = c.configDatabase()
 		if err != nil {
 			return nil, err
@@ -293,8 +288,22 @@ func (c *Config) configDatabase() error {
 	return nil
 }
 
-// configCrypt4gh provides configuration for c4gh operations
-func (c *Config) configCrypt4gh() {
-	c.Crypt4gh.KeyPath = viper.GetString("c4gh.filepath")
-	c.Crypt4gh.Passphrase = viper.GetString("c4gh.passphrase")
+// GetC4GHKey reads and decrypts and returns the c4gh key
+func GetC4GHKey() (*[32]byte, error) {
+	keyPath := viper.GetString("c4gh.filepath")
+	passphrase := viper.GetString("c4gh.passphrase")
+
+	// Make sure the key path and passphrase is valid
+	keyFile, err := os.Open(keyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := keys.ReadPrivateKey(keyFile, []byte(passphrase))
+	if err != nil {
+		return nil, err
+	}
+
+	keyFile.Close()
+	return &key, nil
 }

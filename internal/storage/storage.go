@@ -163,9 +163,10 @@ func newS3Backend(config S3Conf) *s3Backend {
 
 // Helper writer to be used for downloader if concurrency is disabled
 type downloadWriterAt struct {
-	w       io.Writer
-	written int64
-	cond    *sync.Cond
+	w        io.WriteCloser
+	written  int64
+	fileSize int64
+	cond     *sync.Cond
 }
 
 // Simple WriteAt that can only be used to channel through to a non-seekable Writer
@@ -182,6 +183,11 @@ func (dwa *downloadWriterAt) WriteAt(p []byte, offset int64) (n int, err error) 
 
 	dwa.written += int64(writtenNow)
 
+	if dwa.written == dwa.fileSize {
+		// We've written the entire file, there won't be any more data now.
+		dwa.w.Close()
+	}
+
 	dwa.cond.Broadcast()
 	dwa.cond.L.Unlock()
 	return writtenNow, err
@@ -191,7 +197,7 @@ func (dwa *downloadWriterAt) WriteAt(p []byte, offset int64) (n int, err error) 
 // NewFileReader returns an io.ReadCloser instance that's fed from the
 // object
 func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
-	_, err := sb.GetFileSize(filePath)
+	fileSize, err := sb.GetFileSize(filePath)
 
 	// Bail out early if the object does not exist, adds one roundtrip
 	// but probably still worth it
@@ -207,9 +213,9 @@ func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 	var writer io.WriterAt
 
 	// No concurrency - use a pipe
-	var pipeWriter io.Writer
+	var pipeWriter io.WriteCloser
 	reader, pipeWriter = io.Pipe()
-	writer = &downloadWriterAt{pipeWriter, 0, cond}
+	writer = &downloadWriterAt{pipeWriter, 0, fileSize, cond}
 
 	go func() {
 		_, err := sb.Downloader.Download(writer, &s3.GetObjectInput{

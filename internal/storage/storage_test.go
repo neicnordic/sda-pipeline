@@ -238,8 +238,8 @@ func TestDownloadWriterAtOutOfOrder(t *testing.T) {
 	runSecond.Add(1)
 	runThird.Add(1)
 
-	buf := new(bytes.Buffer)
-	writer = &downloadWriterAt{buf, 0, cond}
+	pipeReader, pipeWriter := io.Pipe()
+	writer = &downloadWriterAt{pipeWriter, 0, 58, cond}
 
 	// Some goroutines to do delayed writes
 	go func() {
@@ -265,13 +265,26 @@ func TestDownloadWriterAtOutOfOrder(t *testing.T) {
 	time.Sleep(15000)
 	runThird.Done()
 
-	// Assume this is enough fot things to happen rather than doing anoter
-	// waitgroup
-	time.Sleep(1500000)
+	// Hoping things are down when we get here
 
-	assert.Equal(t, 58, buf.Len(), "Not expected amount of bytes written")
+	buf := make([]byte, 4096)
+
+	readBuf := buf
+	totRead := 0
+	readNow := 0
+	var err error
+
+	for err == nil && totRead < 58 {
+
+		readNow, err = pipeReader.Read(readBuf)
+		readBuf = readBuf[readNow:]
+		totRead += readNow
+	}
+
+	assert.Nil(t, err, "Reading from pipe failed")
+	assert.Equal(t, 58, totRead, "Not expected amount of bytes written")
 	assert.Equal(t, []byte("This goes first. This goes in the middle. This goes last. "),
-		buf.Bytes(),
+		buf[:totRead],
 		"Out of order writes do not appear as expected")
 }
 

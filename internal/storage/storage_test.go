@@ -267,7 +267,7 @@ func TestDownloadWriterAtOutOfOrder(t *testing.T) {
 
 	// Assume this is enough fot things to happen rather than doing anoter
 	// waitgroup
-	time.Sleep(15000)
+	time.Sleep(1500000)
 
 	assert.Equal(t, 58, buf.Len(), "Not expected amount of bytes written")
 	assert.Equal(t, []byte("This goes first. This goes in the middle. This goes last. "),

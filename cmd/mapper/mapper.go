@@ -21,7 +21,7 @@ type message struct {
 }
 
 func main() {
-	conf, err := config.NewConfig("ingest")
+	conf, err := config.NewConfig("mapper")
 	if err != nil {
 		log.Fatal(err)
 	}

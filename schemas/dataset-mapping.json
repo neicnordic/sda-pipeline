@@ -22,7 +22,7 @@
             "type": "string",
             "title": "The Accession identifier for the dataset",
             "description": "The Accession identifier for the dataset",
-            "pattern": "^.*$",
+            "pattern": "^\\S+$",
             "examples": [
                 "EGAD12345678901",
                 "anyidentifier"
@@ -44,7 +44,7 @@
             "additionalItems": false,
             "items": {
                 "type": "string",
-                "pattern": "^.*$"
+                "pattern": "^\\S+$"
             }
         }
     }

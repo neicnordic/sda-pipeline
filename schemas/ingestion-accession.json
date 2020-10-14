@@ -116,7 +116,7 @@
             "type": "string",
             "title": "The Accession identifier",
             "description": "The Accession identifier",
-            "pattern": "^.*$",
+            "pattern": "^\\S+$",
             "examples": [
                 "EGAF12345678901",
                 "anyidentifier"

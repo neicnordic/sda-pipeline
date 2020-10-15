@@ -162,6 +162,7 @@ func configS3Storage(prefix string) storage.S3Conf {
 
 	s3.Port = 443
 	s3.Region = "us-east-1"
+	s3.Concurrency = 1
 
 	if viper.IsSet(prefix + ".port") {
 		s3.Port = viper.GetInt(prefix + ".port")
@@ -173,6 +174,10 @@ func configS3Storage(prefix string) storage.S3Conf {
 
 	if viper.IsSet(prefix + ".chunksize") {
 		s3.Chunksize = viper.GetInt(prefix+".chunksize") * 1024 * 1024
+	}
+
+	if viper.IsSet(prefix + ".concurrent") {
+		s3.Concurrency = viper.GetInt(prefix + ".concurrent")
 	}
 
 	if viper.IsSet(prefix + ".cacert") {

@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -43,7 +44,7 @@ var ts *httptest.Server
 var s3DoesNotExist = "nothing such"
 var s3Creatable = "somename"
 
-var writeData = []byte("this is a test")
+var writeData = []byte(strings.Repeat("this is a test, we want to use a not too small object to test some limits", 750000))
 
 var cleanupFilesBack [1000]string
 var cleanupFiles []string = cleanupFilesBack[0:0]
@@ -150,11 +151,15 @@ func TestPosixBackend(t *testing.T) {
 	}
 
 	var readBackBuffer [4096]byte
-	readBack, err := reader.Read(readBackBuffer[0:4096])
+	for offset := 0; offset < len(writeData); {
 
-	assert.Equal(t, len(writeData), readBack, "did not read back data as expected")
-	assert.Equal(t, writeData, readBackBuffer[:readBack], "did not read back data as expected")
-	assert.Nil(t, err, "unexpected error when reading back data")
+		readBack, err := reader.Read(readBackBuffer[0:4096])
+
+		assert.Equal(t, writeData[offset:offset+readBack], readBackBuffer[:readBack], "did not read back data as expected")
+		assert.Nil(t, err, "unexpected error when reading back data")
+
+		offset += readBack
+	}
 
 	size, err := backend.GetFileSize(writable)
 	assert.Nil(t, err, "posix NewFileReader failed when it should work")
@@ -221,67 +226,136 @@ func setupFakeS3() (err error) {
 	return err
 }
 
+func TestDownloadWriterAtOutOfOrder(t *testing.T) {
+
+	mutex := sync.Mutex{}
+	cond := sync.NewCond(&mutex)
+	var writer io.WriterAt
+
+	var runFirst, runSecond, runThird sync.WaitGroup
+
+	runFirst.Add(1)
+	runSecond.Add(1)
+	runThird.Add(1)
+
+	pipeReader, pipeWriter := io.Pipe()
+	writer = &downloadWriterAt{pipeWriter, 0, 58, cond}
+
+	// Some goroutines to do delayed writes
+	go func() {
+		runThird.Wait()
+		_, _ = writer.WriteAt([]byte("This goes first. "), 0)
+	}()
+
+	go func() {
+		runSecond.Wait()
+		_, _ = writer.WriteAt([]byte("This goes last. "), 42)
+
+	}()
+
+	go func() {
+		runFirst.Wait()
+		_, _ = writer.WriteAt([]byte("This goes in the middle. "), 17)
+	}()
+
+	// Let them loose in our desired order
+	runFirst.Done()
+	time.Sleep(15000)
+	runSecond.Done()
+	time.Sleep(15000)
+	runThird.Done()
+
+	// Hoping things are down when we get here
+
+	buf := make([]byte, 4096)
+
+	readBuf := buf
+	totRead := 0
+	readNow := 0
+	var err error
+
+	for err == nil && totRead < 58 {
+
+		readNow, err = pipeReader.Read(readBuf)
+		readBuf = readBuf[readNow:]
+		totRead += readNow
+	}
+
+	assert.Nil(t, err, "Reading from pipe failed")
+	assert.Equal(t, 58, totRead, "Not expected amount of bytes written")
+	assert.Equal(t, []byte("This goes first. This goes in the middle. This goes last. "),
+		buf[:totRead],
+		"Out of order writes do not appear as expected")
+}
+
 func TestS3Backend(t *testing.T) {
 
-	testConf.Type = "s3"
-	backend := NewBackend(testConf).(*s3Backend)
+	for conc := 0; conc < 5; conc++ {
+		testConf.Type = "s3"
+		testConf.S3.Concurrency = conc
+		backend := NewBackend(testConf).(*s3Backend)
 
-	var buf bytes.Buffer
+		var buf bytes.Buffer
 
-	assert.IsType(t, backend, &s3Backend{}, "Wrong type from NewBackend with s3")
+		assert.IsType(t, backend, &s3Backend{}, "Wrong type from NewBackend with s3")
 
-	writer, err := backend.NewFileWriter(s3Creatable)
+		writer, err := backend.NewFileWriter(s3Creatable)
 
-	assert.NotNil(t, writer, "Got a nil reader for writer from s3")
-	assert.Nil(t, err, "posix NewFileWriter failed when it shouldn't")
+		assert.NotNil(t, writer, "Got a nil reader for writer from s3")
+		assert.Nil(t, err, "posix NewFileWriter failed when it shouldn't")
 
-	written, err := writer.Write(writeData)
+		written, err := writer.Write(writeData)
 
-	assert.Nil(t, err, "Failure when writing to s3 writer")
-	assert.Equal(t, len(writeData), written, "Did not write all writeData")
-	writer.Close()
+		assert.Nil(t, err, "Failure when writing to s3 writer")
+		assert.Equal(t, len(writeData), written, "Did not write all writeData")
+		writer.Close()
 
-	// Give things some time to happen.
-	time.Sleep(1e9)
+		// Give things some time to happen.
+		time.Sleep(1e9)
 
-	reader, err := backend.NewFileReader(s3Creatable)
-	assert.Nil(t, err, "s3 NewFileReader failed when it should work")
-	assert.NotNil(t, reader, "Got a nil reader for s3")
+		reader, err := backend.NewFileReader(s3Creatable)
+		assert.Nil(t, err, "s3 NewFileReader failed when it should work")
+		assert.NotNil(t, reader, "Got a nil reader for s3")
 
-	size, err := backend.GetFileSize(s3Creatable)
-	assert.Nil(t, err, "s3 GetFileSize failed when it should work")
-	assert.Equal(t, int64(len(writeData)), size, "Got an incorrect file size")
+		size, err := backend.GetFileSize(s3Creatable)
+		assert.Nil(t, err, "s3 GetFileSize failed when it should work")
+		assert.Equal(t, int64(len(writeData)), size, "Got an incorrect file size")
 
-	if reader == nil {
-		t.Error("reader that should be usable is not, bailing out")
-		return
+		if reader == nil {
+			t.Error("reader that should be usable is not, bailing out")
+			return
+		}
+
+		var readBackBuffer [4096]byte
+		for offset := 0; offset < len(writeData); {
+
+			readBack, err := reader.Read(readBackBuffer[0:4096])
+
+			assert.Equal(t, writeData[offset:offset+readBack], readBackBuffer[:readBack], "did not read back data as expected")
+			assert.Nil(t, err, "unexpected error when reading back data")
+
+			offset += readBack
+		}
+
+		if err != nil && err != io.EOF {
+			assert.Nil(t, err, "unexpected error when reading back data")
+		}
+
+		buf.Reset()
+
+		log.SetOutput(&buf)
+
+		_, err = backend.GetFileSize(s3DoesNotExist)
+		assert.NotNil(t, err, "s3 GetFileSize worked when it should not")
+		assert.NotZero(t, buf.Len(), "Expected warning missing")
+
+		buf.Reset()
+
+		reader, err = backend.NewFileReader(s3DoesNotExist)
+		assert.NotNil(t, err, "s3 NewFileReader worked when it should not")
+		assert.Nil(t, reader, "Got a non-nil reader for s3")
+		assert.NotZero(t, buf.Len(), "Expected warning missing")
+
+		log.SetOutput(os.Stdout)
 	}
-
-	var readBackBuffer [4096]byte
-	readBack, err := reader.Read(readBackBuffer[0:4096])
-
-	assert.Equal(t, len(writeData), readBack, "did not read back data as expected")
-	assert.Equal(t, writeData, readBackBuffer[:readBack], "did not read back data as expected")
-
-	if err != nil && err != io.EOF {
-		assert.Nil(t, err, "unexpected error when reading back data")
-	}
-
-	buf.Reset()
-
-	log.SetOutput(&buf)
-
-	_, err = backend.GetFileSize(s3DoesNotExist)
-	assert.NotNil(t, err, "s3 GetFileSize worked when it should not")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
-
-	buf.Reset()
-
-	reader, err = backend.NewFileReader(s3DoesNotExist)
-	assert.NotNil(t, err, "s3 NewFileReader worked when it should not")
-	assert.Nil(t, reader, "Got a non-nil reader for s3")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
-
-	log.SetOutput(os.Stdout)
-
 }

@@ -96,14 +96,14 @@ func validateJSON(body []byte) (string, *gojsonschema.Result, error) {
 
 	switch msgType {
 	case "accession":
-		schema = gojsonschema.NewReferenceLoader("file://../../schemas/ingestion-accession.json")
+		schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-accession.json")
 	case "cancel":
-		schema = gojsonschema.NewReferenceLoader("file://../../schemas/ingestion-trigger.json")
+		schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-trigger.json")
 		msgType = ""
 	case "ingest":
-		schema = gojsonschema.NewReferenceLoader("file://../../schemas/ingestion-trigger.json")
+		schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-trigger.json")
 	case "mapping":
-		schema = gojsonschema.NewReferenceLoader("file://../../schemas/dataset-mapping.json")
+		schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/dataset-mapping.json")
 	}
 
 	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))

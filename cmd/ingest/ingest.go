@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
@@ -201,7 +202,14 @@ func main() {
 			log.Debugln("Mark as archived")
 			fileInfo := database.FileInfo{}
 			fileInfo.Path = archivedFile
-			fileInfo.Size = fileSize
+
+			// fix to deal with a slow S3 metadata write,
+			// or we get a 404 when trying to read the file.
+			for fileInfo.Size == 0 {
+				time.Sleep(100 * time.Millisecond)
+				fileInfo.Size, _ = archive.GetFileSize(archivedFile)
+			}
+
 			fileInfo.Checksum = fmt.Sprintf("%x", hash.Sum(nil))
 			if err := db.SetArchived(fileInfo, fileID); err != nil {
 				log.Error("SetArchived failed")

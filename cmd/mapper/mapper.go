@@ -38,7 +38,7 @@ func main() {
 	defer mq.Connection.Close()
 	defer db.Close()
 
-	datasetMapping := gojsonschema.NewReferenceLoader("file://schemas/dataset-mapping.json")
+	datasetMapping := gojsonschema.NewReferenceLoader(conf.SchemasPath + "dataset-mapping.json")
 
 	forever := make(chan bool)
 

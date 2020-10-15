@@ -17,7 +17,12 @@ cd dev_utils
 count=1
 
 for file in dummy_data.c4gh largefile.c4gh; do
+
     curl -u test:test 'localhost:15672/api/queues/test/verified' | jq -r '.["messages_ready"]'
+
+    # Give some time to avoid confounders in logs
+    sleep 10  
+
     now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
     md5sum=$(md5sum "$file" | cut -d' ' -f 1)
@@ -63,8 +68,14 @@ for file in dummy_data.c4gh largefile.c4gh; do
     do echo "waiting for ingestion to complete"
        RETRY_TIMES=$((RETRY_TIMES+1));
        if [ "$RETRY_TIMES" -eq 60 ]; then
-       docker logs ingest
-       exit 1
+           echo "::error::Time out while waiting for ingest to complete, logs:"
+
+	   echo
+	   echo ingest
+	   echo
+	   
+	   docker logs --since="$now" ingest
+	   exit 1
        fi
        sleep 10
     done
@@ -74,8 +85,21 @@ for file in dummy_data.c4gh largefile.c4gh; do
     do echo "waiting for verification to complete"
        RETRY_TIMES=$((RETRY_TIMES+1));
        if [ "$RETRY_TIMES" -eq 60 ]; then
-       docker logs verify
-       exit 1
+           echo "::error::Time out while waiting for verify to complete, logs:"
+
+	   echo
+	   echo ingest
+	   echo
+	   
+	   docker logs --since="$now" ingest
+
+	   echo
+	   echo verify
+	   echo
+	   
+	   docker logs --since="$now" verify
+	   exit 1
+
        fi
        sleep 10
     done
@@ -128,7 +152,25 @@ for file in dummy_data.c4gh largefile.c4gh; do
     do echo "waiting for finalize to complete"
        RETRY_TIMES=$((RETRY_TIMES+1));
        if [ $RETRY_TIMES -eq 60 ]; then
-	   docker logs finalize
+ 	   echo "::error::Time out while waiting for finalize to complete, logs:"
+
+	   echo
+	   echo ingest
+	   echo
+	   
+	   docker logs --since="$now" ingest
+
+	   echo
+	   echo verify
+	   echo
+	   
+	   docker logs --since="$now" verify
+
+	   echo
+	   echo finalize
+	   echo
+	   
+	   docker logs --since="$now" finalize
 	   exit 1
        fi
        sleep 10
@@ -158,28 +200,66 @@ for file in dummy_data.c4gh largefile.c4gh; do
                               \"accession_ids\":[\"ACCESSIONID\"]}"
                            }'| sed -e "s/DATASET/$dataset/" -e "s/ACCESSIONID/$access/" -e "s/CORRID/$count/")"
 
-   dbcheck=$(docker run --rm --name client --network dev_utils_default \
-   neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
-   -t -c "SELECT * from local_ega_ebi.file_dataset where dataset_id='$dataset' and file_id='$access'")
+   RETRY_TIMES=0
+   dbcheck=firstrun
 
-   if [ ${#dbcheck} -eq 0 ]; then
-        echo "Mappings failed"
-        docker run --rm --name client --network dev_utils_default \
-        neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
-        -t -c "SELECT * from local_ega_ebi.file_dataset ORDER BY id DESC"
-        
-        docker run --rm --name client --network dev_utils_default \
-        neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
-        -t -c "SELECT * from local_ega_ebi.filedataset ORDER BY id DESC"
+   until [ "${#dbcheck}" -ne 0 ]; do
 
-        docker run --rm --name client --network dev_utils_default \
-        neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
-        -t -c "SELECT id, status, stable_id, archive_path FROM local_ega.files ORDER BY id DESC"
-        exit 1
-    else
-        echo "Success"
-    fi
+       dbcheck=$(docker run --rm --name client --network dev_utils_default \
+			neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
+			-t -c "SELECT * from local_ega_ebi.file_dataset where dataset_id='$dataset' and file_id='$access'")
 
+       if [ "${#dbcheck}" -eq 0 ]; then
+
+	   sleep 10
+	   RETRY_TIMES=$((RETRY_TIMES+1));
+
+	   if [ "$RETRY_TIMES" -eq 60 ]; then
+
+               echo "Mappings failed"
+               docker run --rm --name client --network dev_utils_default \
+		      neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
+		      -t -c "SELECT * from local_ega_ebi.file_dataset ORDER BY id DESC"
+
+               docker run --rm --name client --network dev_utils_default \
+		      neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
+		      -t -c "SELECT * from local_ega_ebi.filedataset ORDER BY id DESC"
+
+               docker run --rm --name client --network dev_utils_default \
+		      neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
+		      -t -c "SELECT id, status, stable_id, archive_path FROM local_ega.files ORDER BY id DESC"
+
+
+               echo "::error::Timed out waiting for mapper to complete, logs:"
+
+	       echo
+	       echo ingest
+	       echo
+
+	       docker logs --since="$now" ingest
+
+	       echo
+	       echo verify
+	       echo
+
+	       docker logs --since="$now" verify
+
+	       echo
+	       echo finalize
+	       echo
+
+	       docker logs --since="$now" finalize
+
+	       echo
+	       echo mapper
+	       echo
+
+	       docker logs --since="$now" mapper
+
+	       exit 1
+	   fi
+       fi
+   done
 
     count=$((count+1))
 done

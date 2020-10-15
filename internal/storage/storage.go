@@ -161,7 +161,8 @@ func newS3Backend(config S3Conf) *s3Backend {
 		})}
 }
 
-// Helper writer to be used for downloader if concurrency is disabled
+// downloadWriterAt is a helper writer to be used for downloads. Uses a Cond to enable state
+// synchronization between gofuncs.
 type downloadWriterAt struct {
 	w        io.WriteCloser
 	written  int64
@@ -169,8 +170,7 @@ type downloadWriterAt struct {
 	cond     *sync.Cond
 }
 
-// Simple WriteAt that can only be used to channel through to a non-seekable Writer
-// could be expanded with a floating buffer if required
+// WriteAt function for downloadWriterAt to be used to channel through to a non-seekable Writer.
 func (dwa *downloadWriterAt) WriteAt(p []byte, offset int64) (n int, err error) {
 	// Ensure we have the lock
 	dwa.cond.L.Lock()

@@ -9,14 +9,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
-	"github.com/elixir-oslo/crypt4gh/keys"
 	"github.com/elixir-oslo/crypt4gh/streaming"
 	"github.com/xeipuuv/gojsonschema"
 
@@ -127,18 +125,6 @@ func main() {
 				}
 				continue
 			}
-
-			// do file verfication
-			keyFile, err := os.Open(conf.Crypt4gh.KeyPath)
-			if err != nil {
-				log.Error(err)
-			}
-
-			key, err := keys.ReadPrivateKey(keyFile, []byte(conf.Crypt4gh.Passphrase))
-			if err != nil {
-				log.Error(err)
-			}
-			keyFile.Close()
 
 			f, err := backend.NewFileReader(message.ArchivePath)
 			if err != nil {

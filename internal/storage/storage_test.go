@@ -39,7 +39,7 @@ var posixNotCreatable = posixDoesNotExist
 
 var ts *httptest.Server
 
-var s3DoesNotExist = "nothing such"
+// var s3DoesNotExist = "nothing such"
 var s3Creatable = "somename"
 
 var writeData = []byte("this is a test")

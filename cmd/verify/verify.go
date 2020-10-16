@@ -132,13 +132,6 @@ func main() {
 			}
 			keyFile.Close()
 
-			fs, err := backend.GetFileSize(message.ArchivePath)
-
-			if err != nil {
-				log.Error("Failed to get filesize for %s, reason: %v", message.ArchivePath, err)
-				continue
-			}
-
 			f, err := backend.NewFileReader(message.ArchivePath)
 			if err != nil {
 				log.Errorf("Failed to open file: %s, reason: %v", message.ArchivePath, err)

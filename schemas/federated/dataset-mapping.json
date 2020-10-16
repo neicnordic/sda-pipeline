@@ -22,10 +22,9 @@
             "type": "string",
             "title": "The Accession identifier for the dataset",
             "description": "The Accession identifier for the dataset",
-            "pattern": "^\\S+$",
+            "pattern": "^EGAD[0-9]{11}$",
             "examples": [
-                "EGAD12345678901",
-                "anyidentifier"
+                "EGAD12345678901"
             ]
         },
         "accession_ids": {
@@ -37,14 +36,13 @@
                 [
                     "EGAF12345678901",
                     "EGAF12345678902",
-                    "EGAF12345678903",
-                    "anyidentifier"
+                    "EGAF12345678903"
                 ]
             ],
             "additionalItems": false,
             "items": {
                 "type": "string",
-                "pattern": "^\\S+$"
+                "pattern": "^EGAF[0-9]{11}$"
             }
         }
     }

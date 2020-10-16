@@ -116,10 +116,9 @@
             "type": "string",
             "title": "The Accession identifier",
             "description": "The Accession identifier",
-            "pattern": "^\\S+$",
+            "pattern": "^EGAF[0-9]{11}$",
             "examples": [
-                "EGAF12345678901",
-                "anyidentifier"
+                "EGAF12345678901"
             ]
         },
         "decrypted_checksums": {

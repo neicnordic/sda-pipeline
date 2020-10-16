@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
@@ -203,11 +202,11 @@ func main() {
 			fileInfo := database.FileInfo{}
 			fileInfo.Path = archivedFile
 
-			// fix to deal with a slow S3 metadata write,
-			// or we get a 404 when trying to read the file.
-			for fileInfo.Size == 0 {
-				time.Sleep(100 * time.Millisecond)
-				fileInfo.Size, _ = archive.GetFileSize(archivedFile)
+			fileInfo.Size, err = archive.GetFileSize(archivedFile)
+
+			if err != nil {
+				log.Error("Couldn't get file size from archive")
+				continue
 			}
 
 			fileInfo.Checksum = fmt.Sprintf("%x", hash.Sum(nil))

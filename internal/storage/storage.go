@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -155,10 +156,22 @@ func newS3Backend(config S3Conf) *s3Backend {
 
 // NewFileReader returns an io.Reader instance
 func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
+
 	r, err := sb.Client.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(sb.Bucket),
 		Key:    aws.String(filePath),
 	})
+
+	start := time.Now()
+	for err != nil && time.Now().Sub(start).Minutes() < 5 {
+		r, err = sb.Client.GetObject(&s3.GetObjectInput{
+			Bucket: aws.String(sb.Bucket),
+			Key:    aws.String(filePath),
+		})
+		time.Sleep(1 * time.Second)
+
+		fmt.Printf("r: %s, err: %s\n", r, err)
+	}
 
 	if err != nil {
 		log.Error(err)
@@ -172,12 +185,14 @@ func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 func (sb *s3Backend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 	reader, writer := io.Pipe()
 	go func() {
+
 		_, err := sb.Uploader.Upload(&s3manager.UploadInput{
 			Body:            reader,
 			Bucket:          aws.String(sb.Bucket),
 			Key:             aws.String(filePath),
 			ContentEncoding: aws.String("application/octet-stream"),
 		})
+
 		if err != nil {
 			_ = reader.CloseWithError(err)
 		}
@@ -187,9 +202,24 @@ func (sb *s3Backend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 
 // GetFileSize returns the size of a specific object
 func (sb *s3Backend) GetFileSize(filePath string) (int64, error) {
+
 	r, err := sb.Client.HeadObject(&s3.HeadObjectInput{
 		Bucket: aws.String(sb.Bucket),
 		Key:    aws.String(filePath)})
+
+	start := time.Now()
+
+	// Retry on error up to five minutes to allow for
+	// "slow writes' or s3 eventual consistency
+	for err != nil && time.Now().Sub(start).Minutes() < 5 {
+		r, err = sb.Client.HeadObject(&s3.HeadObjectInput{
+			Bucket: aws.String(sb.Bucket),
+			Key:    aws.String(filePath)})
+
+		fmt.Printf("r: %s, err: %s\n", r, err)
+		time.Sleep(1 * time.Second)
+
+	}
 
 	if err != nil {
 		log.Errorln(err)

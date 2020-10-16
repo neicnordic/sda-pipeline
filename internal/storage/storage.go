@@ -163,14 +163,12 @@ func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 	})
 
 	start := time.Now()
-	for err != nil && time.Since(start).Minutes() < 5 {
+	for err != nil && time.Since(start).Minutes() < 2 {
 		r, err = sb.Client.GetObject(&s3.GetObjectInput{
 			Bucket: aws.String(sb.Bucket),
 			Key:    aws.String(filePath),
 		})
 		time.Sleep(1 * time.Second)
-
-		fmt.Printf("r: %s, err: %s\n", r, err)
 	}
 
 	if err != nil {
@@ -211,12 +209,11 @@ func (sb *s3Backend) GetFileSize(filePath string) (int64, error) {
 
 	// Retry on error up to five minutes to allow for
 	// "slow writes' or s3 eventual consistency
-	for err != nil && time.Since(start).Minutes() < 5 {
+	for err != nil && time.Since(start).Minutes() < 2 {
 		r, err = sb.Client.HeadObject(&s3.HeadObjectInput{
 			Bucket: aws.String(sb.Bucket),
 			Key:    aws.String(filePath)})
 
-		fmt.Printf("r: %s, err: %s\n", r, err)
 		time.Sleep(1 * time.Second)
 
 	}

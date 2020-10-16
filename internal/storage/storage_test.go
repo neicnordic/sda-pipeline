@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -240,9 +239,6 @@ func TestS3Backend(t *testing.T) {
 	assert.Nil(t, err, "Failure when writing to s3 writer")
 	assert.Equal(t, len(writeData), written, "Did not write all writeData")
 	writer.Close()
-
-	// Give things some time to happen.
-	time.Sleep(1e9)
 
 	reader, err := backend.NewFileReader(s3Creatable)
 	assert.Nil(t, err, "s3 NewFileReader failed when it should work")

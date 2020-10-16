@@ -50,22 +50,18 @@ for file in dummy_data.c4gh largefile.c4gh; do
     until docker logs ingest --since="$now" 2>&1 | grep "Mark as archived"
     do echo "waiting for ingestion to complete"
        RETRY_TIMES=$((RETRY_TIMES+1));
-       if [ "$RETRY_TIMES" -eq 30 ]; then
+       if [ "$RETRY_TIMES" -eq 60 ]; then
 	   docker logs ingest
 	   exit 1
        fi
        sleep 10
     done
 
-    # Wait some for things to settle
-    filesize=$(stat -c '%b' "$file")
-    sleep "$(($filesize/100000))"
-
     RETRY_TIMES=0
     until docker logs verify --since="$now" 2>&1 | grep "Mark completed"
     do echo "waiting for verification to complete"
        RETRY_TIMES=$((RETRY_TIMES+1));
-       if [ "$RETRY_TIMES" -eq 30 ]; then
+       if [ "$RETRY_TIMES" -eq 60 ]; then
 	   docker logs verify
 	   exit 1
        fi
@@ -120,7 +116,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
     until docker logs finalize --since="$now" 2>&1 | grep "Mark ready"
     do echo "waiting for finalize to complete"
        RETRY_TIMES=$((RETRY_TIMES+1));
-       if [ $RETRY_TIMES -eq 30 ]; then
+       if [ $RETRY_TIMES -eq 60 ]; then
 	   docker logs finalize
 	   exit 1
        fi

@@ -201,7 +201,14 @@ func main() {
 			log.Debugln("Mark as archived")
 			fileInfo := database.FileInfo{}
 			fileInfo.Path = archivedFile
-			fileInfo.Size = fileSize
+
+			fileInfo.Size, err = archive.GetFileSize(archivedFile)
+
+			if err != nil {
+				log.Error("Couldn't get file size from archive")
+				continue
+			}
+
 			fileInfo.Checksum = fmt.Sprintf("%x", hash.Sum(nil))
 			if err := db.SetArchived(fileInfo, fileID); err != nil {
 				log.Error("SetArchived failed")

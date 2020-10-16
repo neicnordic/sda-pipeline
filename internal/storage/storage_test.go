@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -241,9 +240,6 @@ func TestS3Backend(t *testing.T) {
 	assert.Equal(t, len(writeData), written, "Did not write all writeData")
 	writer.Close()
 
-	// Give things some time to happen.
-	time.Sleep(1e9)
-
 	reader, err := backend.NewFileReader(s3Creatable)
 	assert.Nil(t, err, "s3 NewFileReader failed when it should work")
 	assert.NotNil(t, reader, "Got a nil reader for s3")
@@ -271,16 +267,18 @@ func TestS3Backend(t *testing.T) {
 
 	log.SetOutput(&buf)
 
-	_, err = backend.GetFileSize(s3DoesNotExist)
-	assert.NotNil(t, err, "s3 GetFileSize worked when it should not")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
+	if !testing.Short() {
+		_, err = backend.GetFileSize(s3DoesNotExist)
+		assert.NotNil(t, err, "s3 GetFileSize worked when it should not")
+		assert.NotZero(t, buf.Len(), "Expected warning missing")
 
-	buf.Reset()
+		buf.Reset()
 
-	reader, err = backend.NewFileReader(s3DoesNotExist)
-	assert.NotNil(t, err, "s3 NewFileReader worked when it should not")
-	assert.Nil(t, reader, "Got a non-nil reader for s3")
-	assert.NotZero(t, buf.Len(), "Expected warning missing")
+		reader, err = backend.NewFileReader(s3DoesNotExist)
+		assert.NotNil(t, err, "s3 NewFileReader worked when it should not")
+		assert.Nil(t, reader, "Got a non-nil reader for s3")
+		assert.NotZero(t, buf.Len(), "Expected warning missing")
+	}
 
 	log.SetOutput(os.Stdout)
 

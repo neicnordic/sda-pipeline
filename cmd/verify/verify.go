@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
@@ -132,14 +131,6 @@ func main() {
 				log.Error(err)
 			}
 			keyFile.Close()
-
-			// fix to deal with a slow S3 metadata write,
-			// or we get a 404 when trying to read the file.
-			var fs int64
-			for fs == 0 {
-				time.Sleep(100 * time.Millisecond)
-				fs, _ = backend.GetFileSize(message.ArchivePath)
-			}
 
 			f, err := backend.NewFileReader(message.ArchivePath)
 			if err != nil {

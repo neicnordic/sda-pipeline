@@ -49,7 +49,7 @@ type posixConf struct {
 }
 
 // NewBackend initiates a storage backend
-func NewBackend(config Conf) Backend {
+func NewBackend(config Conf) (Backend, error) {
 	switch config.Type {
 	case "s3":
 		return newS3Backend(config.S3)
@@ -58,12 +58,26 @@ func NewBackend(config Conf) Backend {
 	}
 }
 
-func newPosixBackend(config posixConf) *posixBackend {
-	return &posixBackend{Location: config.Location}
+func newPosixBackend(config posixConf) (*posixBackend, error) {
+	fileInfo, err := os.Stat(config.Location)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !fileInfo.IsDir() {
+		return nil, fmt.Errorf("%s is not a directory", config.Location)
+	}
+
+	return &posixBackend{Location: config.Location}, nil
 }
 
 // NewFileReader returns an io.Reader instance
 func (pb *posixBackend) NewFileReader(filePath string) (io.ReadCloser, error) {
+	if pb == nil {
+		return nil, fmt.Errorf("Invalid posixBackend")
+	}
+
 	file, err := os.Open(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
@@ -75,6 +89,10 @@ func (pb *posixBackend) NewFileReader(filePath string) (io.ReadCloser, error) {
 
 // NewFileWriter returns an io.Writer instance
 func (pb *posixBackend) NewFileWriter(filePath string) (io.WriteCloser, error) {
+	if pb == nil {
+		return nil, fmt.Errorf("Invalid posixBackend")
+	}
+
 	file, err := os.OpenFile(filepath.Join(filepath.Clean(pb.Location), filePath), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0640)
 	if err != nil {
 		log.Error(err)
@@ -86,6 +104,10 @@ func (pb *posixBackend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 
 // GetFileSize returns the size of the file
 func (pb *posixBackend) GetFileSize(filePath string) (int64, error) {
+	if pb == nil {
+		return 0, fmt.Errorf("Invalid posixBackend")
+	}
+
 	stat, err := os.Stat(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
@@ -114,7 +136,7 @@ type S3Conf struct {
 	Cacert            string
 }
 
-func newS3Backend(config S3Conf) *s3Backend {
+func newS3Backend(config S3Conf) (*s3Backend, error) {
 	s3Transport := transportConfigS3(config)
 	client := http.Client{Transport: s3Transport}
 	s3Session := session.Must(session.NewSession(
@@ -144,7 +166,7 @@ func newS3Backend(config S3Conf) *s3Backend {
 		}
 	}
 
-	return &s3Backend{
+	sb := &s3Backend{
 		Bucket: config.Bucket,
 		Uploader: s3manager.NewUploader(s3Session, func(u *s3manager.Uploader) {
 			u.PartSize = int64(config.Chunksize)
@@ -152,10 +174,21 @@ func newS3Backend(config S3Conf) *s3Backend {
 			u.LeavePartsOnError = false
 		}),
 		Client: s3.New(s3Session)}
+
+	_, err = sb.Client.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: &config.Bucket})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return sb, nil
 }
 
 // NewFileReader returns an io.Reader instance
 func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
+	if sb == nil {
+		return nil, fmt.Errorf("Invalid s3Backend")
+	}
 
 	r, err := sb.Client.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(sb.Bucket),
@@ -181,6 +214,10 @@ func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 
 // NewFileWriter uploads the contents of an io.Reader to a S3 bucket
 func (sb *s3Backend) NewFileWriter(filePath string) (io.WriteCloser, error) {
+	if sb == nil {
+		return nil, fmt.Errorf("Invalid s3Backend")
+	}
+
 	reader, writer := io.Pipe()
 	go func() {
 
@@ -200,6 +237,9 @@ func (sb *s3Backend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 
 // GetFileSize returns the size of a specific object
 func (sb *s3Backend) GetFileSize(filePath string) (int64, error) {
+	if sb == nil {
+		return 0, fmt.Errorf("Invalid s3Backend")
+	}
 
 	r, err := sb.Client.HeadObject(&s3.HeadObjectInput{
 		Bucket: aws.String(sb.Bucket),

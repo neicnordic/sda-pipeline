@@ -21,6 +21,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// posixType is the configuration type used for posix backends
+const posixType = "posix"
+
+// s3Type is the configuration type used for posix backends
+const s3Type = "s3"
+
 var testS3Conf = S3Conf{
 	"http://127.0.0.1",
 	9000,
@@ -32,7 +38,7 @@ var testS3Conf = S3Conf{
 	5 * 1024 * 1024,
 	"../../dev_utils/certs/ca.pem"}
 
-var testConf = Conf{"posix", testS3Conf, testPosixConf}
+var testConf = Conf{posixType, testS3Conf, testPosixConf}
 
 var posixDoesNotExist = "/this/does/not/exist"
 var posixNotCreatable = posixDoesNotExist
@@ -73,19 +79,21 @@ func doCleanup() {
 }
 func TestNewBackend(t *testing.T) {
 
-	testConf.Type = "posix"
-	p := NewBackend(testConf)
+	testConf.Type = posixType
+	p, err := NewBackend(testConf)
+	assert.Nil(t, err, "Backend posix failed")
 
-	testConf.Type = "s3"
-	s := NewBackend(testConf)
+	testConf.Type = s3Type
+	s, err := NewBackend(testConf)
+	assert.Nil(t, err, "Backend s3 failed")
 
 	assert.IsType(t, p, &posixBackend{}, "Wrong type from NewBackend with posix")
 	assert.IsType(t, s, &s3Backend{}, "Wrong type from NewBackend with S3")
 
 	// test some extra ssl handling
 	testConf.S3.Cacert = "/dev/null"
-	s = NewBackend(testConf)
-
+	s, err = NewBackend(testConf)
+	assert.Nil(t, err, "Backend s3 failed")
 	assert.IsType(t, s, &s3Backend{}, "Wrong type from NewBackend with S3")
 }
 
@@ -105,8 +113,10 @@ func TestMain(m *testing.M) {
 func TestPosixBackend(t *testing.T) {
 
 	defer doCleanup()
-	testConf.Type = "posix"
-	backend := NewBackend(testConf)
+	testConf.Type = posixType
+	backend, err := NewBackend(testConf)
+	assert.Nil(t, err, "POSIX backend failed unexpectedly")
+
 	var buf bytes.Buffer
 
 	assert.IsType(t, backend, &posixBackend{}, "Wrong type from NewBackend with posix")
@@ -192,14 +202,19 @@ func setupFakeS3() (err error) {
 
 	testConf.S3.URL = ts.URL[:portAt]
 	testConf.S3.Port, err = strconv.Atoi(ts.URL[portAt+1:])
-	testConf.Type = "s3"
+	testConf.Type = s3Type
 
 	if err != nil {
 		log.Error("Unexpected error while setting up fake s3")
 		return err
 	}
 
-	s3back := NewBackend(testConf).(*s3Backend)
+	backEnd, err := NewBackend(testConf)
+	if err != nil {
+		return err
+	}
+
+	s3back := backEnd.(*s3Backend)
 
 	_, err = s3back.Client.CreateBucket(&s3.CreateBucketInput{
 		Bucket: aws.String(testConf.S3.Bucket)})
@@ -220,16 +235,74 @@ func setupFakeS3() (err error) {
 	return err
 }
 
+func TestS3Fail(t *testing.T) {
+
+	testConf.Type = s3Type
+
+	tmp := testConf.S3.URL
+
+	defer func() { testConf.S3.URL = tmp }()
+	testConf.S3.URL = "file://tmp/"
+	_, err := NewBackend(testConf)
+	assert.NotNil(t, err, "Backend worked when it should not")
+
+	var dummyBackend *s3Backend
+	reader, err := dummyBackend.NewFileReader("/")
+	assert.NotNil(t, err, "NewFileReader worked when it should not")
+	assert.Nil(t, reader, "Got a Reader when expected not to")
+
+	writer, err := dummyBackend.NewFileWriter("/")
+	assert.NotNil(t, err, "NewFileWriter worked when it should not")
+	assert.Nil(t, writer, "Got a Writer when expected not to")
+
+	_, err = dummyBackend.GetFileSize("/")
+	assert.NotNil(t, err, "GetFileSize worked when it should not")
+}
+
+func TestPOSIXFail(t *testing.T) {
+	testConf.Type = posixType
+
+	tmp := testConf.Posix.Location
+
+	defer func() { testConf.Posix.Location = tmp }()
+
+	testConf.Posix.Location = "/thisdoesnotexist"
+	backEnd, err := NewBackend(testConf)
+	assert.NotNil(t, err, "Backend worked when it should not")
+	assert.Nil(t, backEnd, "Got a backend when expected not to")
+
+	testConf.Posix.Location = "/etc/passwd"
+
+	backEnd, err = NewBackend(testConf)
+	assert.NotNil(t, err, "Backend worked when it should not")
+	assert.Nil(t, backEnd, "Got a backend when expected not to")
+
+	var dummyBackend *posixBackend
+	reader, err := dummyBackend.NewFileReader("/")
+	assert.NotNil(t, err, "NewFileReader worked when it should not")
+	assert.Nil(t, reader, "Got a Reader when expected not to")
+
+	writer, err := dummyBackend.NewFileWriter("/")
+	assert.NotNil(t, err, "NewFileWriter worked when it should not")
+	assert.Nil(t, writer, "Got a Writer when expected not to")
+
+	_, err = dummyBackend.GetFileSize("/")
+	assert.NotNil(t, err, "GetFileSize worked when it should not")
+}
+
 func TestS3Backend(t *testing.T) {
 
-	testConf.Type = "s3"
-	backend := NewBackend(testConf).(*s3Backend)
+	testConf.Type = s3Type
+	backend, err := NewBackend(testConf)
+	assert.Nil(t, err, "Backend failed")
+
+	s3back := backend.(*s3Backend)
 
 	var buf bytes.Buffer
 
-	assert.IsType(t, backend, &s3Backend{}, "Wrong type from NewBackend with s3")
+	assert.IsType(t, s3back, &s3Backend{}, "Wrong type from NewBackend with s3")
 
-	writer, err := backend.NewFileWriter(s3Creatable)
+	writer, err := s3back.NewFileWriter(s3Creatable)
 
 	assert.NotNil(t, writer, "Got a nil reader for writer from s3")
 	assert.Nil(t, err, "posix NewFileWriter failed when it shouldn't")
@@ -240,11 +313,11 @@ func TestS3Backend(t *testing.T) {
 	assert.Equal(t, len(writeData), written, "Did not write all writeData")
 	writer.Close()
 
-	reader, err := backend.NewFileReader(s3Creatable)
+	reader, err := s3back.NewFileReader(s3Creatable)
 	assert.Nil(t, err, "s3 NewFileReader failed when it should work")
 	assert.NotNil(t, reader, "Got a nil reader for s3")
 
-	size, err := backend.GetFileSize(s3Creatable)
+	size, err := s3back.GetFileSize(s3Creatable)
 	assert.Nil(t, err, "s3 GetFileSize failed when it should work")
 	assert.Equal(t, int64(len(writeData)), size, "Got an incorrect file size")
 

@@ -9,14 +9,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
-	"github.com/elixir-oslo/crypt4gh/keys"
 	"github.com/elixir-oslo/crypt4gh/streaming"
 	"github.com/xeipuuv/gojsonschema"
 
@@ -60,7 +58,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	backend := storage.NewBackend(conf.Archive)
+	backend, err := storage.NewBackend(conf.Archive)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	key, err := config.GetC4GHKey()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
@@ -120,18 +126,6 @@ func main() {
 				continue
 			}
 
-			// do file verfication
-			keyFile, err := os.Open(conf.Crypt4gh.KeyPath)
-			if err != nil {
-				log.Error(err)
-			}
-
-			key, err := keys.ReadPrivateKey(keyFile, []byte(conf.Crypt4gh.Passphrase))
-			if err != nil {
-				log.Error(err)
-			}
-			keyFile.Close()
-
 			f, err := backend.NewFileReader(message.ArchivePath)
 			if err != nil {
 				log.Errorf("Failed to open file: %s, reason: %v", message.ArchivePath, err)
@@ -141,7 +135,7 @@ func main() {
 			hr := bytes.NewReader(header)
 			mr := io.MultiReader(hr, f)
 
-			c4ghr, err := streaming.NewCrypt4GHReader(mr, key, nil)
+			c4ghr, err := streaming.NewCrypt4GHReader(mr, *key, nil)
 			if err != nil {
 				log.Error(err)
 				continue

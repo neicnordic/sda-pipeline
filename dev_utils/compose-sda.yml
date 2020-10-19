@@ -29,6 +29,15 @@ services:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
     mem_limit: 64m
+  mapper:
+    command: sda-mapper
+    container_name: mapper
+    env_file: ./env.mapper
+    image: neicnordic/sda-pipeline:latest
+    volumes:
+      - ./config.yaml:/config.yaml
+      - ./:/dev_utils/
+    mem_limit: 64m
 
 volumes:
      archive:

@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"sda-pipeline/internal/broker"
@@ -96,7 +97,7 @@ func validateJSON(body []byte) (string, *gojsonschema.Result, error) {
 
 	msgType, ok := message["type"]
 	if !ok {
-		return "", nil, fmt.Errorf("Malformed message, type is missing")
+		return "", nil, errors.New("Malformed message, type is missing")
 	}
 
 	var schema gojsonschema.JSONLoader

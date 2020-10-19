@@ -35,10 +35,11 @@ var (
 
 // Config is a parent object for all the different configuration parts
 type Config struct {
-	Archive  storage.Conf
-	Broker   broker.MQConf
-	Inbox    storage.Conf
-	Database database.DBConf
+	Archive     storage.Conf
+	Broker      broker.MQConf
+	Inbox       storage.Conf
+	Database    database.DBConf
+	SchemasPath string
 }
 
 // NewConfig initializes and parses the config file and/or environment using
@@ -106,6 +107,8 @@ func NewConfig(app string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	viper.SetDefault("schema.type", "federated")
+	c.configSchemas()
 	switch app {
 	case "ingest":
 		c.configInbox()
@@ -141,6 +144,16 @@ func NewConfig(app string) (*Config, error) {
 	}
 
 	return nil, fmt.Errorf("application '%s' doesn't exist", app)
+}
+
+// configSchemas configures the schemas to load depending on
+// the type IDs of connection Federated EGA or isolate (stand-alone)
+func (c *Config) configSchemas() {
+	if viper.GetString("schema.type") == "federated" {
+		c.SchemasPath = "file://schemas/federated/"
+	} else {
+		c.SchemasPath = "file://schemas/isolated/"
+	}
 }
 
 // configS3Storage populates and returns a S3Conf from the

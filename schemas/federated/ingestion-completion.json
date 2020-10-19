@@ -1,14 +1,13 @@
 {
-    "title": "JSON schema for Local EGA accession message interface",
-    "$id": "https://github.com/EGA-archive/LocalEGA/tree/master/schemas/ingestion-accession.json",
+    "title": "JSON schema for Local EGA message completion to Central EGA",
+    "$id": "https://github.com/EGA-archive/LocalEGA/tree/master/schemas/ingestion-completion.json",
     "$schema": "http://json-schema.org/draft-07/schema",
     "type": "object",
     "required": [
-        "type",
         "user",
         "filepath",
-        "accession_id",
-        "decrypted_checksums"
+        "decrypted_checksums",
+        "accession_id"
     ],
     "additionalProperties": true,
     "definitions": {
@@ -86,13 +85,6 @@
         }
     },
     "properties": {
-        "type": {
-            "$id": "#/properties/type",
-            "type": "string",
-            "title": "The message type",
-            "description": "The message type",
-            "const": "accession"
-        },
         "user": {
             "$id": "#/properties/user",
             "type": "string",
@@ -138,6 +130,17 @@
                     }
                 ]
             ],
+            "contains": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "const": "md5"
+                    }
+                },
+                "required": [
+                    "type"
+                ]
+            },
             "additionalItems": false,
             "items": {
                 "anyOf": [

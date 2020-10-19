@@ -38,6 +38,15 @@ services:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
     mem_limit: 64m
+  interceptor:
+    command: sda-intercept
+    container_name: intercept
+    env_file: ./env.intercept
+    image: neicnordic/sda-pipeline:latest
+    volumes:
+      - ./config.yaml:/config.yaml
+      - ./:/dev_utils/
+    mem_limit: 64m
 
 volumes:
      archive:

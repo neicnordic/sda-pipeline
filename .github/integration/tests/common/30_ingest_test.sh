@@ -5,7 +5,7 @@ cd dev_utils
 count=1
 
 for file in dummy_data.c4gh largefile.c4gh; do
-	    
+    curl -u test:test 'localhost:15672/api/queues/test/verified' | jq -r '.["messages_ready"]'
     now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
     md5sum=$(md5sum "$file" | cut -d' ' -f 1)
@@ -17,14 +17,14 @@ for file in dummy_data.c4gh largefile.c4gh; do
     decsha256sum=$(crypt4gh decrypt --sk c4gh.sec.pem < "$file" | sha256sum | cut -d' ' -f 1)
     decmd5sum=$(crypt4gh decrypt --sk c4gh.sec.pem < "$file" | md5sum | cut -d' ' -f 1)
     
-    curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
+    curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
           -H 'Content-Type: application/json;charset=UTF-8' \
           --data-binary "$( echo '{
                           "vhost":"test",
-	                  "name":"localega",
+	                  "name":"sda",
                           "properties":{
                                         "delivery_mode":2,
-                                        "correlation_id":"1",
+                                        "correlation_id":"CORRID",
                                         "content_encoding":"UTF-8",
                                         "content_type":"application/json"
                                        },
@@ -43,7 +43,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
                                                                }
                                                               ]
                                      }"
-                         }' | sed -e "s/FILENAME/$file/" -e "s/MD5SUM/${md5sum}/" -e "s/SHA256SUM/${sha256sum}/" )"
+                         }' | sed -e "s/FILENAME/$file/" -e "s/MD5SUM/${md5sum}/" -e "s/SHA256SUM/${sha256sum}/" -e "s/CORRID/$count/" )"
 
 
     RETRY_TIMES=0
@@ -51,8 +51,8 @@ for file in dummy_data.c4gh largefile.c4gh; do
     do echo "waiting for ingestion to complete"
        RETRY_TIMES=$((RETRY_TIMES+1));
        if [ "$RETRY_TIMES" -eq 60 ]; then
-	   docker logs ingest
-	   exit 1
+       docker logs ingest
+       exit 1
        fi
        sleep 10
     done
@@ -62,8 +62,8 @@ for file in dummy_data.c4gh largefile.c4gh; do
     do echo "waiting for verification to complete"
        RETRY_TIMES=$((RETRY_TIMES+1));
        if [ "$RETRY_TIMES" -eq 60 ]; then
-	   docker logs verify
-	   exit 1
+       docker logs verify
+       exit 1
        fi
        sleep 10
     done
@@ -73,44 +73,43 @@ for file in dummy_data.c4gh largefile.c4gh; do
     
 
 
-    archivepath=$(curl -u test:test 'localhost:15672/api/queues/test/files.verified/get' \
-		   -H 'Content-Type: application/json;charset=UTF-8' \
-		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}' | \
-		  jq -r '.[0]["payload"]' |  jq -r '.["filepath"]'
-   )
+    archivepath=$(curl -u test:test 'localhost:15672/api/queues/test/verified/get' \
+                -H 'Content-Type: application/json;charset=UTF-8' \
+                -d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto","truncate":50000}' | \
+                jq -r '.[0]["payload"]' |  jq -r '.["filepath"]'
+                )
 
-    
-    # Publish stable id
-    curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
-	 -H 'Content-Type: application/json;charset=UTF-8' \
-	 --data-binary "$( echo '{
-                     "vhost":"test",
-		     "name":"localega",
-                     "properties":{
-                           "delivery_mode":2,
-                            "correlation_id":"1",
-                            "content_encoding":"UTF-8",
-                            "content_type":"application/json"
-                                  },
-                     "routing_key":"stableIDs",
-                     "payload_encoding":"string",
-                     "payload":"{
-                                 \"type\":\"accession\",
-                                 \"user\":\"test\",
-                                 \"filepath\":\"FILENAME\",
-                                 \"accession_id\":\"ACCESSIONID\",
-                                 \"decrypted_checksums\":[
-                                                          {
-                                                           \"type\":\"sha256\",
-                                                           \"value\":\"DECSHA256SUM\"
-                                                          },
-                                                          {
-                                                           \"type\":\"md5\",
-                                                           \"value\":\"DECMD5SUM\"
-                                                          }
-                                                         ]
-                                }"
-                    }'| sed -e "s/FILENAME/$archivepath/" -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/$access/"  )"
+    # Publish accession id
+    curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
+    -H 'Content-Type: application/json;charset=UTF-8' \
+    --data-binary "$( echo '{
+                            "vhost":"test",
+                            "name":"sda",
+                            "properties":{
+                                        "delivery_mode":2,
+                                        "correlation_id":"CORRID",
+                                        "content_encoding":"UTF-8",
+                                        "content_type":"application/json"
+                                        },
+                            "routing_key":"files",
+                            "payload_encoding":"string",
+                            "payload":"{
+                                        \"type\":\"accession\",
+                                        \"user\":\"test\",
+                                        \"filepath\":\"FILENAME\",
+                                        \"accession_id\":\"ACCESSIONID\",
+                                        \"decrypted_checksums\":[
+                                                                {
+                                                                \"type\":\"sha256\",
+                                                                \"value\":\"DECSHA256SUM\"
+                                                                },
+                                                                {
+                                                                \"type\":\"md5\",
+                                                                \"value\":\"DECMD5SUM\"
+                                                                }
+                                                                ]
+                                        }"
+                            }'| sed -e "s/FILENAME/$archivepath/" -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/${access}/" -e "s/CORRID/$count/" )"
 
     RETRY_TIMES=0
     until docker logs finalize --since="$now" 2>&1 | grep "Mark ready"
@@ -123,5 +122,40 @@ for file in dummy_data.c4gh largefile.c4gh; do
        sleep 10
     done
     
+    dataset=$(printf "EGAD%011d" "$count" )
+
+   # Map dataset ids
+   curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
+   -H 'Content-Type: application/json;charset=UTF-8' \
+   --data-binary "$( echo '{
+                           "vhost":"test",
+                           "name":"sda",
+                           "properties":{
+                              "delivery_mode":2,
+                              "correlation_id":"CORRID",
+                              "content_encoding":"UTF-8",
+                              "content_type":"application/json"
+                           },
+                           "routing_key":"files",
+                           "payload_encoding":"string",
+                           "payload":"{
+                              \"type\":\"mapping\",
+                              \"dataset_id\":\"DATASET\",
+                              \"accession_ids\":[\"ACCESSIONID\"]}"
+                           }'| sed -e "s/DATASET/$dataset/" -e "s/ACCESSIONID/$access/" -e "s/CORRID/$count/")"
+
+   dbcheck=$(docker run --rm --name client --network dev_utils_default \
+   neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
+   -c "SELECT * from local_ega_ebi.file_dataset where dataset_id='$dataset' and file_id='$access'")
+
+   if [ ${#dbcheck} -eq 0 ]; then
+      echo "Mappings failed"
+      docker logs mapper
+      exit 1
+   else
+      echo "Success"
+   fi
+
+
     count=$((count+1))
 done

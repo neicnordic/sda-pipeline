@@ -9,11 +9,11 @@ cd dev_utils || exit 1
 #
 
 
-curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
+curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary "$( echo '{
     	                       "vhost":"test",
-                               "name":"localega",
+                               "name":"sda",
     	                       "properties":{
     	                                     "delivery_mode":2,
     	                                     "correlation_id":"1",
@@ -38,9 +38,9 @@ curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
     	                      }' )"
 
 
-# Verify message put in files.error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
+# Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
 
-curl -u test:test 'localhost:15672/api/queues/test/files.error/get' \
+curl -u test:test 'localhost:15672/api/queues/test/error/get' \
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
 
@@ -48,11 +48,11 @@ curl -u test:test 'localhost:15672/api/queues/test/files.error/get' \
 
 # Submit an existing file but incorrect checksum
 
-curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
+curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary "$( echo '{
     	                       "vhost":"test",
-                               "name":"localega",
+                               "name":"sda",
     	                       "properties":{
     	                                     "delivery_mode":2,
     	                                     "correlation_id":"1",
@@ -77,9 +77,9 @@ curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
     	                      }' )"
 
 
-# Verify message put in files.error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
+# Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
 
-curl -u test:test 'localhost:15672/api/queues/test/files.error/get' \
+curl -u test:test 'localhost:15672/api/queues/test/error/get' \
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
 
@@ -89,11 +89,11 @@ curl -u test:test 'localhost:15672/api/queues/test/files.error/get' \
 md5sum=$(md5sum truncated1.c4gh | cut -d' ' -f 1)
 sha256sum=$(sha256sum truncated1.c4gh | cut -d' ' -f 1)
 	 
-curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
+curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary "$( echo '{
     	                       "vhost":"test",
-                               "name":"localega",
+                               "name":"sda",
     	                       "properties":{
     	                                     "delivery_mode":2,
     	                                     "correlation_id":"1",
@@ -117,9 +117,9 @@ curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
     	                                  }"
     	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
 
-# Verify message put in files.error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
+# Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
 
-curl -u test:test 'localhost:15672/api/queues/test/files.error/get' \
+curl -u test:test 'localhost:15672/api/queues/test/error/get' \
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
 
@@ -129,11 +129,11 @@ curl -u test:test 'localhost:15672/api/queues/test/files.error/get' \
 md5sum=$(md5sum truncated2.c4gh | cut -d' ' -f 1)
 sha256sum=$(sha256sum truncated2.c4gh | cut -d' ' -f 1)
 	 
-curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
+curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary "$( echo '{
     	                       "vhost":"test",
-                               "name":"localega",
+                               "name":"sda",
     	                       "properties":{
     	                                     "delivery_mode":2,
     	                                     "correlation_id":"1",
@@ -157,8 +157,8 @@ curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
     	                                  }"
     	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
 
-# Verify message put in files.error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
+# Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
 
-curl -u test:test 'localhost:15672/api/queues/test/files.error/get' \
+curl -u test:test 'localhost:15672/api/queues/test/error/get' \
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'

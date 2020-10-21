@@ -149,12 +149,18 @@ for file in dummy_data.c4gh largefile.c4gh; do
    -t -c "SELECT * from local_ega_ebi.file_dataset where dataset_id='$dataset' and file_id='$access'")
 
    if [ ${#dbcheck} -eq 0 ]; then
-      echo "Mappings failed"
-      docker logs mapper
-      exit 1
-   else
-      echo "Success"
-   fi
+        echo "Mappings failed"
+        docker run --rm --name client --network dev_utils_default \
+        neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
+        -t -c "SELECT * from local_ega_ebi.file_dataset"
+        
+        docker run --rm --name client --network dev_utils_default \
+        neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
+        -t -c "SELECT * from local_ega_ebi.filedataset"
+        exit 1
+    else
+        echo "Success"
+    fi
 
 
     count=$((count+1))

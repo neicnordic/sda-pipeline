@@ -1,5 +1,17 @@
 #!/bin/bash
 
+docker run --rm --name client --network dev_utils_default \
+neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
+-t -c "SELECT * from local_ega_ebi.file_dataset ORDER BY id DESC"
+
+docker run --rm --name client --network dev_utils_default \
+neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
+-t -c "SELECT * from local_ega_ebi.filedataset ORDER BY id DESC"
+
+docker run --rm --name client --network dev_utils_default \
+neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
+-t -c "SELECT id, status, stable_id, archive_path FROM local_ega.files ORDER BY id DESC"
+
 cd dev_utils
 
 count=1
@@ -122,6 +134,8 @@ for file in dummy_data.c4gh largefile.c4gh; do
        sleep 10
     done
     
+   docker logs finalize --since="$now" 2>&1
+
     dataset=$(printf "EGAD%011d" "$count" )
 
    # Map dataset ids
@@ -152,15 +166,15 @@ for file in dummy_data.c4gh largefile.c4gh; do
         echo "Mappings failed"
         docker run --rm --name client --network dev_utils_default \
         neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
-        -t -c "SELECT * from local_ega_ebi.file_dataset"
+        -t -c "SELECT * from local_ega_ebi.file_dataset ORDER BY id DESC"
         
         docker run --rm --name client --network dev_utils_default \
         neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
-        -t -c "SELECT * from local_ega_ebi.filedataset"
+        -t -c "SELECT * from local_ega_ebi.filedataset ORDER BY id DESC"
 
         docker run --rm --name client --network dev_utils_default \
         neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
-        -t -c "SELECT id, status, stable_id, archive_path FROM local_ega.files"
+        -t -c "SELECT id, status, stable_id, archive_path FROM local_ega.files ORDER BY id DESC"
         exit 1
     else
         echo "Success"
@@ -169,3 +183,15 @@ for file in dummy_data.c4gh largefile.c4gh; do
 
     count=$((count+1))
 done
+
+docker run --rm --name client --network dev_utils_default \
+neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
+-t -c "SELECT * from local_ega_ebi.file_dataset ORDER BY id DESC"
+
+docker run --rm --name client --network dev_utils_default \
+neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
+-t -c "SELECT * from local_ega_ebi.filedataset ORDER BY id DESC"
+
+docker run --rm --name client --network dev_utils_default \
+neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
+-t -c "SELECT id, status, stable_id, archive_path FROM local_ega.files ORDER BY id DESC"

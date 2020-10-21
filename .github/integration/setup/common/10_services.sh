@@ -30,7 +30,7 @@ done
 docker-compose -f compose-sda.yml up -d
 
 RETRY_TIMES=0
-for p in ingest verify finalize; do
+for p in ingest verify finalize mapper intercept; do
     until docker ps -f name=$p --format {{.Status}} | grep "Up"
     do echo "waiting for $p to become ready"
        RETRY_TIMES=$((RETRY_TIMES+1));

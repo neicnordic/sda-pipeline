@@ -168,8 +168,8 @@ func TLSConfigBroker(config MQConf) (*tls.Config, error) {
 		if cacert == "" {
 			continue
 		}
-		cacert, e := ioutil.ReadFile(cacert) // #nosec this file comes from our config
-		if e != nil {
+		cacert, err := ioutil.ReadFile(cacert) // #nosec this file comes from our config
+		if err != nil {
 			return nil, err
 		}
 		if ok := tlsConfig.RootCAs.AppendCertsFromPEM(cacert); !ok {

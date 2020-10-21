@@ -7,12 +7,12 @@
 #
 
 
-for routingkey in files archived verified completed stableIDs; do 
-    curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
+for routingkey in files archived verified completed accessionIDs; do 
+    curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
 	 -H 'Content-Type: application/json;charset=UTF-8' \
 	 --data-binary '{
                                   "vhost":"test",
-                               	  "name":"localega",
+                               	  "name":"sda",
     	                       	  "properties":{
     	                                     "delivery_mode":2,
     	                                     "correlation_id":"1",
@@ -25,12 +25,12 @@ for routingkey in files archived verified completed stableIDs; do
 			                   I give you bad json!'
 done
 
-for routingkey in files archived verified completed stableIDs; do 
-    curl -vvv -u test:test 'localhost:15672/api/exchanges/test/localega/publish' \
+for routingkey in files archived verified completed accessionIDs; do 
+    curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
 	 -H 'Content-Type: application/json;charset=UTF-8' \
 	 --data-binary '{
                                   "vhost":"test",
-                               	  "name":"localega",
+                               	  "name":"sda",
     	                       	  "properties":{
     	                                     "delivery_mode":2,
     	                                     "correlation_id":"1",
@@ -39,6 +39,6 @@ for routingkey in files archived verified completed stableIDs; do
     	                                    },
     	                       "routing_key":"'"$routingkey"'",
     	                       "payload_encoding":"string",
-    	                       "payload":"{ \"json\":\"yes, but not localega\" }"'
+    	                       "payload":"{ \"json\":\"yes, but not sda\" }"'
 
 done

@@ -18,14 +18,19 @@ services:
       - /tmp/data:/data
   mq:
     container_name: mq
-    image: rabbitmq:3.7.8-management-alpine
+    image: neicnordic/sda-mq:latest
+    environment:
+     - MQ_SERVER_CERT=/etc/rabbitmq/ssl/mq.pem
+     - MQ_SERVER_KEY=/etc/rabbitmq/ssl/mq.key
+     - MQ_CA=/etc/rabbitmq/ssl/ca.pem
+     - MQ_USER=test
+     - MQ_PASSWORD_HASH=C5ufXbYlww6ZBcEqDUB04YdUptO81s+ozI3Ll5GCHTnv8NAm
+     - MQ_VHOST=test
     ports:
       - "15672:15672"
       - "5672:5672"
       - "5671:5671"
     volumes:
-      - ./defs.json:/etc/rabbitmq/defs.json
-      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
       - ./certs/ca.pem:/etc/rabbitmq/ssl/ca.pem
       - ./certs/mq.pem:/etc/rabbitmq/ssl/mq.pem
       - ./certs/mq-key.pem:/etc/rabbitmq/ssl/mq.key

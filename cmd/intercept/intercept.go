@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"sda-pipeline/internal/broker"
@@ -12,6 +13,13 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
 )
+
+	const (
+		msgAccession string = "accession"
+		msgCancel    string = "cancel"
+		msgIngest    string = "ingest"
+		msgMapping   string = "mapping"
+	)
 
 func main() {
 	conf, err := config.NewConfig("intercept")
@@ -55,14 +63,14 @@ func main() {
 			var routingKey string
 
 			switch msgType {
-			case "accession":
-				routingKey = "stableIDs"
-			case "cancel":
+			case msgAccession:
+				routingKey = "accessionIDs"
+			case msgCancel:
 				routingKey = ""
 				continue
-			case "ingest":
-				routingKey = "files"
-			case "mapping":
+			case msgIngest:
+				routingKey = "ingest"
+			case msgMapping:
 				routingKey = "mappings"
 			}
 
@@ -89,20 +97,20 @@ func validateJSON(body []byte) (string, *gojsonschema.Result, error) {
 
 	msgType, ok := message["type"]
 	if !ok {
-		return "", nil, fmt.Errorf("Malformed message, type is missing")
+		return "", nil, errors.New("Malformed message, type is missing")
 	}
 
 	var schema gojsonschema.JSONLoader
 
 	switch msgType {
-	case "accession":
+	case msgAccession:
 		schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-accession.json")
-	case "cancel":
+	case msgCancel:
 		schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-trigger.json")
 		msgType = ""
-	case "ingest":
+	case msgIngest:
 		schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-trigger.json")
-	case "mapping":
+	case msgMapping:
 		schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/dataset-mapping.json")
 	}
 

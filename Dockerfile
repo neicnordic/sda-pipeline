@@ -20,7 +20,7 @@ LABEL org.label-schema.vcs-url="https://github.com/neicnordic/sda-pipeline"
 LABEL org.label-schema.vcs-ref=$SOURCE_COMMIT
 
 COPY --from=builder /go/passwd /etc/passwd
-COPY --from=builder /go/sda-* /bin/
+COPY --from=builder /go/sda-* /usr/bin/
 COPY --from=builder /go/schemas /schemas
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 

@@ -146,7 +146,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 
    dbcheck=$(docker run --rm --name client --network dev_utils_default \
    neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
-   -c "SELECT * from local_ega_ebi.file_dataset where dataset_id='$dataset' and file_id='$access'")
+   -t -c "SELECT * from local_ega_ebi.file_dataset where dataset_id='$dataset' and file_id='$access'")
 
    if [ ${#dbcheck} -eq 0 ]; then
       echo "Mappings failed"

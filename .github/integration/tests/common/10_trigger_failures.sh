@@ -162,3 +162,8 @@ curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
 curl -u test:test 'localhost:15672/api/queues/test/error/get' \
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
+
+
+# Cleanup cueues
+curl -u test:test -X DELETE 'localhost:15672/api/queues/test/completed/contents'
+curl -u test:test -X DELETE 'localhost:15672/api/queues/test/verified/contents'

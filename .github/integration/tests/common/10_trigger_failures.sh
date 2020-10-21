@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd dev_utils || exit 1
-
+exit 0
 #
 # Submit some messages that will trigger various failures. Do this
 # before the "real" work to verify that these failures are not top of

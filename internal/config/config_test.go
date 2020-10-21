@@ -244,7 +244,6 @@ func (suite *TestSuite) TestMapperConfiguration() {
 	assert.Equal(suite.T(), "test", config.Broker.User)
 	assert.Equal(suite.T(), "test", config.Broker.Password)
 	assert.Equal(suite.T(), "test", config.Broker.Queue)
-	assert.Equal(suite.T(), "test", config.Broker.RoutingKey)
 	assert.NotNil(suite.T(), config.Database)
 	assert.Equal(suite.T(), "test", config.Database.Host)
 	assert.Equal(suite.T(), 123, config.Database.Port)

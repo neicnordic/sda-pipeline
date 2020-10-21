@@ -85,6 +85,12 @@ func NewConfig(app string) (*Config, error) {
 		requiredConfVars = append(requiredConfVars, requiredConfVarsExtra...)
 	}
 
+	if app == "mapper" {
+		// Mapper does not require broker.routingkey thus we remove it
+		// if new vars are added this will need to be redone
+		requiredConfVars = append(requiredConfVars[:5], requiredConfVars[6:]...)
+	}
+
 	for _, s := range requiredConfVars {
 		if !viper.IsSet(s) {
 			return nil, fmt.Errorf("%s not set", s)

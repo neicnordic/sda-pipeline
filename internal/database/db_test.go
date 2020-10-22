@@ -150,8 +150,17 @@ func sqlTesterHelper(t *testing.T, f func(sqlmock.Sqlmock, *SQLdb) error) error 
 func TestMarkCompleted(t *testing.T) {
 	file := FileInfo{sha256.New(), 46, "/somepath", sha256.New(), 48}
 
-	file.Checksum.Write([]byte("checksum"))
-	file.DecryptedChecksum.Write([]byte("decryptedchecksum"))
+	_, err := file.Checksum.Write([]byte("checksum"))
+
+	if err != nil {
+		return
+	}
+
+	_, err = file.DecryptedChecksum.Write([]byte("decryptedchecksum"))
+
+	if err != nil {
+		return
+	}
 
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
@@ -280,7 +289,11 @@ func TestStoreHeader(t *testing.T) {
 func TestSetArchived(t *testing.T) {
 
 	file := FileInfo{sha256.New(), 1000, "/tmp/file.c4gh", sha256.New(), -1}
-	file.Checksum.Write([]byte("checksum"))
+	_, err := file.Checksum.Write([]byte("checksum"))
+
+	if err != nil {
+		return
+	}
 
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 

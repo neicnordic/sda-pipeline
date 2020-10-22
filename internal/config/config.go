@@ -21,17 +21,7 @@ import (
 const POSIX = "posix"
 const S3 = "s3"
 
-var (
-	// requiredConfVars determines what needs to be provided as a minimum
-	requiredConfVars = []string{
-		"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue",
-	}
-
-	// requiredConfVarsExtra contains more variables required for most services
-	requiredConfVarsExtra = []string{
-		"broker.routingkey", "db.host", "db.port", "db.user", "db.password", "db.database",
-	}
-)
+var requiredConfVars []string
 
 // Config is a parent object for all the different configuration parts
 type Config struct {
@@ -68,6 +58,23 @@ func NewConfig(app string) (*Config, error) {
 		}
 	}
 
+	switch app {
+	case "intercept":
+		// Intercept does not require these extra settings
+		requiredConfVars = []string{
+			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue",
+		}
+	case "mapper":
+		// Mapper does not require broker.routingkey thus we remove it
+		requiredConfVars = []string{
+			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "db.host", "db.port", "db.user", "db.password", "db.database",
+		}
+	default:
+		requiredConfVars = []string{
+			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "broker.routingkey", "db.host", "db.port", "db.user", "db.password", "db.database",
+		}
+	}
+
 	if viper.GetString("archive.type") == S3 {
 		requiredConfVars = append(requiredConfVars, []string{"archive.url", "archive.accesskey", "archive.secretkey", "archive.bucket"}...)
 	} else if viper.GetString("archive.type") == POSIX {
@@ -78,11 +85,6 @@ func NewConfig(app string) (*Config, error) {
 		requiredConfVars = append(requiredConfVars, []string{"inbox.url", "inbox.accesskey", "inbox.secretkey", "inbox.bucket"}...)
 	} else if viper.GetString("inbox.type") == POSIX {
 		requiredConfVars = append(requiredConfVars, []string{"inbox.location"}...)
-	}
-
-	if app != "intercept" {
-		// Intercept does not require these extra settings
-		requiredConfVars = append(requiredConfVars, requiredConfVarsExtra...)
 	}
 
 	for _, s := range requiredConfVars {

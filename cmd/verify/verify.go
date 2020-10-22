@@ -126,6 +126,17 @@ func main() {
 				continue
 			}
 
+			var file database.FileInfo
+
+			file.Size, err = backend.GetFileSize(message.ArchivePath)
+
+			if err != nil {
+				log.Errorf("Failed to get file size for %s, reason: %v", message.ArchivePath, err)
+				continue
+			}
+
+			archiveFileHash := sha256.New()
+
 			f, err := backend.NewFileReader(message.ArchivePath)
 			if err != nil {
 				log.Errorf("Failed to open file: %s, reason: %v", message.ArchivePath, err)
@@ -133,7 +144,8 @@ func main() {
 			}
 
 			hr := bytes.NewReader(header)
-			mr := io.MultiReader(hr, f)
+			// Feed everything read from the archive file to archiveFileHash
+			mr := io.MultiReader(hr, io.TeeReader(f, archiveFileHash))
 
 			c4ghr, err := streaming.NewCrypt4GHReader(mr, *key, nil)
 			if err != nil {
@@ -146,16 +158,19 @@ func main() {
 
 			stream := io.TeeReader(c4ghr, md5hash)
 
-			if _, err := io.Copy(sha256hash, stream); err != nil {
+			if file.DecryptedSize, err = io.Copy(sha256hash, stream); err != nil {
 				log.Error(err)
 				continue
 			}
+
+			file.Checksum = archiveFileHash
+			file.DecryptedChecksum = sha256hash
 
 			//nolint:nestif
 			if message.ReVerify == nil || !*message.ReVerify {
 				log.Debug("Mark completed")
 				// Mark file as "COMPLETED"
-				if e := db.MarkCompleted(fmt.Sprintf("%x", sha256hash.Sum(nil)), message.FileID); e != nil {
+				if e := db.MarkCompleted(file, message.FileID); e != nil {
 					// this should really be hadled by the DB retry mechanism
 				} else {
 					// Send message to verified

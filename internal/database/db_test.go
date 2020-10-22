@@ -2,6 +2,7 @@ package database
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -147,12 +148,32 @@ func sqlTesterHelper(t *testing.T, f func(sqlmock.Sqlmock, *SQLdb) error) error 
 }
 
 func TestMarkCompleted(t *testing.T) {
+	file := FileInfo{sha256.New(), 46, "/somepath", sha256.New(), 48}
+
+	file.Checksum.Write([]byte("checksum"))
+	file.DecryptedChecksum.Write([]byte("decryptedchecksum"))
+
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+
 		r := sqlmock.NewResult(10, 1)
 
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'COMPLETED', archive_file_checksum = \\$1, archive_file_checksum_type = 'SHA256'  WHERE id = \\$2").WithArgs("1", 10).WillReturnResult(r)
+		mock.ExpectExec("UPDATE local_ega.files SET status = 'COMPLETED', "+
+			"archive_file_size = \\$2, "+
+			"archive_file_checksum = \\$3, "+
+			"archive_file_checksum_type = \\$4, "+
+			"decrypted_file_size = \\$5, "+
+			"decrypted_file_checksum = \\$6, "+
+			"decrypted_file_checksum_type = \\$7 "+
+			"WHERE id = \\$1;").WithArgs(
+			10,
+			file.Size,
+			"96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b",
+			"SHA256",
+			file.DecryptedSize,
+			"b353d3058b350466bb75a4e5e2263c73a7b900e2c48804780c6dd820b8b151ba",
+			"SHA256").WillReturnResult(r)
 
-		return testDb.MarkCompleted("1", 10)
+		return testDb.MarkCompleted(file, 10)
 	})
 
 	assert.Nil(t, r, "MarkCompleted failed unexpectedly")
@@ -162,11 +183,25 @@ func TestMarkCompleted(t *testing.T) {
 
 	buf.Reset()
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'COMPLETED', archive_file_checksum = \\$1, archive_file_checksum_type = 'SHA256'  WHERE id = \\$2").
-			WithArgs("1", 10).
+
+		mock.ExpectExec("UPDATE local_ega.files SET status = 'COMPLETED', "+
+			"archive_file_size = \\$2, "+
+			"archive_file_checksum = \\$3, "+
+			"archive_file_checksum_type = \\$4, "+
+			"decrypted_file_size = \\$5, "+
+			"decrypted_file_checksum = \\$6, "+
+			"decrypted_file_checksum_type = \\$7 "+
+			"WHERE id = \\$1;").
+			WithArgs(10,
+				file.Size,
+				"96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b",
+				"SHA256",
+				file.DecryptedSize,
+				"b353d3058b350466bb75a4e5e2263c73a7b900e2c48804780c6dd820b8b151ba",
+				"SHA256").
 			WillReturnError(fmt.Errorf("error for testing"))
 
-		return testDb.MarkCompleted("1", 10)
+		return testDb.MarkCompleted(file, 10)
 	})
 
 	assert.NotNil(t, r, "MarkCompleted did not fail as expected")
@@ -244,13 +279,19 @@ func TestStoreHeader(t *testing.T) {
 
 func TestSetArchived(t *testing.T) {
 
+	file := FileInfo{sha256.New(), 1000, "/tmp/file.c4gh", sha256.New(), -1}
+	file.Checksum.Write([]byte("checksum"))
+
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
-		file := FileInfo{"10", 1000, "/tmp/file.c4gh"}
 		r := sqlmock.NewResult(10, 1)
 
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'ARCHIVED', archive_path = \\$1, archive_filesize = \\$2, inbox_file_checksum = \\$3, inbox_file_checksum_type = 'SHA256' WHERE id = \\$4;").
-			WithArgs(file.Path, file.Size, file.Checksum, 42).
+		mock.ExpectExec("UPDATE local_ega.files SET status = 'ARCHIVED', archive_path = \\$1, archive_filesize = \\$2, inbox_file_checksum = \\$3, inbox_file_checksum_type = \\$4 WHERE id = \\$5;").
+			WithArgs(file.Path,
+				file.Size,
+				"96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b",
+				"SHA256",
+				42).
 			WillReturnResult(r)
 
 		return testDb.SetArchived(file, 42)
@@ -265,10 +306,11 @@ func TestSetArchived(t *testing.T) {
 
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
-		file := FileInfo{"10", 1000, "/tmp/file.c4gh"}
-
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'ARCHIVED', archive_path = \\$1, archive_filesize = \\$2, inbox_file_checksum = \\$3, inbox_file_checksum_type = 'SHA256' WHERE id = \\$4;").
-			WithArgs(file.Path, file.Size, file.Checksum, 42).
+		mock.ExpectExec("UPDATE local_ega.files SET status = 'ARCHIVED', archive_path = \\$1, archive_filesize = \\$2, inbox_file_checksum = \\$3, inbox_file_checksum_type = \\$4 WHERE id = \\$5;").
+			WithArgs(file.Path,
+				file.Size,
+				"96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b",
+				"SHA256", 42).
 			WillReturnError(fmt.Errorf("error for testing"))
 
 		return testDb.SetArchived(file, 42)

@@ -179,23 +179,13 @@ Package config manages configuration
 			<h2 id="pkg-variables">Variables</h2>
 			
 				
-				<pre>var (
-    <span class="comment">// requiredConfVars determines what needs to be provided as a minimum</span>
-    <span id="requiredConfVars">requiredConfVars</span> = []<a href="http://localhost:6060/pkg/builtin/#string">string</a>{
-        &#34;broker.host&#34;, &#34;broker.port&#34;, &#34;broker.user&#34;, &#34;broker.password&#34;, &#34;broker.queue&#34;,
-    }
-
-    <span class="comment">// requiredConfVarsExtra contains more variables required for most services</span>
-    <span id="requiredConfVarsExtra">requiredConfVarsExtra</span> = []<a href="http://localhost:6060/pkg/builtin/#string">string</a>{
-        &#34;broker.routingkey&#34;, &#34;db.host&#34;, &#34;db.port&#34;, &#34;db.user&#34;, &#34;db.password&#34;, &#34;db.database&#34;,
-    }
-)</pre>
+				<pre>var <span id="requiredConfVars">requiredConfVars</span> []<a href="http://localhost:6060/pkg/builtin/#string">string</a></pre>
 			
 		
 		
 			
 			
-			<h2 id="GetC4GHKey">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=8240:8276#L295">GetC4GHKey</a>
+			<h2 id="GetC4GHKey">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=8402:8438#L297">GetC4GHKey</a>
 				<a class="permalink" href="index.html#GetC4GHKey">&#xb6;</a>
 				
 				
@@ -211,7 +201,7 @@ GetC4GHKey reads and decrypts and returns the c4gh key
 		
 			
 			
-			<h2 id="configS3Storage">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4122:4172#L151">configS3Storage</a>
+			<h2 id="configS3Storage">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4284:4334#L153">configS3Storage</a>
 				<a class="permalink" href="index.html#configS3Storage">&#xb6;</a>
 				
 				
@@ -229,7 +219,7 @@ configuration
 		
 			
 			
-			<h2 id="Config">type <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=834:984#L27">Config</a>
+			<h2 id="Config">type <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=468:618#L17">Config</a>
 				<a class="permalink" href="index.html#Config">&#xb6;</a>
 				
 				
@@ -257,7 +247,7 @@ Config is a parent object for all the different configuration parts
 
 			
 				
-				<h3 id="NewConfig">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=1085:1128#L37">NewConfig</a>
+				<h3 id="NewConfig">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=719:762#L27">NewConfig</a>
 					<a class="permalink" href="index.html#NewConfig">&#xb6;</a>
 					
 					
@@ -274,7 +264,7 @@ the viper library.
 
 			
 				
-				<h3 id="Config.configArchive">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4956:4988#L184">configArchive</a>
+				<h3 id="Config.configArchive">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5118:5150#L186">configArchive</a>
 					<a class="permalink" href="index.html#Config.configArchive">&#xb6;</a>
 					
 					
@@ -289,7 +279,7 @@ configArchive provides configuration for the archive storage
 				
 			
 				
-				<h3 id="Config.configBroker">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5564:5601#L206">configBroker</a>
+				<h3 id="Config.configBroker">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5726:5763#L208">configBroker</a>
 					<a class="permalink" href="index.html#Config.configBroker">&#xb6;</a>
 					
 					
@@ -304,7 +294,7 @@ configBroker provides configuration for the message broker
 				
 			
 				
-				<h3 id="Config.configDatabase">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=7255:7294#L262">configDatabase</a>
+				<h3 id="Config.configDatabase">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=7417:7456#L264">configDatabase</a>
 					<a class="permalink" href="index.html#Config.configDatabase">&#xb6;</a>
 					
 					
@@ -319,7 +309,7 @@ configDatabase provides configuration for the database
 				
 			
 				
-				<h3 id="Config.configInbox">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5267:5297#L195">configInbox</a>
+				<h3 id="Config.configInbox">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5429:5459#L197">configInbox</a>
 					<a class="permalink" href="index.html#Config.configInbox">&#xb6;</a>
 					
 					
@@ -334,7 +324,7 @@ configInbox provides configuration for the inbox storage
 				
 			
 				
-				<h3 id="Config.configSchemas">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=3852:3884#L141">configSchemas</a>
+				<h3 id="Config.configSchemas">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4014:4046#L143">configSchemas</a>
 					<a class="permalink" href="index.html#Config.configSchemas">&#xb6;</a>
 					
 					

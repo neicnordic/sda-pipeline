@@ -266,7 +266,7 @@ done
 
 docker run --rm --name client --network dev_utils_default \
 neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
--t -c "SELECT * from local_ega_ebi.file_dataset ORDER BY id DESC"
+-t -c "SELECT * from local_ega_ebi.file_dataset"
 
 docker run --rm --name client --network dev_utils_default \
 neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \

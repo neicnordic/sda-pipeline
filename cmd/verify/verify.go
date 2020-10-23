@@ -168,49 +168,50 @@ func main() {
 
 			//nolint:nestif
 			if message.ReVerify == nil || !*message.ReVerify {
-				log.Debug("will run markcompleted")
+
 				// Mark file as "COMPLETED"
 				if e := db.MarkCompleted(file, message.FileID); e != nil {
 					log.Errorf("MarkCompleted failed: %v", e)
 					continue
 					// this should really be hadled by the DB retry mechanism
-				} else {
-					log.Debug("Mark completed")
-					// Send message to verified
-					c := Verified{
-						User:     message.User,
-						Filepath: message.ArchivePath,
-						DecryptedChecksums: []Checksums{
-							{"sha256", fmt.Sprintf("%x", sha256hash.Sum(nil))},
-							{"md5", fmt.Sprintf("%x", md5hash.Sum(nil))},
-						},
-					}
-
-					verifyMsg := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-accession-request.json")
-					res, err := gojsonschema.Validate(verifyMsg, gojsonschema.NewGoLoader(c))
-					if err != nil {
-						fmt.Println("error:", err)
-						log.Error(err)
-						// publish MQ error
-						continue
-					}
-					if !res.Valid() {
-						fmt.Println("result:", res.Errors())
-						log.Error(res.Errors())
-						// publish MQ error
-						continue
-					}
-
-					verified, _ := json.Marshal(&c)
-
-					if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, verified); err != nil {
-						// TODO fix resend mechanism
-						log.Errorln("We need to fix this resend stuff ...")
-					}
-					if err := delivered.Ack(false); err != nil {
-						log.Errorf("failed to ack message for reason: %v", err)
-					}
 				}
+
+				log.Debug("Mark completed")
+				// Send message to verified
+				c := Verified{
+					User:     message.User,
+					Filepath: message.ArchivePath,
+					DecryptedChecksums: []Checksums{
+						{"sha256", fmt.Sprintf("%x", sha256hash.Sum(nil))},
+						{"md5", fmt.Sprintf("%x", md5hash.Sum(nil))},
+					},
+				}
+
+				verifyMsg := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-accession-request.json")
+				res, err := gojsonschema.Validate(verifyMsg, gojsonschema.NewGoLoader(c))
+				if err != nil {
+					fmt.Println("error:", err)
+					log.Error(err)
+					// publish MQ error
+					continue
+				}
+				if !res.Valid() {
+					fmt.Println("result:", res.Errors())
+					log.Error(res.Errors())
+					// publish MQ error
+					continue
+				}
+
+				verified, _ := json.Marshal(&c)
+
+				if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, verified); err != nil {
+					// TODO fix resend mechanism
+					log.Errorln("We need to fix this resend stuff ...")
+				}
+				if err := delivered.Ack(false); err != nil {
+					log.Errorf("failed to ack message for reason: %v", err)
+				}
+
 			}
 		}
 	}()

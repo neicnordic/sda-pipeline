@@ -273,8 +273,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
       :
    else
       echo "File passed through flow but decrypted size in DB did not match real decrypted size."
-      # Temporarily disable failure here until accession issue is fixed
-      #exit 1
+      exit 1
    fi
 
    decryptedchecksum=$(docker run --rm --name client --network dev_utils_default \
@@ -286,8 +285,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
       :
      else
       echo "File passed through flow but decrypted checksum in DB did not match real decrypted checksum."
-      # Temporarily disable failure here until accession issue is fixed
-      #exit 1
+      exit 1
    fi
 
     count=$((count+1))

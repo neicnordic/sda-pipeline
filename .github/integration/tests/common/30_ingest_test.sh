@@ -110,10 +110,8 @@ for file in dummy_data.c4gh largefile.c4gh; do
     done
 
     now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-    access=$(printf "EGAF%011d" "$count" )
+    access=$(printf "EGAF%05d%06d" "$RANDOM" "$count" )
     
-
-
     archivepath=$(curl -u test:test 'localhost:15672/api/queues/test/verified/get' \
                 -H 'Content-Type: application/json;charset=UTF-8' \
                 -d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto","truncate":50000}' | \

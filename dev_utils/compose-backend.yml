@@ -6,6 +6,10 @@ services:
     environment:
       - DB_LEGA_IN_PASSWORD=lega_in
       - DB_LEGA_OUT_PASSWORD=lega_out
+      - PKI_VOLUME_PATH=/certs/
+      - PG_CA=/var/lib/postgresql/tls/ca.pem
+      - PG_SERVER_CERT=/var/lib/postgresql/tls/db.pem
+      - PG_SERVER_KEY=/var/lib/postgresql/tls/db-key.pem
     healthcheck:
       test: ["CMD", "pg_isready", "-h", "localhost", "-U", "lega_out"]
       interval: 5s
@@ -16,6 +20,7 @@ services:
       - "5432:5432"
     volumes:
       - /tmp/data:/data
+      - ./certs:/certs
   mq:
     container_name: mq
     image: neicnordic/sda-mq:latest

@@ -3,7 +3,8 @@
 cd dev_utils || exit 1
 
 touch largefile.raw
-shred -s 4G largefile.raw
+size=$(echo "$RANDOM" '*' "$RANDOM" '*' 5 + "$RANDOM" | bc)
+shred -n 1 -s "$size" largefile.raw
 
 md5sum largefile.raw > largefile.raw.md5
 sha256sum largefile.raw > largefile.raw.sha256

@@ -268,7 +268,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 
    decryptedsizedb=$(docker run --rm --name client --network dev_utils_default \
 		      neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
-		      -t -c "SELECT decrypted_file_size from local_ega.files where stable_id='$access';")
+		      -t -A -c "SELECT decrypted_file_size from local_ega.files where stable_id='$access';")
 
    if [ "$decryptedsizedb" -eq "$decryptedfilesize" ]; then
       # Use this logic to handle case of bad output from db (missing)
@@ -281,9 +281,9 @@ for file in dummy_data.c4gh largefile.c4gh; do
 
    decryptedchecksum=$(docker run --rm --name client --network dev_utils_default \
 		      neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
-		      -t -c "SELECT decrypted_file_checksum from local_ega.files where stable_id='$access';")
+		      -t -A -c "SELECT decrypted_file_checksum from local_ega.files where stable_id='$access';")
 
-   if [ "$(echo $decryptedchecksum)" = "$decsha256sum" ]; then
+   if [ "$decryptedchecksum" = "$decsha256sum" ]; then
       # Use this logic to handle case of bad output from db (missing)
       :
      else

@@ -167,7 +167,7 @@ func TestMarkCompleted(t *testing.T) {
 		r := sqlmock.NewResult(10, 1)
 
 		mock.ExpectExec("UPDATE local_ega.files SET status = 'COMPLETED', "+
-			"archive_file_size = \\$2, "+
+			"archive_filesize = \\$2, "+
 			"archive_file_checksum = \\$3, "+
 			"archive_file_checksum_type = \\$4, "+
 			"decrypted_file_size = \\$5, "+
@@ -194,7 +194,7 @@ func TestMarkCompleted(t *testing.T) {
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
 		mock.ExpectExec("UPDATE local_ega.files SET status = 'COMPLETED', "+
-			"archive_file_size = \\$2, "+
+			"archive_filesize = \\$2, "+
 			"archive_file_checksum = \\$3, "+
 			"archive_file_checksum_type = \\$4, "+
 			"decrypted_file_size = \\$5, "+

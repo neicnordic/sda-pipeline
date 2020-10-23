@@ -124,7 +124,7 @@ func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
 	db := dbs.DB
 	const completed = "UPDATE local_ega.files SET status = 'COMPLETED', " +
-		"archive_file_size = $2, " +
+		"archive_filesize = $2, " +
 		"archive_file_checksum = $3, " +
 		"archive_file_checksum_type = $4, " +
 		"decrypted_file_size = $5, " +

@@ -43,7 +43,7 @@ db:
   cacert: "./dev_utils/certs/ca.pem"
   clientCert: "./dev_utils/certs/client.pem"
   clientKey: "./dev_utils/certs/client-key.pem"
-  sslmode: "disable"
+  sslmode: "verify-ca"
 
 inbox:
   type: ""

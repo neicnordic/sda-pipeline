@@ -1,52 +1,76 @@
 version: "2.4"
 services:
+  certfixer:
+    command: sh -c "cp /origcerts/* /certs && chown -R nobody.nobody /certs/ && chmod -R og-rw /certs/"
+    container_name: certfixer
+    image: alpine:latest
+    volumes:
+      - ./certs:/origcerts
+      - certs:/certs
   ingest:
     command: sda-ingest
     container_name: ingest
+    depends_on: 
+      - certfixer
     env_file: ./env.ingest
     image: neicnordic/sda-pipeline:latest
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
       - archive:/tmp
+      - certs:/dev_utils/certs
     mem_limit: 1024m
   verify:
     command: sda-verify
     container_name: verify
+    depends_on: 
+      - certfixer
     env_file: ./env.verify
     image: neicnordic/sda-pipeline:latest
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
       - archive:/tmp
+      - certs:/dev_utils/certs
 #    mem_limit: 256m
   finalize:
     command: sda-finalize
     container_name: finalize
+    depends_on: 
+      - certfixer
     env_file: ./env.finalize
     image: neicnordic/sda-pipeline:latest
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
+      - certs:/dev_utils/certs
     mem_limit: 64m
   mapper:
     command: sda-mapper
     container_name: mapper
+    depends_on: 
+      - certfixer
     env_file: ./env.mapper
     image: neicnordic/sda-pipeline:latest
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
+      - certs:/dev_utils/certs
     mem_limit: 64m
   interceptor:
     command: sda-intercept
     container_name: intercept
+    depends_on: 
+      - certfixer
     env_file: ./env.intercept
     image: neicnordic/sda-pipeline:latest
+    
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
+      - certs:/dev_utils/certs
     mem_limit: 64m
 
 volumes:
      archive:
+     certs:

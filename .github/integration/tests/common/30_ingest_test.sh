@@ -283,7 +283,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 		      neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 		      -t -c "SELECT decrypted_file_checksum from local_ega.files where stable_id='$access';")
 
-   if [ "$decryptedchecksum" = "$decsha256sum" ]; then
+   if [ "$(echo $decryptedchecksum)" = "$decsha256sum" ]; then
       # Use this logic to handle case of bad output from db (missing)
       :
      else

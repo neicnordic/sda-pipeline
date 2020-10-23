@@ -73,15 +73,19 @@ func main() {
 			var routingKey string
 
 			switch msgType {
-			case msgAccession:
-				routingKey = "accessionIDs"
-			case msgCancel:
-				routingKey = ""
-				continue
-			case msgIngest:
-				routingKey = "ingest"
-			case msgMapping:
-				routingKey = "mappings"
+				case msgAccession:
+					routingKey = "accessionIDs"
+				case msgCancel:
+					routingKey = ""
+					continue
+				case msgIngest:
+					routingKey = "ingest"
+				case msgMapping:
+					routingKey = "mappings"
+				default:
+					log.Debug("Unknown type")
+					routingKey = ""
+					continue
 			}
 
 			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, routingKey, conf.Broker.Durable, delivered.Body); err != nil {
@@ -111,19 +115,32 @@ func validateJSON(body []byte) (string, *gojsonschema.Result, error) {
 	}
 
 	var schema gojsonschema.JSONLoader
+	var res *gojsonschema.Result
 
 	switch msgType {
-	case msgAccession:
-		schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-accession.json")
-	case msgCancel:
-		schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-trigger.json")
-		msgType = ""
-	case msgIngest:
-		schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-trigger.json")
-	case msgMapping:
-		schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/dataset-mapping.json")
+		case msgAccession:
+			schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-accession.json")
+		case msgCancel:
+			schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-trigger.json")
+			msgType = ""
+		case msgIngest:
+			schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-trigger.json")
+		case msgMapping:
+			schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/dataset-mapping.json")
+		default:
+			schema = gojsonschema.NewStringLoader(`{"required": ["type"],
+												"properties": {
+														"type": {
+															"type": "string",
+															"title": "The message type",
+															"description": "The message type",
+															"enum": ["accession", "cancel", "ingest", "mapping"]
+														}
+													}
+												}`)
+			msgType = ""
 	}
 
-	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
+	res, err = gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
 	return fmt.Sprintf("%v", msgType), res, err
 }

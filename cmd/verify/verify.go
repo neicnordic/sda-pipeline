@@ -168,11 +168,14 @@ func main() {
 
 			//nolint:nestif
 			if message.ReVerify == nil || !*message.ReVerify {
-				log.Debug("Mark completed")
+				log.Debug("will run markcompleted")
 				// Mark file as "COMPLETED"
 				if e := db.MarkCompleted(file, message.FileID); e != nil {
+					log.Error("MarkCompleted failed: %v", e)
+					continue
 					// this should really be hadled by the DB retry mechanism
 				} else {
+					log.Debug("Mark completed")
 					// Send message to verified
 					c := Verified{
 						User:     message.User,

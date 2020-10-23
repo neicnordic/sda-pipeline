@@ -171,7 +171,7 @@ func main() {
 				log.Debug("will run markcompleted")
 				// Mark file as "COMPLETED"
 				if e := db.MarkCompleted(file, message.FileID); e != nil {
-					log.Error("MarkCompleted failed: %v", e)
+					log.Errorf("MarkCompleted failed: %v", e)
 					continue
 					// this should really be hadled by the DB retry mechanism
 				} else {

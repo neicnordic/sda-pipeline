@@ -10,6 +10,7 @@ services:
       - ./:/dev_utils/
       - archive:/tmp
     mem_limit: 1024m
+    restart: always
   verify:
     command: sda-verify
     container_name: verify
@@ -19,7 +20,8 @@ services:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
       - archive:/tmp
-#    mem_limit: 256m
+    mem_limit: 256m
+    restart: always
   finalize:
     command: sda-finalize
     container_name: finalize
@@ -29,6 +31,7 @@ services:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
     mem_limit: 64m
+    restart: always
   mapper:
     command: sda-mapper
     container_name: mapper
@@ -38,6 +41,7 @@ services:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
     mem_limit: 64m
+    restart: always
   interceptor:
     command: sda-intercept
     container_name: intercept
@@ -47,6 +51,7 @@ services:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
     mem_limit: 64m
+    restart: always
 
 volumes:
      archive:

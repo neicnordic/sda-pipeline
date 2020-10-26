@@ -217,3 +217,10 @@ func confirmOne(confirms <-chan amqp.Confirmation) {
 	}
 	log.Debugf("confirmed delivery with delivery tag: %d", confirmed.DeliveryTag)
 }
+
+
+// ConnectionWatcher listens to events from the server 
+func ConnectionWatcher(conn *amqp.Connection) (*amqp.Error) {
+	amqpError := <-conn.NotifyClose(make(chan *amqp.Error))
+	return amqpError
+}

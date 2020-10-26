@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
@@ -71,6 +72,14 @@ func main() {
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
 	defer db.Close()
+
+	go func() {
+		for {
+			connError := broker.ConnectionWatcher(mq.Connection)
+			log.Error(connError)
+			os.Exit(1)
+		}
+	}()
 
 	ingestVerification := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-verification.json")
 

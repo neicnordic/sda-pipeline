@@ -47,8 +47,6 @@ func main() {
 		}
 	}()
 
-	datasetMapping := gojsonschema.NewReferenceLoader(conf.SchemasPath + "dataset-mapping.json")
-
 	forever := make(chan bool)
 
 	log.Info("starting mapper service")
@@ -61,7 +59,7 @@ func main() {
 		}
 		for d := range messages {
 			log.Debugf("received a message: %s", d.Body)
-			res, err := gojsonschema.Validate(datasetMapping, gojsonschema.NewBytesLoader(d.Body))
+			res, err := validateJSON(conf.SchemasPath, delivered.Body)
 			if err != nil {
 				log.Error(err)
 				// publish MQ error
@@ -91,4 +89,17 @@ func main() {
 	}()
 
 	<-forever
+}
+
+// Validate the JSON in a received message
+func validateJSON(schemasPath string, body []byte) (*gojsonschema.Result, error) {
+	message := make(map[string]interface{})
+	err := json.Unmarshal(body, &message)
+	if err != nil {
+		return nil, err
+	}
+
+	schema := gojsonschema.NewReferenceLoader(schemasPath + "dataset-mapping.json")
+	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
+	return res, err
 }

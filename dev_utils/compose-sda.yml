@@ -31,6 +31,7 @@ services:
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
+      - certs:/dev_utils/certs
       - archive:/tmp
     mem_limit: 256m
     restart: always

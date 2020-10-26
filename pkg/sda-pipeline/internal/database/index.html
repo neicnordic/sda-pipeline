@@ -116,6 +116,9 @@ providing high level functions
 				
 				<dd><a href="index.html#buildConnInfo">func buildConnInfo(config DBConf) string</a></dd>
 			
+				
+				<dd><a href="index.html#hashType">func hashType(h hash.Hash) string</a></dd>
+			
 			
 				
 				<dd><a href="index.html#DBConf">type DBConf</a></dd>
@@ -152,7 +155,7 @@ providing high level functions
 					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.MapFilesToDataset">func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) error</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.MarkCompleted">func (dbs *SQLdb) MarkCompleted(checksum string, fileID int) error</a></dd>
+					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.MarkCompleted">func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.MarkReady">func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error</a></dd>
@@ -199,7 +202,7 @@ Internal variable to ease testing
 		
 			
 			
-			<h2 id="buildConnInfo">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1517:1557#L63">buildConnInfo</a>
+			<h2 id="buildConnInfo">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1758:1798#L72">buildConnInfo</a>
 				<a class="permalink" href="index.html#buildConnInfo">&#xb6;</a>
 				
 				
@@ -213,10 +216,26 @@ buildConnInfo builds a connection string for the database
 			
 
 		
+			
+			
+			<h2 id="hashType">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1275:1308#L49">hashType</a>
+				<a class="permalink" href="index.html#hashType">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func hashType(h <a href="http://localhost:6060/pkg/hash/">hash</a>.<a href="http://localhost:6060/pkg/hash/#Hash">Hash</a>) <a href="http://localhost:6060/pkg/builtin/#string">string</a></pre>
+			<p>
+hashType returns the identification string for the hash type
+</p>
+
+			
+			
+
+		
 		
 			
 			
-			<h2 id="DBConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=719:909#L23">DBConf</a>
+			<h2 id="DBConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=727:917#L24">DBConf</a>
 				<a class="permalink" href="index.html#DBConf">&#xb6;</a>
 				
 				
@@ -252,7 +271,7 @@ DBConf stores information about the database backend
 		
 			
 			
-			<h2 id="Database">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=372:560#L10">Database</a>
+			<h2 id="Database">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=380:568#L11">Database</a>
 				<a class="permalink" href="index.html#Database">&#xb6;</a>
 				
 				
@@ -282,7 +301,7 @@ Database defines methods to be implemented by SQLdb
 		
 			
 			
-			<h2 id="FileInfo">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=982:1056#L36">FileInfo</a>
+			<h2 id="FileInfo">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=990:1148#L37">FileInfo</a>
 				<a class="permalink" href="index.html#FileInfo">&#xb6;</a>
 				
 				
@@ -292,9 +311,11 @@ FileInfo is used by ingest for file metadata (path, size, checksum)
 </p>
 
 			<pre>type FileInfo struct {
-<span id="FileInfo.Checksum"></span>    Checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="FileInfo.Size"></span>    Size     <a href="http://localhost:6060/pkg/builtin/#int64">int64</a>
-<span id="FileInfo.Path"></span>    Path     <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="FileInfo.Checksum"></span>    Checksum          <a href="http://localhost:6060/pkg/hash/">hash</a>.<a href="http://localhost:6060/pkg/hash/#Hash">Hash</a>
+<span id="FileInfo.Size"></span>    Size              <a href="http://localhost:6060/pkg/builtin/#int64">int64</a>
+<span id="FileInfo.Path"></span>    Path              <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="FileInfo.DecryptedChecksum"></span>    DecryptedChecksum <a href="http://localhost:6060/pkg/hash/">hash</a>.<a href="http://localhost:6060/pkg/hash/#Hash">Hash</a>
+<span id="FileInfo.DecryptedSize"></span>    DecryptedSize     <a href="http://localhost:6060/pkg/builtin/#int64">int64</a>
 }
 </pre>
 
@@ -312,7 +333,7 @@ FileInfo is used by ingest for file metadata (path, size, checksum)
 		
 			
 			
-			<h2 id="SQLdb">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=628:661#L18">SQLdb</a>
+			<h2 id="SQLdb">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=636:669#L19">SQLdb</a>
 				<a class="permalink" href="index.html#SQLdb">&#xb6;</a>
 				
 				
@@ -336,7 +357,7 @@ SQLdb struct that acts as a receiver for the DB update methods
 
 			
 				
-				<h3 id="NewDB">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1156:1197#L46">NewDB</a>
+				<h3 id="NewDB">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1397:1438#L55">NewDB</a>
 					<a class="permalink" href="index.html#NewDB">&#xb6;</a>
 					
 					
@@ -352,7 +373,7 @@ NewDB creates a new DB connection
 
 			
 				
-				<h3 id="SQLdb.Close">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=6212:6237#L201">Close</a>
+				<h3 id="SQLdb.Close">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=6897:6922#L235">Close</a>
 					<a class="permalink" href="index.html#SQLdb.Close">&#xb6;</a>
 					
 					
@@ -367,7 +388,7 @@ Close terminates the connection to the database
 				
 			
 				
-				<h3 id="SQLdb.GetHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=2127:2182#L87">GetHeader</a>
+				<h3 id="SQLdb.GetHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=2368:2423#L96">GetHeader</a>
 					<a class="permalink" href="index.html#SQLdb.GetHeader">&#xb6;</a>
 					
 					
@@ -382,7 +403,7 @@ GetHeader retrieves the file header
 				
 			
 				
-				<h3 id="SQLdb.InsertFile">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=3064:3130#L119">InsertFile</a>
+				<h3 id="SQLdb.InsertFile">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=3648:3714#L142">InsertFile</a>
 					<a class="permalink" href="index.html#SQLdb.InsertFile">&#xb6;</a>
 					
 					
@@ -397,7 +418,7 @@ InsertFile inserts a file in the database
 				
 			
 				
-				<h3 id="SQLdb.MapFilesToDataset">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=5215:5297#L173">MapFilesToDataset</a>
+				<h3 id="SQLdb.MapFilesToDataset">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=5900:5982#L207">MapFilesToDataset</a>
 					<a class="permalink" href="index.html#SQLdb.MapFilesToDataset">&#xb6;</a>
 					
 					
@@ -412,12 +433,12 @@ MapFilesToDataset maps a set of files to a dataset in the database
 				
 			
 				
-				<h3 id="SQLdb.MarkCompleted">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=2532:2598#L105">MarkCompleted</a>
+				<h3 id="SQLdb.MarkCompleted">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=2773:2837#L114">MarkCompleted</a>
 					<a class="permalink" href="index.html#SQLdb.MarkCompleted">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (dbs *<a href="index.html#SQLdb">SQLdb</a>) MarkCompleted(checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>, fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<pre>func (dbs *<a href="index.html#SQLdb">SQLdb</a>) MarkCompleted(file <a href="index.html%3Fm=all.html#FileInfo">FileInfo</a>, fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
 				<p>
 MarkCompleted marks the file as &#34;COMPLETED&#34;
 </p>
@@ -427,7 +448,7 @@ MarkCompleted marks the file as &#34;COMPLETED&#34;
 				
 			
 				
-				<h3 id="SQLdb.MarkReady">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=4603:4682#L159">MarkReady</a>
+				<h3 id="SQLdb.MarkReady">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=5279:5358#L192">MarkReady</a>
 					<a class="permalink" href="index.html#SQLdb.MarkReady">&#xb6;</a>
 					
 					
@@ -442,7 +463,7 @@ MarkReady marks the file as &#34;READY&#34;
 				
 			
 				
-				<h3 id="SQLdb.SetArchived">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=4032:4092#L145">SetArchived</a>
+				<h3 id="SQLdb.SetArchived">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=4616:4676#L168">SetArchived</a>
 					<a class="permalink" href="index.html#SQLdb.SetArchived">&#xb6;</a>
 					
 					
@@ -457,7 +478,7 @@ SetArchived marks the file as &#39;ARCHIVED&#39;
 				
 			
 				
-				<h3 id="SQLdb.StoreHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=3578:3638#L131">StoreHeader</a>
+				<h3 id="SQLdb.StoreHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=4162:4222#L154">StoreHeader</a>
 					<a class="permalink" href="index.html#SQLdb.StoreHeader">&#xb6;</a>
 					
 					

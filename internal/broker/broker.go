@@ -4,6 +4,7 @@ package broker
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 
@@ -48,6 +49,13 @@ type MQConf struct {
 	ClientKey    string
 	ServerName   string
 	Durable      bool
+}
+
+// jsonError struct for sending broken messages to analysis
+type jsonError struct {
+	Error          string `json:"error"`
+	Reason         string `json:"reason"`
+	OrginalMessage []byte `json:"orginal-message"`
 }
 
 // NewMQ creates a new Broker that can communicate with a backend
@@ -223,4 +231,17 @@ func confirmOne(confirms <-chan amqp.Confirmation) {
 func (broker *AMQPBroker) ConnectionWatcher() (*amqp.Error) {
 	amqpError := <-broker.Connection.NotifyClose(make(chan *amqp.Error))
 	return amqpError
+}
+
+// SendJSONError sends message on JSON error
+func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, reason string, conf MQConf) error {
+	josnError := jsonError{
+		Error:          "Validation of json message failed",
+		Reason:         fmt.Sprintf("%v", reason),
+		OrginalMessage: delivered.Body,
+	}
+	body, _ := json.Marshal(josnError)
+
+	return broker.SendMessage(delivered.CorrelationId, conf.Exchange, conf.RoutingError, conf.Durable, body)
+
 }

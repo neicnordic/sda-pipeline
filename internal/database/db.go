@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"hash"
 	"path/filepath"
 	"strings"
 
@@ -44,13 +45,21 @@ type DBConf struct {
 
 // FileInfo is used by ingest for file metadata (path, size, checksum)
 type FileInfo struct {
-	Checksum string
-	Size     int64
-	Path     string
+	Checksum          hash.Hash
+	Size              int64
+	Path              string
+	DecryptedChecksum hash.Hash
+	DecryptedSize     int64
 }
 
 // Internal variable to ease testing
 var sqlOpen = sql.Open
+
+// hashType returns the identification string for the hash type
+func hashType(h hash.Hash) string {
+	// TODO: Support/check type
+	return "SHA256"
+}
 
 // NewDB creates a new DB connection
 func NewDB(config DBConf) (*SQLdb, error) {
@@ -112,10 +121,24 @@ func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 }
 
 // MarkCompleted marks the file as "COMPLETED"
-func (dbs *SQLdb) MarkCompleted(checksum string, fileID int) error {
+func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
 	db := dbs.DB
-	const completed = "UPDATE local_ega.files SET status = 'COMPLETED', archive_file_checksum = $1, archive_file_checksum_type = 'SHA256'  WHERE id = $2;"
-	result, err := db.Exec(completed, checksum, fileID)
+	const completed = "UPDATE local_ega.files SET status = 'COMPLETED', " +
+		"archive_filesize = $2, " +
+		"archive_file_checksum = $3, " +
+		"archive_file_checksum_type = $4, " +
+		"decrypted_file_size = $5, " +
+		"decrypted_file_checksum = $6, " +
+		"decrypted_file_checksum_type = $7 " +
+		"WHERE id = $1;"
+	result, err := db.Exec(completed,
+		fileID,
+		file.Size,
+		fmt.Sprintf("%x", file.Checksum.Sum(nil)),
+		hashType(file.Checksum),
+		file.DecryptedSize,
+		fmt.Sprintf("%x", file.DecryptedChecksum.Sum(nil)),
+		hashType(file.DecryptedChecksum))
 	if err != nil {
 		return err
 	}
@@ -154,8 +177,18 @@ func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
 // SetArchived marks the file as 'ARCHIVED'
 func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
 	db := dbs.DB
-	const query = "UPDATE local_ega.files SET status = 'ARCHIVED', archive_path = $1, archive_filesize = $2, inbox_file_checksum = $3, inbox_file_checksum_type = 'SHA256' WHERE id = $4;"
-	result, err := db.Exec(query, file.Path, file.Size, file.Checksum, id)
+	const query = "UPDATE local_ega.files SET status = 'ARCHIVED', " +
+		"archive_path = $1, " +
+		"archive_filesize = $2, " +
+		"inbox_file_checksum = $3, " +
+		"inbox_file_checksum_type = $4 " +
+		"WHERE id = $5;"
+	result, err := db.Exec(query,
+		file.Path,
+		file.Size,
+		fmt.Sprintf("%x", file.Checksum.Sum(nil)),
+		hashType(file.Checksum),
+		id)
 	if err != nil {
 		return err
 	}
@@ -168,7 +201,8 @@ func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
 // MarkReady marks the file as "READY"
 func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error {
 	db := dbs.DB
-	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE elixir_id = $2 and archive_path = $3 and archive_file_checksum = $4 and status != 'DISABLED';"
+	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE " +
+		"elixir_id = $2 and archive_path = $3 and decrypted_file_checksum = $4 and status != 'DISABLED';"
 	result, err := db.Exec(ready, accessionID, user, filepath, checksum)
 	if err != nil {
 		return err

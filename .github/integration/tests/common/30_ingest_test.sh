@@ -2,7 +2,7 @@
 
 docker run --rm --name client --network dev_utils_default \
 neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
--t -c "SELECT * from local_ega_ebi.file_dataset ORDER BY id DESC"
+-t -c "SELECT * from local_ega_ebi.file_dataset"
 
 docker run --rm --name client --network dev_utils_default \
 neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
@@ -31,9 +31,14 @@ for file in dummy_data.c4gh largefile.c4gh; do
     C4GH_PASSPHRASE=$(grep -F passphrase config.yaml | sed -e 's/.* //' -e 's/"//g')
     export C4GH_PASSPHRASE
 
-    decsha256sum=$(crypt4gh decrypt --sk c4gh.sec.pem < "$file" | sha256sum | cut -d' ' -f 1)
+    dcf=$(tempfile)
+
+    decsha256sum=$(crypt4gh decrypt --sk c4gh.sec.pem < "$file" | LANG=C dd bs=4M 2>"$dcf" | sha256sum | cut -d' ' -f 1)
     decmd5sum=$(crypt4gh decrypt --sk c4gh.sec.pem < "$file" | md5sum | cut -d' ' -f 1)
     
+    decryptedfilesize=$(sed -ne 's/^\([0-9][0-9]*\) bytes (.*) copied, .*$/\1/p' "$dcf")
+    rm -f "$dcf"
+
     curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
           -H 'Content-Type: application/json;charset=UTF-8' \
           --data-binary "$( echo '{
@@ -105,10 +110,8 @@ for file in dummy_data.c4gh largefile.c4gh; do
     done
 
     now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-    access=$(printf "EGAF%011d" "$count" )
+    access=$(printf "EGAF%05d%06d" "$RANDOM" "$count" )
     
-
-
     archivepath=$(curl -u test:test 'localhost:15672/api/queues/test/verified/get' \
                 -H 'Content-Type: application/json;charset=UTF-8' \
                 -d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto","truncate":50000}' | \
@@ -261,12 +264,36 @@ for file in dummy_data.c4gh largefile.c4gh; do
        fi
    done
 
+   decryptedsizedb=$(docker run --rm --name client --network dev_utils_default \
+		      neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
+		      -t -A -c "SELECT decrypted_file_size from local_ega.files where stable_id='$access';")
+
+   if [ "$decryptedsizedb" -eq "$decryptedfilesize" ]; then
+      # Use this logic to handle case of bad output from db (missing)
+      :
+   else
+      echo "File passed through flow but decrypted size in DB did not match real decrypted size."
+      exit 1
+   fi
+
+   decryptedchecksum=$(docker run --rm --name client --network dev_utils_default \
+		      neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
+		      -t -A -c "SELECT decrypted_file_checksum from local_ega.files where stable_id='$access';")
+
+   if [ "$decryptedchecksum" = "$decsha256sum" ]; then
+      # Use this logic to handle case of bad output from db (missing)
+      :
+     else
+      echo "File passed through flow but decrypted checksum in DB did not match real decrypted checksum."
+      exit 1
+   fi
+
     count=$((count+1))
 done
 
 docker run --rm --name client --network dev_utils_default \
 neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
--t -c "SELECT * from local_ega_ebi.file_dataset ORDER BY id DESC"
+-t -c "SELECT * from local_ega_ebi.file_dataset"
 
 docker run --rm --name client --network dev_utils_default \
 neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \

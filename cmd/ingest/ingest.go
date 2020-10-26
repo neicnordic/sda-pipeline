@@ -230,7 +230,7 @@ func main() {
 				continue
 			}
 
-			fileInfo.Checksum = fmt.Sprintf("%x", hash.Sum(nil))
+			fileInfo.Checksum = hash
 			if err := db.SetArchived(fileInfo, fileID); err != nil {
 				log.Error("SetArchived failed")
 				// This should really be handled by the DB retry mechanism

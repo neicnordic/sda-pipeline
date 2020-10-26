@@ -135,6 +135,17 @@ func main() {
 				continue
 			}
 
+			var file database.FileInfo
+
+			file.Size, err = backend.GetFileSize(message.ArchivePath)
+
+			if err != nil {
+				log.Errorf("Failed to get file size for %s, reason: %v", message.ArchivePath, err)
+				continue
+			}
+
+			archiveFileHash := sha256.New()
+
 			f, err := backend.NewFileReader(message.ArchivePath)
 			if err != nil {
 				log.Errorf("Failed to open file: %s, reason: %v", message.ArchivePath, err)
@@ -142,7 +153,8 @@ func main() {
 			}
 
 			hr := bytes.NewReader(header)
-			mr := io.MultiReader(hr, f)
+			// Feed everything read from the archive file to archiveFileHash
+			mr := io.MultiReader(hr, io.TeeReader(f, archiveFileHash))
 
 			c4ghr, err := streaming.NewCrypt4GHReader(mr, *key, nil)
 			if err != nil {
@@ -155,53 +167,60 @@ func main() {
 
 			stream := io.TeeReader(c4ghr, md5hash)
 
-			if _, err := io.Copy(sha256hash, stream); err != nil {
+			if file.DecryptedSize, err = io.Copy(sha256hash, stream); err != nil {
 				log.Error(err)
 				continue
 			}
 
+			file.Checksum = archiveFileHash
+			file.DecryptedChecksum = sha256hash
+
 			//nolint:nestif
 			if message.ReVerify == nil || !*message.ReVerify {
-				log.Debug("Mark completed")
+
 				// Mark file as "COMPLETED"
-				if e := db.MarkCompleted(fmt.Sprintf("%x", sha256hash.Sum(nil)), message.FileID); e != nil {
+				if e := db.MarkCompleted(file, message.FileID); e != nil {
+					log.Errorf("MarkCompleted failed: %v", e)
+					continue
 					// this should really be hadled by the DB retry mechanism
-				} else {
-					// Send message to verified
-					c := Verified{
-						User:     message.User,
-						Filepath: message.ArchivePath,
-						DecryptedChecksums: []Checksums{
-							{"sha256", fmt.Sprintf("%x", sha256hash.Sum(nil))},
-							{"md5", fmt.Sprintf("%x", md5hash.Sum(nil))},
-						},
-					}
-
-					verifyMsg := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-accession-request.json")
-					res, err := gojsonschema.Validate(verifyMsg, gojsonschema.NewGoLoader(c))
-					if err != nil {
-						fmt.Println("error:", err)
-						log.Error(err)
-						// publish MQ error
-						continue
-					}
-					if !res.Valid() {
-						fmt.Println("result:", res.Errors())
-						log.Error(res.Errors())
-						// publish MQ error
-						continue
-					}
-
-					verified, _ := json.Marshal(&c)
-
-					if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, verified); err != nil {
-						// TODO fix resend mechanism
-						log.Errorln("We need to fix this resend stuff ...")
-					}
-					if err := delivered.Ack(false); err != nil {
-						log.Errorf("failed to ack message for reason: %v", err)
-					}
 				}
+
+				log.Debug("Mark completed")
+				// Send message to verified
+				c := Verified{
+					User:     message.User,
+					Filepath: message.ArchivePath,
+					DecryptedChecksums: []Checksums{
+						{"sha256", fmt.Sprintf("%x", sha256hash.Sum(nil))},
+						{"md5", fmt.Sprintf("%x", md5hash.Sum(nil))},
+					},
+				}
+
+				verifyMsg := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-accession-request.json")
+				res, err := gojsonschema.Validate(verifyMsg, gojsonschema.NewGoLoader(c))
+				if err != nil {
+					fmt.Println("error:", err)
+					log.Error(err)
+					// publish MQ error
+					continue
+				}
+				if !res.Valid() {
+					fmt.Println("result:", res.Errors())
+					log.Error(res.Errors())
+					// publish MQ error
+					continue
+				}
+
+				verified, _ := json.Marshal(&c)
+
+				if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, verified); err != nil {
+					// TODO fix resend mechanism
+					log.Errorln("We need to fix this resend stuff ...")
+				}
+				if err := delivered.Ack(false); err != nil {
+					log.Errorf("failed to ack message for reason: %v", err)
+				}
+
 			}
 		}
 	}()

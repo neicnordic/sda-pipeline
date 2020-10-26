@@ -113,6 +113,9 @@ Package broker contains logic for communicating with a message broker
 			
 			
 				
+				<dd><a href="index.html#ConnectionWatcher">func ConnectionWatcher(conn *amqp.Connection) *amqp.Error</a></dd>
+			
+				
 				<dd><a href="index.html#GetMessages">func GetMessages(broker *AMQPBroker, queue string) (&lt;-chan amqp.Delivery, error)</a></dd>
 			
 				
@@ -178,6 +181,22 @@ This is an internal helper variable to make testing easier
 				<pre>var <span id="logFatalf">logFatalf</span> = <a href="http://localhost:6060/pkg/github.com/sirupsen/logrus/">log</a>.<a href="http://localhost:6060/pkg/github.com/sirupsen/logrus/#Fatalf">Fatalf</a></pre>
 			
 		
+		
+			
+			
+			<h2 id="ConnectionWatcher">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=5991:6050#L213">ConnectionWatcher</a>
+				<a class="permalink" href="index.html#ConnectionWatcher">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func ConnectionWatcher(conn *<a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Connection">Connection</a>) *<a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Error">Error</a></pre>
+			<p>
+ConnectionWatcher listens to events from the server
+</p>
+
+			
+			
+
 		
 			
 			

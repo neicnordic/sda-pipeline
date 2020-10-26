@@ -65,8 +65,6 @@ func main() {
 		}
 	}()
 
-	ingestAccession := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-accession.json")
-
 	forever := make(chan bool)
 
 	log.Info("starting finalize service")
@@ -79,7 +77,7 @@ func main() {
 		}
 		for delivered := range messages {
 			log.Debugf("received a message: %s", delivered.Body)
-			res, err := gojsonschema.Validate(ingestAccession, gojsonschema.NewBytesLoader(delivered.Body))
+			res, err := validateJSON(conf.SchemasPath, delivered.Body)
 			if err != nil {
 				log.Error(err)
 				// publish MQ error
@@ -91,11 +89,8 @@ func main() {
 				continue
 			}
 
-			if err := json.Unmarshal(delivered.Body, &message); err != nil {
-				log.Errorf("Unmarshaling json message failed, reason: %s", err)
-				// publish MQ error
-				continue
-			}
+			// we unmarshal the message in the validation step so this is safe to do
+			_ = json.Unmarshal(delivered.Body, &message)
 
 			// Extract the sha256 from the message and use it for the database
 			var checksumSha256 string
@@ -145,4 +140,24 @@ func main() {
 	}()
 
 	<-forever
+}
+
+// Validate the JSON in a received message
+func validateJSON(schemasPath string, body []byte) (*gojsonschema.Result, error) {
+	message := make(map[string]interface{})
+	err := json.Unmarshal(body, &message)
+	if err != nil {
+		return nil, err
+	}
+
+	var schema gojsonschema.JSONLoader
+
+	_, ok := message["type"]
+	if ok {
+		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-accession.json")
+	} else {
+		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-completion.json")
+	}
+	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
+	return res, err
 }

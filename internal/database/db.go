@@ -52,8 +52,11 @@ type FileInfo struct {
 	DecryptedSize     int64
 }
 
-// Internal variable to ease testing
+// sqlOpen is an internal variable to ease testing
 var sqlOpen = sql.Open
+
+// logFatalf is an internal variable to ease testing
+var logFatalf = log.Fatalf
 
 // hashType returns the identification string for the hash type
 func hashType(h hash.Hash) string {
@@ -102,6 +105,15 @@ func buildConnInfo(config DBConf) string {
 	return connInfo
 }
 
+// checkAndAbortOnBadConn validates the current connection
+// with a ping and exits if the connection is not usable
+func (dbs *SQLdb) checkAndAbortOnBadConn() {
+	err := dbs.DB.Ping()
+	if err != nil {
+		logFatalf("Database connection no longer usable, giving up: %v", err)
+	}
+}
+
 // GetHeader retrieves the file header
 func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 	db := dbs.DB
@@ -109,11 +121,13 @@ func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 
 	var hexString string
 	if err := db.QueryRow(query, fileID).Scan(&hexString); err != nil {
+		dbs.checkAndAbortOnBadConn()
 		return nil, err
 	}
 
 	header, err := hex.DecodeString(hexString)
 	if err != nil {
+		dbs.checkAndAbortOnBadConn()
 		return nil, err
 	}
 
@@ -140,6 +154,7 @@ func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
 		fmt.Sprintf("%x", file.DecryptedChecksum.Sum(nil)),
 		hashType(file.DecryptedChecksum))
 	if err != nil {
+		dbs.checkAndAbortOnBadConn()
 		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
@@ -155,6 +170,7 @@ func (dbs *SQLdb) InsertFile(filename, user string) (int64, error) {
 	var fileID int64
 	err := db.QueryRow(query, filename, strings.Replace(filepath.Ext(filename), ".", "", -1), user).Scan(&fileID)
 	if err != nil {
+		dbs.checkAndAbortOnBadConn()
 		return 0, err
 	}
 	return fileID, nil
@@ -166,6 +182,7 @@ func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
 	const query = "UPDATE local_ega.files SET header = $1 WHERE id = $2;"
 	result, err := db.Exec(query, hex.EncodeToString(header), id)
 	if err != nil {
+		dbs.checkAndAbortOnBadConn()
 		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
@@ -190,6 +207,7 @@ func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
 		hashType(file.Checksum),
 		id)
 	if err != nil {
+		dbs.checkAndAbortOnBadConn()
 		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
@@ -205,6 +223,7 @@ func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error 
 		"elixir_id = $2 and archive_path = $3 and decrypted_file_checksum = $4 and status != 'DISABLED';"
 	result, err := db.Exec(ready, accessionID, user, filepath, checksum)
 	if err != nil {
+		dbs.checkAndAbortOnBadConn()
 		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
@@ -223,14 +242,17 @@ func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) err
 	for _, accessionID := range accessionIDs {
 		err := db.QueryRow(getID, accessionID).Scan(&fileID)
 		if err != nil {
+			dbs.checkAndAbortOnBadConn()
 			log.Errorf("something went wrong with the DB query: %s", err)
 			if e := transaction.Rollback(); e != nil {
+				dbs.checkAndAbortOnBadConn()
 				log.Errorf("failed to rollback the transaction: %s", e)
 			}
 			return err
 		}
 		_, err = transaction.Exec(mapping, fileID, datasetID)
 		if err != nil {
+			dbs.checkAndAbortOnBadConn()
 			log.Errorf("something went wrong with the DB query: %s", err)
 			if e := transaction.Rollback(); e != nil {
 				log.Errorf("failed to rollback the transaction: %s", e)

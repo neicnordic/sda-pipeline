@@ -55,7 +55,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
                           "payload":"{
                                       \"type\":\"ingest\",
                                       \"user\":\"test\",
-                                      \"filepath\":\"/FILENAME\",
+                                      \"filepath\":\"FILENAME\",
                                       \"encrypted_checksums\":[{
                                                                 \"type\":\"sha256\",
                                                                 \"value\":\"SHA256SUM\"},

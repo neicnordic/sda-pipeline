@@ -31,7 +31,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
     C4GH_PASSPHRASE=$(grep -F passphrase config.yaml | sed -e 's/.* //' -e 's/"//g')
     export C4GH_PASSPHRASE
 
-    dcf=$(tempfile)
+    dcf=$(mktemp)
 
     decsha256sum=$(crypt4gh decrypt --sk c4gh.sec.pem < "$file" | LANG=C dd bs=4M 2>"$dcf" | sha256sum | cut -d' ' -f 1)
     decmd5sum=$(crypt4gh decrypt --sk c4gh.sec.pem < "$file" | md5sum | cut -d' ' -f 1)
@@ -55,7 +55,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
                           "payload":"{
                                       \"type\":\"ingest\",
                                       \"user\":\"test\",
-                                      \"filepath\":\"/FILENAME\",
+                                      \"filepath\":\"FILENAME\",
                                       \"encrypted_checksums\":[{
                                                                 \"type\":\"sha256\",
                                                                 \"value\":\"SHA256SUM\"},
@@ -112,7 +112,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
     now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
     access=$(printf "EGAF%05d%06d" "$RANDOM" "$count" )
     
-    archivepath=$(curl -u test:test 'localhost:15672/api/queues/test/verified/get' \
+    filepath=$(curl -u test:test 'localhost:15672/api/queues/test/verified/get' \
                 -H 'Content-Type: application/json;charset=UTF-8' \
                 -d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto","truncate":50000}' | \
                 jq -r '.[0]["payload"]' |  jq -r '.["filepath"]'
@@ -148,7 +148,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
                                                                 }
                                                                 ]
                                         }"
-                            }'| sed -e "s/FILENAME/$archivepath/" -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/${access}/" -e "s/CORRID/$count/" )"
+                            }'| sed -e "s/FILENAME/$filepath/" -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/${access}/" -e "s/CORRID/$count/" )"
 
     RETRY_TIMES=0
     until docker logs finalize --since="$now" 2>&1 | grep "Mark ready"

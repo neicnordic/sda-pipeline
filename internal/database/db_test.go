@@ -339,7 +339,7 @@ func TestMarkReady(t *testing.T) {
 
 		r := sqlmock.NewResult(10, 1)
 
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'READY', stable_id = \\$1 WHERE elixir_id = \\$2 and archive_path = \\$3 and decrypted_file_checksum = \\$4 and status != 'DISABLED';").
+		mock.ExpectExec("UPDATE local_ega.files SET status = 'READY', stable_id = \\$1 WHERE elixir_id = \\$2 and inbox_path = \\$3 and decrypted_file_checksum = \\$4 and status != 'DISABLED';").
 			WithArgs("accessionId", "nobody", "/tmp/file.c4gh", "checksum").
 			WillReturnResult(r)
 
@@ -353,7 +353,7 @@ func TestMarkReady(t *testing.T) {
 
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'READY', stable_id = \\$1 WHERE elixir_id = \\$2 and archive_path = \\$3 and decrypted_file_checksum = \\$4 and status != 'DISABLED';").
+		mock.ExpectExec("UPDATE local_ega.files SET status = 'READY', stable_id = \\$1 WHERE elixir_id = \\$2 and inbox_path = \\$3 and decrypted_file_checksum = \\$4 and status != 'DISABLED';").
 			WithArgs("accessionId", "nobody", "/tmp/file.c4gh", "checksum").
 			WillReturnError(fmt.Errorf("error for testing"))
 

@@ -81,8 +81,6 @@ func main() {
 		}
 	}()
 
-	ingestVerification := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-verification.json")
-
 	forever := make(chan bool)
 
 	log.Info("starting verify service")
@@ -94,7 +92,7 @@ func main() {
 		}
 		for delivered := range messages {
 			log.Debugf("received a message: %s", delivered.Body)
-			res, err := gojsonschema.Validate(ingestVerification, gojsonschema.NewBytesLoader(delivered.Body))
+			res, err := validateJSON(conf.SchemasPath, delivered.Body)
 			if err != nil {
 				log.Error(err)
 				// publish MQ error
@@ -226,4 +224,24 @@ func main() {
 	}()
 
 	<-forever
+}
+
+// Validate the JSON in a received message
+func validateJSON(schemasPath string, body []byte) (*gojsonschema.Result, error) {
+	message := make(map[string]interface{})
+	err := json.Unmarshal(body, &message)
+	if err != nil {
+		return nil, err
+	}
+
+	var schema gojsonschema.JSONLoader
+
+	_, ok := message["file_id"]
+	if ok {
+		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-verification.json")
+	} else {
+		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-accession-request.json")
+	}
+	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
+	return res, err
 }

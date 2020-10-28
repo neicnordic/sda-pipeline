@@ -10,6 +10,7 @@ import (
 	"hash"
 	"path/filepath"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -27,7 +28,8 @@ type Database interface {
 
 // SQLdb struct that acts as a receiver for the DB update methods
 type SQLdb struct {
-	DB *sql.DB
+	DB       *sql.DB
+	ConnInfo string
 }
 
 // DBConf stores information about the database backend
@@ -78,7 +80,7 @@ func NewDB(config DBConf) (*SQLdb, error) {
 		return nil, err
 	}
 
-	return &SQLdb{DB: db}, nil
+	return &SQLdb{DB: db, ConnInfo: connInfo}, nil
 }
 
 // buildConnInfo builds a connection string for the database
@@ -114,6 +116,25 @@ func (dbs *SQLdb) checkAndAbortOnBadConn() {
 	}
 }
 
+// checkAndReconnectIfNeeded validates the current connection with a ping
+// and tries to reconnect if necessary
+func (dbs *SQLdb) checkAndReconnectIfNeeded() {
+	start := time.Now()
+
+	for dbs.DB.Ping() != nil {
+		log.Errorln("Database unreachable, reconnecting")
+		dbs.DB.Close()
+
+		if time.Since(start) > 5*time.Minute {
+			log.Fatalf("Could not reconnect to failed database in reasonable time, giving up")
+		}
+		time.Sleep(5 * time.Second)
+		log.Debugf("Reconnecting to DB with <%s>", dbs.ConnInfo)
+		dbs.DB, _ = sqlOpen("postgres", dbs.ConnInfo)
+	}
+
+}
+
 // GetHeader retrieves the file header
 func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 	db := dbs.DB
@@ -136,6 +157,8 @@ func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 
 // MarkCompleted marks the file as "COMPLETED"
 func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
+	dbs.checkAndReconnectIfNeeded()
+
 	db := dbs.DB
 	const completed = "UPDATE local_ega.files SET status = 'COMPLETED', " +
 		"archive_filesize = $2, " +
@@ -165,6 +188,8 @@ func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
 
 // InsertFile inserts a file in the database
 func (dbs *SQLdb) InsertFile(filename, user string) (int64, error) {
+	dbs.checkAndReconnectIfNeeded()
+
 	db := dbs.DB
 	const query = "INSERT INTO local_ega.main(submission_file_path, submission_file_extension, submission_user, status, encryption_method) VALUES($1, $2, $3,'INIT', 'CRYPT4GH') RETURNING id;"
 	var fileID int64
@@ -178,6 +203,8 @@ func (dbs *SQLdb) InsertFile(filename, user string) (int64, error) {
 
 // StoreHeader stores the file header in the database
 func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
+	dbs.checkAndReconnectIfNeeded()
+
 	db := dbs.DB
 	const query = "UPDATE local_ega.files SET header = $1 WHERE id = $2;"
 	result, err := db.Exec(query, hex.EncodeToString(header), id)
@@ -193,6 +220,8 @@ func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
 
 // SetArchived marks the file as 'ARCHIVED'
 func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
+	dbs.checkAndReconnectIfNeeded()
+
 	db := dbs.DB
 	const query = "UPDATE local_ega.files SET status = 'ARCHIVED', " +
 		"archive_path = $1, " +
@@ -218,6 +247,8 @@ func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
 
 // MarkReady marks the file as "READY"
 func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error {
+	dbs.checkAndReconnectIfNeeded()
+
 	db := dbs.DB
 	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE " +
 		"elixir_id = $2 and archive_path = $3 and decrypted_file_checksum = $4 and status != 'DISABLED';"
@@ -234,6 +265,8 @@ func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error 
 
 // MapFilesToDataset maps a set of files to a dataset in the database
 func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) error {
+	dbs.checkAndReconnectIfNeeded()
+
 	const getID = "SELECT file_id FROM local_ega.archive_files WHERE stable_id = $1"
 	const mapping = "INSERT INTO local_ega_ebi.filedataset (file_id, dataset_stable_id) VALUES ($1, $2);"
 	db := dbs.DB

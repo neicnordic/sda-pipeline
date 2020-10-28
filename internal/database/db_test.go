@@ -66,7 +66,7 @@ func TestCheckAndAbortOnBadConn(t *testing.T) {
 
 	mock.ExpectPing().WillReturnError(fmt.Errorf("ping fail for testing bad conn"))
 
-	err := CatchPanicCheckAndAbort(SQLdb{db})
+	err := CatchPanicCheckAndAbort(SQLdb{db, ""})
 	assert.Error(t, err, "Should have received error from checkAndAbortOnBadConn fataling")
 
 }

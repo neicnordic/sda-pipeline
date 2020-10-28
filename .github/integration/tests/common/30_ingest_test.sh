@@ -264,10 +264,22 @@ for file in dummy_data.c4gh largefile.c4gh; do
        fi
    done
 
-   decryptedsizedb=$(docker run --rm --name client --network dev_utils_default \
-		      neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
-		      -t -A -c "SELECT decrypted_file_size from local_ega.files where stable_id='$access';")
+   RETRY_TIMES=0
+   decryptedsizedb=''
 
+   until [ -n "$decryptedsizedb" ]; do 
+       decryptedsizedb=$(docker run --rm --name client --network dev_utils_default \
+				neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
+				-t -A -c "SELECT decrypted_file_size from local_ega.files where stable_id='$access';")
+       sleep 3
+       RETRY_TIMES=$((RETRY_TIMES+1))
+
+       if [ "$RETRY_TIMES" -eq 150 ]; then
+	   echo "Timed out waiting for database to come back, aborting"
+	   exit 1
+       fi
+   done
+       
    if [ "$decryptedsizedb" -eq "$decryptedfilesize" ]; then
       # Use this logic to handle case of bad output from db (missing)
       :
@@ -276,10 +288,23 @@ for file in dummy_data.c4gh largefile.c4gh; do
       exit 1
    fi
 
-   decryptedchecksum=$(docker run --rm --name client --network dev_utils_default \
-		      neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
-		      -t -A -c "SELECT decrypted_file_checksum from local_ega.files where stable_id='$access';")
+   RETRY_TIMES=0
+   decryptedchecksum=''
 
+   until [ -n "$decryptedchecksum" ]; do
+       decryptedchecksum=$(docker run --rm --name client --network dev_utils_default \
+				  neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
+				  -t -A -c "SELECT decrypted_file_checksum from local_ega.files where stable_id='$access';")
+       sleep 3
+       RETRY_TIMES=$((RETRY_TIMES+1))
+
+       if [ "$RETRY_TIMES" -eq 150 ]; then
+	   echo "Timed out waiting for database to come back, aborting"
+	   exit 1
+       fi
+   done
+
+       
    if [ "$decryptedchecksum" = "$decsha256sum" ]; then
       # Use this logic to handle case of bad output from db (missing)
       :

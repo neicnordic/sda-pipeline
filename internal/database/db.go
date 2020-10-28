@@ -151,9 +151,43 @@ func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
 // InsertFile inserts a file in the database
 func (dbs *SQLdb) InsertFile(filename, user string) (int64, error) {
 	db := dbs.DB
-	const query = "INSERT INTO local_ega.main(submission_file_path, submission_file_extension, submission_user, status, encryption_method) VALUES($1, $2, $3,'INIT', 'CRYPT4GH') RETURNING id;"
+	const checkQuery = "SELECT id FROM local_ega.main WHERE " +
+		"submission_file_path = $1 AND " +
+		"submission_file_extension = $2 AND " +
+		"submission_user = $3 AND " +
+		"status = 'INIT' AND " +
+		"encryption_method = 'CRYPT4GH' AND " +
+		"inbox_file_checksum = NULL AND " +
+		"inbox_file_checksum_type = NULL AND " +
+		"archive_path = NULL AND " +
+		"archive_filesize = NULL"
+
+	const insertQuery = "INSERT INTO local_ega.main(submission_file_path, " +
+		"submission_file_extension, " +
+		"submission_user, " +
+		"status, " +
+		"encryption_method) " +
+		"VALUES($1, $2, $3, 'INIT', 'CRYPT4GH') RETURNING id;"
+
 	var fileID int64
-	err := db.QueryRow(query, filename, strings.Replace(filepath.Ext(filename), ".", "", -1), user).Scan(&fileID)
+	extension := strings.Replace(filepath.Ext(filename), ".", "", -1)
+
+	err := db.QueryRow(checkQuery, filename, extension, user).Scan(&fileID)
+
+	if err == nil {
+		// This had run already but got aborted, continue with that
+		// since it's the same file, the case of simultaneous ingest
+		// is not useful to consider
+
+		return fileID, nil
+	}
+
+	// check connection here
+
+	err = db.QueryRow(insertQuery,
+		filename,
+		extension,
+		user).Scan(&fileID)
 	if err != nil {
 		return 0, err
 	}
@@ -162,6 +196,8 @@ func (dbs *SQLdb) InsertFile(filename, user string) (int64, error) {
 
 // StoreHeader stores the file header in the database
 func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
+	// This query is fine rerunning on the same file, should reasonably be the same header
+
 	db := dbs.DB
 	const query = "UPDATE local_ega.files SET header = $1 WHERE id = $2;"
 	result, err := db.Exec(query, hex.EncodeToString(header), id)

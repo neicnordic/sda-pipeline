@@ -221,7 +221,18 @@ func TestMarkCompleted(t *testing.T) {
 func TestInsertFile(t *testing.T) {
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
-		mock.ExpectQuery("INSERT INTO local_ega.main\\(submission_file_path, submission_file_extension, submission_user, status, encryption_method\\) VALUES\\(\\$1, \\$2, \\$3,'INIT', 'CRYPT4GH'\\) RETURNING id;").
+		mock.ExpectQuery("SELECT id FROM local_ega.main WHERE "+
+			"submission_file_path = \\$1 AND "+
+			"submission_file_extension = \\$2 AND "+
+			"submission_user = \\$3 AND "+
+			"status = 'INIT' AND "+
+			"encryption_method = 'CRYPT4GH' AND "+
+			"inbox_file_checksum = NULL AND "+
+			"inbox_file_checksum_type = NULL AND "+
+			"archive_path = NULL AND "+
+			"archive_filesize = NULL").WithArgs("/tmp/file.c4gh", "c4gh", "nobody").WillReturnError(fmt.Errorf("No such row"))
+
+		mock.ExpectQuery("INSERT INTO local_ega.main\\(submission_file_path, submission_file_extension, submission_user, status, encryption_method\\) VALUES\\(\\$1, \\$2, \\$3, 'INIT', 'CRYPT4GH'\\) RETURNING id;").
 			WithArgs("/tmp/file.c4gh", "c4gh", "nobody").
 			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(5))
 

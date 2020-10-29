@@ -15,27 +15,27 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Message struct that holds the json message data
-type Message struct {
+// finalize struct that holds the json message data
+type finalize struct {
 	Type               string      `json:"type"`
 	User               string      `json:"user"`
 	Filepath           string      `json:"filepath"`
 	AccessionID        string      `json:"accession_id"`
-	DecryptedChecksums []Checksums `json:"decrypted_checksums"`
+	DecryptedChecksums []checksums `json:"decrypted_checksums"`
 }
 
 // Checksums is struct for the checksum type and value
-type Checksums struct {
+type checksums struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
 }
 
 // Completed is struct holding the full message data
-type Completed struct {
+type completed struct {
 	User               string      `json:"user"`
 	Filepath           string      `json:"filepath"`
 	AccessionID        string      `json:"accession_id"`
-	DecryptedChecksums []Checksums `json:"decrypted_checksums"`
+	DecryptedChecksums []checksums `json:"decrypted_checksums"`
 }
 
 func main() {
@@ -67,7 +67,7 @@ func main() {
 	forever := make(chan bool)
 
 	log.Info("starting finalize service")
-	var message Message
+	var message finalize
 
 	go func() {
 		messages, err := mq.GetMessages(conf.Broker.Queue)
@@ -118,7 +118,7 @@ func main() {
 				}
 			}
 
-			c := Completed{
+			c := completed{
 				User:               message.User,
 				Filepath:           message.Filepath,
 				AccessionID:        message.AccessionID,

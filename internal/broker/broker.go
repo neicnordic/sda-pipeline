@@ -58,6 +58,13 @@ type jsonError struct {
 	OrginalMessage []byte `json:"orginal-message"`
 }
 
+// FileError struct for sending file error messages to analysis
+type FileError struct {
+	User     string `json:"user"`
+	FilePath string `json:"filepath"`
+	Reason   string `json:"reason"`
+}
+
 // NewMQ creates a new Broker that can communicate with a backend
 // amqp server.
 func NewMQ(config MQConf) (*AMQPBroker, error) {

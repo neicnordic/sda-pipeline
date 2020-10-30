@@ -103,13 +103,30 @@ func main() {
 			log.Debugf("Received a message: %s", delivered.Body)
 			res, err := validateJSON(conf.SchemasPath, delivered.Body)
 			if err != nil {
-				log.Error(err)
-				// publish MQ error
+				log.Errorf("josn error: %v", err)
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the errorus message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 			if !res.Valid() {
-				log.Error(res.Errors())
-				// publish MQ error
+				log.Errorf("result.error: %v", res.Errors())
+				log.Error("Validation failed")
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the errorus message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 
@@ -246,15 +263,30 @@ func main() {
 
 			res, err = validateJSON(conf.SchemasPath, archivedMsg)
 			if err != nil {
-				fmt.Println("error:", err)
-				log.Error(err)
-				// publish MQ error
+				log.Errorf("josn error: %v", err)
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the errorus message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 			if !res.Valid() {
-				fmt.Println("result:", res.Errors())
-				log.Error(res.Errors())
-				// publish MQ error
+				log.Errorf("result.error: %v", res.Errors())
+				log.Error("Validation failed")
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the errorus message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 

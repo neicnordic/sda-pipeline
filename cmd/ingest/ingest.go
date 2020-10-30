@@ -165,6 +165,10 @@ func main() {
 			dest, err := archive.NewFileWriter(archivedFile)
 			if err != nil {
 				log.Errorf("Failed to create file: %s, reason: %v", archivedFile, err)
+				// Nack errorus message so the server gets notified that something is wrong and requeue the message
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
 				continue
 			}
 

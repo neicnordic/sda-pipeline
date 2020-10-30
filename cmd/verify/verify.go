@@ -155,6 +155,17 @@ func main() {
 			f, err := backend.NewFileReader(message.ArchivePath)
 			if err != nil {
 				log.Errorf("Failed to open file: %s, reason: %v", message.ArchivePath, err)
+				// Send the errorus message to an error queue so it can be analyzed.
+				fileError := broker.FileError{
+					User:     message.User,
+					FilePath: message.FilePath,
+					Reason:   err.Error(),
+				}
+				body, _ := json.Marshal(fileError)
+				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
+					log.Error("faild to publish message, reason: ", e)
+				}
+				// Restart on new message
 				continue
 			}
 

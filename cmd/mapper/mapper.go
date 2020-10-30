@@ -59,15 +59,32 @@ func main() {
 		}
 		for d := range messages {
 			log.Debugf("received a message: %s", d.Body)
-			res, err := validateJSON(conf.SchemasPath, delivered.Body)
+			res, err := validateJSON(conf.SchemasPath, d.Body)
 			if err != nil {
-				log.Error(err)
-				// publish MQ error
+				log.Errorf("josn error: %v", err)
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				if e := d.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the errorus message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&d, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 			if !res.Valid() {
-				log.Error(res.Errors())
-				// publish MQ error
+				log.Errorf("result.error: %v", res.Errors())
+				log.Error("Validation failed")
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				if e := d.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the errorus message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&d, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 

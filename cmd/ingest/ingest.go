@@ -145,6 +145,14 @@ func main() {
 				continue
 			}
 
+			// Create a random uuid as file name
+			archivedFile := uuid.New().String()
+			dest, err := archive.NewFileWriter(archivedFile)
+			if err != nil {
+				log.Errorf("Failed to create file: %s, reason: %v", archivedFile, err)
+				continue
+			}
+
 			fileID, err := db.InsertFile(message.Filepath, message.User)
 			if err != nil {
 				log.Errorf("InsertFile failed, reason: %v", err)
@@ -161,14 +169,6 @@ func main() {
 			hash := sha256.New()
 			var bytesRead int64
 			var byteBuf bytes.Buffer
-
-			// Create a random uuid as file name
-			archivedFile := uuid.New().String()
-			dest, err := archive.NewFileWriter(archivedFile)
-			if err != nil {
-				log.Errorf("Failed to create file: %s, reason: %v", archivedFile, err)
-				continue
-			}
 
 			for bytesRead < fileSize {
 				i, _ := io.ReadFull(file, readBuffer)

@@ -89,8 +89,6 @@ func main() {
 		}
 	}()
 
-	ingestTrigger := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-trigger.json")
-
 	forever := make(chan bool)
 
 	log.Info("starting ingest service")
@@ -102,7 +100,8 @@ func main() {
 			log.Fatal(err)
 		}
 		for delivered := range messages {
-			res, err := gojsonschema.Validate(ingestTrigger, gojsonschema.NewBytesLoader(delivered.Body))
+			log.Debugf("Received a message: %s", delivered.Body)
+			res, err := validateJSON(conf.SchemasPath, delivered.Body)
 			if err != nil {
 				log.Error(err)
 				// publish MQ error
@@ -114,12 +113,8 @@ func main() {
 				continue
 			}
 
-			log.Debugf("Received a message: %s", delivered.Body)
-			if err := json.Unmarshal(delivered.Body, &message); err != nil {
-				log.Errorf("Unmarshaling json message failed, reason: %s", err)
-				// publish MQ error
-				continue
-			}
+			// we unmarshal the message in the validation step so this is safe to do
+			_ = json.Unmarshal(delivered.Body, &message)
 
 			fileID, err := db.InsertFile(message.Filepath, message.User)
 			if err != nil {
@@ -247,8 +242,9 @@ func main() {
 				},
 			}
 
-			ingestedMsg := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-verification.json")
-			res, err = gojsonschema.Validate(ingestedMsg, gojsonschema.NewGoLoader(msg))
+			archivedMsg, _ := json.Marshal(&msg)
+
+			res, err = validateJSON(conf.SchemasPath, archivedMsg)
 			if err != nil {
 				fmt.Println("error:", err)
 				log.Error(err)
@@ -262,9 +258,7 @@ func main() {
 				continue
 			}
 
-			brokerMsg, _ := json.Marshal(&msg)
-
-			if err := mq.SendMessage( delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, brokerMsg); err != nil {
+			if err := mq.SendMessage( delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, archivedMsg); err != nil {
 				// TODO fix resend mechanism
 				log.Errorln("We need to fix this resend stuff ...")
 			}
@@ -302,4 +296,25 @@ func tryDecrypt(key *[32]byte, buf []byte) ([]byte, error) {
 	}
 
 	return header, nil
+}
+
+// Validate the JSON in a received message
+func validateJSON(schemaPath string, body []byte) (*gojsonschema.Result, error) {
+	message := make(map[string]interface{})
+	err := json.Unmarshal(body, &message)
+	if err != nil {
+		return nil, err
+	}
+
+	var schema gojsonschema.JSONLoader
+
+	_, ok := message["type"]
+	if ok {
+		schema = gojsonschema.NewReferenceLoader(schemaPath + "ingestion-trigger.json")
+	} else {
+		schema = gojsonschema.NewReferenceLoader(schemaPath + "ingestion-verification.json")
+	}
+
+	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
+	return res, err
 }

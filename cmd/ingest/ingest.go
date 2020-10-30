@@ -142,6 +142,21 @@ func main() {
 			fileSize, err := inbox.GetFileSize(message.Filepath)
 			if err != nil {
 				log.Errorf("Failed to get file size of: %s, reason: %v", message.Filepath, err)
+				// Nack errorus message so the server gets notified that something is wrong and requeue the message
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the errorus message to an error queue so it can be analyzed.
+				fileError := broker.FileError{
+					User:     message.User,
+					FilePath: message.Filepath,
+					Reason:   err.Error(),
+				}
+				body, _ := json.Marshal(fileError)
+				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
+					log.Error("faild to publish message, reason: ", e)
+				}
+				// Restart on new message
 				continue
 			}
 

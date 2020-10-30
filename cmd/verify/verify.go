@@ -94,30 +94,38 @@ func main() {
 			log.Debugf("received a message: %s", delivered.Body)
 			res, err := validateJSON(conf.SchemasPath, delivered.Body)
 			if err != nil {
-				log.Error(err)
-				// publish MQ error
-				continue
-			}
-			if !res.Valid() {
-				log.Error(res.Errors())
-				// publish MQ error
-				continue
-			}
-
-			var message message
-			if err := json.Unmarshal(delivered.Body, &message); err != nil {
-				log.Errorf("Unmarshaling json message failed, reason: %s", err)
+				log.Errorf("josn error: %v", err)
 				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
 				if e := delivered.Nack(false, false); e != nil {
 					log.Errorln("failed to Nack message, reason: ", e)
 				}
 				// Send the errorus message to an error queue so it can be analyzed.
-				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, delivered.Body); e != nil {
-					log.Error("faild to publish message, reason: ", e)
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
 				}
 				// Restart on new message
 				continue
 			}
+			if !res.Valid() {
+				log.Errorf("result.error: %v", res.Errors())
+				log.Error("Validation failed")
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the errorus message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
+				continue
+			}
+
+			var message message
+
+			// we unmarshal the message in the validation step so this is safe to do
+			_ = json.Unmarshal(delivered.Body, &message)
+
 
 			header, err := db.GetHeader(message.FileID)
 			if err != nil {
@@ -176,15 +184,6 @@ func main() {
 			//nolint:nestif
 			if message.ReVerify == nil || !*message.ReVerify {
 
-				// Mark file as "COMPLETED"
-				if e := db.MarkCompleted(file, message.FileID); e != nil {
-					log.Errorf("MarkCompleted failed: %v", e)
-					continue
-					// this should really be hadled by the DB retry mechanism
-				}
-
-				log.Debug("Mark completed")
-				// Send message to verified
 				c := verified{
 					User:     message.User,
 					FilePath: message.FilePath,
@@ -194,22 +193,46 @@ func main() {
 					},
 				}
 
-				verifyMsg := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-accession-request.json")
-				res, err := gojsonschema.Validate(verifyMsg, gojsonschema.NewGoLoader(c))
+				verified, _ := json.Marshal(&c)
+				res, err = validateJSON(conf.SchemasPath, verified)
+
 				if err != nil {
-					fmt.Println("error:", err)
-					log.Error(err)
-					// publish MQ error
-					continue
+				log.Errorf("josn error: %v", err)
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
 				}
-				if !res.Valid() {
-					fmt.Println("result:", res.Errors())
-					log.Error(res.Errors())
-					// publish MQ error
+				// Send the errorus message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
+				continue
+			}
+			if !res.Valid() {
+				log.Errorf("result.error: %v", res.Errors())
+				log.Error("Validation failed")
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the errorus message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
+				continue
+			}
+
+				// Mark file as "COMPLETED"
+				if e := db.MarkCompleted(file, message.FileID); e != nil {
+					log.Errorf("MarkCompleted failed: %v", e)
 					continue
+					// this should really be hadled by the DB retry mechanism
 				}
 
-				verified, _ := json.Marshal(&c)
+				log.Debug("Mark completed")
+				// Send message to verified queue
 
 				if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, verified); err != nil {
 					// TODO fix resend mechanism

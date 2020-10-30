@@ -79,12 +79,12 @@ func main() {
 			res, err := validateJSON(conf.SchemasPath, delivered.Body)
 			if err != nil {
 				log.Errorf("josn error: %v", err)
-				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
 				if e := delivered.Nack(false, false); e != nil {
 					log.Errorln("failed to Nack message, reason: ", e)
 				}
 
-				// Send the errorus message to an error queue so it can be analyzed.
+				// Send the message to an error queue so it can be analyzed.
 				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
 					log.Error("faild to publish message, reason: ", err)
 				}
@@ -94,12 +94,12 @@ func main() {
 			if !res.Valid() {
 				log.Errorf("result.error: %v", res.Errors())
 				log.Error("Validation failed")
-				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
 				if e := delivered.Nack(false, false); e != nil {
 					log.Errorln("failed to Nack message, reason: ", e)
 				}
 
-				// Send the errorus message to an error queue so it can be analyzed.
+				// Send the message to an error queue so it can be analyzed.
 				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
 					log.Error("faild to publish message, reason: ", res.Errors())
 				}
@@ -130,11 +130,11 @@ func main() {
 			res, err = validateJSON(conf.SchemasPath, completeMsg)
 			if err != nil {
 				log.Errorf("josn error: %v", err)
-				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
 				if e := delivered.Nack(false, false); e != nil {
 					log.Errorln("failed to Nack message, reason: ", e)
 				}
-				// Send the errorus message to an error queue so it can be analyzed.
+				// Send the message to an error queue so it can be analyzed.
 				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
 					log.Error("faild to publish message, reason: ", err)
 				}
@@ -144,11 +144,11 @@ func main() {
 			if !res.Valid() {
 				log.Errorf("result.error: %v", res.Errors())
 				log.Error("Validation failed")
-				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
 				if e := delivered.Nack(false, false); e != nil {
 					log.Errorln("failed to Nack message, reason: ", e)
 				}
-				// Send the errorus message to an error queue so it can be analyzed.
+				// Send the message to an error queue so it can be analyzed.
 				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
 					log.Error("faild to publish message, reason: ", err)
 				}

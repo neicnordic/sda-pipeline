@@ -55,7 +55,7 @@ func main() {
 		}
 		for delivered := range messages {
 			log.Debugf("received a message: %s", delivered.Body)
-			msgType, res, err := validateJSON(delivered.Body)
+			msgType, res, err := validateJSON(conf.SchemasPath, delivered.Body)
 			if res == nil {
 				continue
 			}
@@ -102,7 +102,7 @@ func main() {
 }
 
 // Validate the JSON in a received message
-func validateJSON(body []byte) (string, *gojsonschema.Result, error) {
+func validateJSON(schemasPath string, body []byte) (string, *gojsonschema.Result, error) {
 	message := make(map[string]interface{})
 	err := json.Unmarshal(body, &message)
 	if err != nil {
@@ -119,14 +119,14 @@ func validateJSON(body []byte) (string, *gojsonschema.Result, error) {
 
 	switch msgType {
 		case msgAccession:
-			schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-accession.json")
+			schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-accession.json")
 		case msgCancel:
-			schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-trigger.json")
+			schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-trigger.json")
 			msgType = ""
 		case msgIngest:
-			schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/ingestion-trigger.json")
+			schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-trigger.json")
 		case msgMapping:
-			schema = gojsonschema.NewReferenceLoader("file://../../schemas/federated/dataset-mapping.json")
+			schema = gojsonschema.NewReferenceLoader(schemasPath + "dataset-mapping.json")
 		default:
 			schema = gojsonschema.NewStringLoader(`{"required": ["type"],
 												"properties": {

@@ -59,7 +59,7 @@ func main() {
 
 	go func() {
 		for {
-			connError := broker.ConnectionWatcher(mq.Connection)
+			connError := mq.ConnectionWatcher()
 			log.Error(connError)
 			os.Exit(1)
 		}
@@ -73,7 +73,7 @@ func main() {
 	var message Message
 
 	go func() {
-		messages, err := broker.GetMessages(mq, conf.Broker.Queue)
+		messages, err := mq.GetMessages(conf.Broker.Queue)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -133,7 +133,7 @@ func main() {
 			}
 
 			completed, _ := json.Marshal(&c)
-			if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completed); err != nil {
+			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completed); err != nil {
 				// TODO fix resend mechanism
 				log.Errorln("We need to fix this resend stuff ...")
 			}

@@ -41,7 +41,7 @@ func main() {
 
 	go func() {
 		for {
-			connError := broker.ConnectionWatcher(mq.Connection)
+			connError := mq.ConnectionWatcher()
 			log.Error(connError)
 			os.Exit(1)
 		}
@@ -55,7 +55,7 @@ func main() {
 	var mappings message
 
 	go func() {
-		messages, err := broker.GetMessages(mq, conf.Broker.Queue)
+		messages, err := mq.GetMessages(conf.Broker.Queue)
 		if err != nil {
 			log.Fatal(err)
 		}

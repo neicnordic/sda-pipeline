@@ -75,7 +75,7 @@ func main() {
 
 	go func() {
 		for {
-			connError := broker.ConnectionWatcher(mq.Connection)
+			connError := mq.ConnectionWatcher()
 			log.Error(connError)
 			os.Exit(1)
 		}
@@ -88,7 +88,7 @@ func main() {
 	log.Info("starting verify service")
 
 	go func() {
-		messages, err := broker.GetMessages(mq, conf.Broker.Queue)
+		messages, err := mq.GetMessages(conf.Broker.Queue)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -114,7 +114,7 @@ func main() {
 					log.Errorln("failed to Nack message, reason: ", e)
 				}
 				// Send the errorus message to an error queue so it can be analyzed.
-				if e := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, delivered.Body); e != nil {
+				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, delivered.Body); e != nil {
 					log.Error("faild to publish message, reason: ", e)
 				}
 				// Restart on new message
@@ -129,7 +129,7 @@ func main() {
 					log.Errorln("failed to Nack message, reason: ", err)
 				}
 				// Send the errorus message to an error queue so it can be analyzed.
-				if e := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, delivered.Body); e != nil {
+				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, delivered.Body); e != nil {
 					log.Error("faild to publish message, reason: ", e)
 				}
 				continue
@@ -213,7 +213,7 @@ func main() {
 
 				verified, _ := json.Marshal(&c)
 
-				if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, verified); err != nil {
+				if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, verified); err != nil {
 					// TODO fix resend mechanism
 					log.Errorln("We need to fix this resend stuff ...")
 				}

@@ -76,7 +76,7 @@ func TestGetMessages_Error(t *testing.T) {
 	var str bytes.Buffer
 	log.SetOutput(&str)
 
-	_, err := GetMessages(&b, "queue")
+	_, err := b.GetMessages("queue")
 	assert.Error(t, err, "Must be an error")
 }
 
@@ -87,7 +87,7 @@ func CatchSendMessage(b *AMQPBroker, corrID, exchange, routingkey string, reliab
 			err = fmt.Errorf("Caught panic")
 		}
 	}()
-	err = SendMessage(b, corrID, exchange, routingkey, reliable, body)
+	err = b.SendMessage(corrID, exchange, routingkey, reliable, body)
 
 	return err
 }
@@ -109,10 +109,10 @@ func TestSendMessage(t *testing.T) {
 
 	c.failConfirm = false
 
-	err = SendMessage(&b, "corrID1", "exchange", "routingkey", false, msg)
+	err = b.SendMessage("corrID1", "exchange", "routingkey", false, msg)
 	assert.Nil(t, err, "Unexpected error from SendMessage (not reliable)")
 
-	err = SendMessage(&b, "corrID1", "exchange", "routingkey", true, msg)
+	err = b.SendMessage("corrID1", "exchange", "routingkey", true, msg)
 	assert.Nil(t, err, "Unexpected error from SendMessage (reliable)")
 
 }

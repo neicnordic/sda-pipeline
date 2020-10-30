@@ -96,7 +96,7 @@ func NewMQ(config MQConf) (*AMQPBroker, error) {
 }
 
 // GetMessages reads messages from the queue
-func GetMessages(broker *AMQPBroker, queue string) (<-chan amqp.Delivery, error) {
+func (broker *AMQPBroker)  GetMessages(queue string) (<-chan amqp.Delivery, error) {
 	ch := broker.Channel
 	return ch.Consume(
 		queue, // queue
@@ -110,7 +110,7 @@ func GetMessages(broker *AMQPBroker, queue string) (<-chan amqp.Delivery, error)
 }
 
 // SendMessage sends a message to RabbitMQ
-func SendMessage(broker *AMQPBroker, corrID, exchange, routingKey string, reliable bool, body []byte) error {
+func (broker *AMQPBroker) SendMessage(corrID, exchange, routingKey string, reliable bool, body []byte) error {
 	if reliable {
 		// Set channel
 		if e := broker.Channel.Confirm(false); e != nil {
@@ -220,7 +220,7 @@ func confirmOne(confirms <-chan amqp.Confirmation) {
 
 
 // ConnectionWatcher listens to events from the server 
-func ConnectionWatcher(conn *amqp.Connection) (*amqp.Error) {
-	amqpError := <-conn.NotifyClose(make(chan *amqp.Error))
+func (broker *AMQPBroker) ConnectionWatcher() (*amqp.Error) {
+	amqpError := <-broker.Connection.NotifyClose(make(chan *amqp.Error))
 	return amqpError
 }

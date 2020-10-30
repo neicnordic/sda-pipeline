@@ -29,7 +29,7 @@ type message struct {
 	FileID             int         `json:"file_id"`
 	ArchivePath        string      `json:"archive_path"`
 	EncryptedChecksums []checksums `json:"encrypted_checksums"`
-	ReVerify           *bool       `json:"re_verify"`
+	ReVerify           bool       `json:"re_verify"`
 }
 
 // Verified is struct holding the full message data
@@ -182,7 +182,7 @@ func main() {
 			file.DecryptedChecksum = sha256hash
 
 			//nolint:nestif
-			if message.ReVerify == nil || !*message.ReVerify {
+			if !message.ReVerify {
 
 				c := verified{
 					User:     message.User,

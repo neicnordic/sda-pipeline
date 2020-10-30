@@ -41,7 +41,7 @@ func (suite *TestSuite) TestValidateJSON_Ingest() {
 func (suite *TestSuite) TestValidateJSON_AccessionRequest() {
 	msg := verified{
 		User:     "foo",
-		Filepath: "dummy_data.c4gh",
+		FilePath: "dummy_data.c4gh",
 		DecryptedChecksums: []checksums{
 			{"sha256", "da886a89637d125ef9f15f6d676357f3a9e5e10306929f0bad246375af89c2e2"},
 			{"md5", "e3c19316a6f1cf8ef82a079a902e98d0"},

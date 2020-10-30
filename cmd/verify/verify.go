@@ -23,24 +23,24 @@ import (
 )
 
 // Message struct that holds the json message data
-type Message struct {
-	Filepath           string      `json:"filepath"`
+type message struct {
+	FilePath           string      `json:"filepath"`
 	User               string      `json:"user"`
 	FileID             int         `json:"file_id"`
 	ArchivePath        string      `json:"archive_path"`
-	EncryptedChecksums []Checksums `json:"encrypted_checksums"`
+	EncryptedChecksums []checksums `json:"encrypted_checksums"`
 	ReVerify           *bool       `json:"re_verify"`
 }
 
 // Verified is struct holding the full message data
-type Verified struct {
+type verified struct {
 	User               string      `json:"user"`
-	Filepath           string      `json:"filepath"`
-	DecryptedChecksums []Checksums `json:"decrypted_checksums"`
+	FilePath           string      `json:"filepath"`
+	DecryptedChecksums []checksums `json:"decrypted_checksums"`
 }
 
 // Checksums is struct for the checksum type and value
-type Checksums struct {
+type checksums struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
 }
@@ -104,7 +104,7 @@ func main() {
 				continue
 			}
 
-			var message Message
+			var message message
 			if err := json.Unmarshal(delivered.Body, &message); err != nil {
 				log.Errorf("Unmarshaling json message failed, reason: %s", err)
 				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
@@ -185,10 +185,10 @@ func main() {
 
 				log.Debug("Mark completed")
 				// Send message to verified
-				c := Verified{
+				c := verified{
 					User:     message.User,
-					Filepath: message.Filepath,
-					DecryptedChecksums: []Checksums{
+					FilePath: message.FilePath,
+					DecryptedChecksums: []checksums{
 						{"sha256", fmt.Sprintf("%x", sha256hash.Sum(nil))},
 						{"md5", fmt.Sprintf("%x", md5hash.Sum(nil))},
 					},

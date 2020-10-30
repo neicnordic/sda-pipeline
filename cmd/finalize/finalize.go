@@ -4,7 +4,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"sda-pipeline/internal/broker"
@@ -79,13 +78,32 @@ func main() {
 			log.Debugf("received a message: %s", delivered.Body)
 			res, err := validateJSON(conf.SchemasPath, delivered.Body)
 			if err != nil {
-				log.Error(err)
-				// publish MQ error
+				log.Errorf("josn error: %v", err)
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+
+				// Send the errorus message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 			if !res.Valid() {
-				log.Error(res.Errors())
-				// publish MQ error
+				log.Errorf("result.error: %v", res.Errors())
+				log.Error("Validation failed")
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+
+				// Send the errorus message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", res.Errors())
+				}
+				// Restart on new message
 				continue
 			}
 
@@ -99,12 +117,7 @@ func main() {
 					checksumSha256 = checksum.Value
 				}
 			}
-			log.Debug("Mark ready")
-			if err := db.MarkReady(message.AccessionID, message.User, message.Filepath, checksumSha256); err != nil {
-				log.Errorf("MarkReady failed, reason: %v", err)
-				continue
-				// this should be handled by the SQL retry mechanism
-			}
+
 			c := Completed{
 				User:               message.User,
 				Filepath:           message.Filepath,
@@ -112,23 +125,49 @@ func main() {
 				DecryptedChecksums: message.DecryptedChecksums,
 			}
 
-			completeMsg := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-completion.json")
-			res, err = gojsonschema.Validate(completeMsg, gojsonschema.NewGoLoader(c))
+			completeMsg, _ := json.Marshal(&c)
+
+			res, err = validateJSON(conf.SchemasPath, completeMsg)
 			if err != nil {
-				fmt.Println("error:", err)
-				log.Error(err)
-				// publish MQ error
+				log.Errorf("josn error: %v", err)
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the errorus message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 			if !res.Valid() {
-				fmt.Println("result:", res.Errors())
-				log.Error(res.Errors())
-				// publish MQ error
+				log.Errorf("result.error: %v", res.Errors())
+				log.Error("Validation failed")
+				// Nack errorus message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the errorus message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 
-			completed, _ := json.Marshal(&c)
-			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completed); err != nil {
+			log.Debug("Mark ready")
+			if err := db.MarkReady(message.AccessionID, message.User, message.Filepath, checksumSha256); err != nil {
+				log.Errorf("MarkReady failed, reason: %v", err)
+				// nack the message but requeue until we fixed the SQL retry.
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				continue
+				// this should be handled by the SQL retry mechanism
+			}
+
+			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completeMsg); err != nil {
 				// TODO fix resend mechanism
 				log.Errorln("We need to fix this resend stuff ...")
 			}

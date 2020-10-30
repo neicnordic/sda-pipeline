@@ -133,12 +133,6 @@ func main() {
 			// we unmarshal the message in the validation step so this is safe to do
 			_ = json.Unmarshal(delivered.Body, &message)
 
-			fileID, err := db.InsertFile(message.Filepath, message.User)
-			if err != nil {
-				log.Errorf("InsertFile failed, reason: %v", err)
-				// This should really be handled by the DB retry mechanism
-			}
-
 			file, err := inbox.NewFileReader(message.Filepath)
 			if err != nil {
 				log.Errorf("Failed to open file: %s, reason: %v", message.Filepath, err)
@@ -149,6 +143,12 @@ func main() {
 			if err != nil {
 				log.Errorf("Failed to get file size of: %s, reason: %v", message.Filepath, err)
 				continue
+			}
+
+			fileID, err := db.InsertFile(message.Filepath, message.User)
+			if err != nil {
+				log.Errorf("InsertFile failed, reason: %v", err)
+				// This should really be handled by the DB retry mechanism
 			}
 
 			// 4MiB readbuffer, this must be large enough that we get the entire header and the first 64KiB datablock

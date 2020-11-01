@@ -137,6 +137,8 @@ func (dbs *SQLdb) checkAndReconnectIfNeeded() {
 
 // GetHeader retrieves the file header
 func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
+	dbs.checkAndReconnectIfNeeded()
+
 	db := dbs.DB
 	const query = "SELECT header from local_ega.files WHERE id = $1"
 

@@ -64,7 +64,7 @@ func (suite *TestSuite) TestValidateJSON_Accession() {
 	}
 	message, _ := json.Marshal(&msg)
 
-	msgType, res, err := validateJSON(message)
+	msgType, res, err := validateJSON("file://../../schemas/federated/", message)
 	assert.Nil(suite.T(), err)
 	assert.True(suite.T(), res.Valid())
 	assert.Equal(suite.T(), "accession", msgType)
@@ -79,7 +79,7 @@ func (suite *TestSuite) TestValidateJSON_Cancel() {
 	}
 	message, _ := json.Marshal(&msg)
 
-	msgType, res, err := validateJSON(message)
+	msgType, res, err := validateJSON("file://../../schemas/federated/", message)
 	if fmt.Sprintf("%v", msgType) == "" {
 		fmt.Println("empty")
 	}
@@ -97,7 +97,7 @@ func (suite *TestSuite) TestValidateJSON_Ingest() {
 	}
 	message, _ := json.Marshal(&msg)
 
-	msgType, res, err := validateJSON(message)
+	msgType, res, err := validateJSON("file://../../schemas/federated/", message)
 	assert.Nil(suite.T(), err)
 	assert.True(suite.T(), res.Valid())
 	assert.Equal(suite.T(), "ingest", msgType)
@@ -114,7 +114,7 @@ func (suite *TestSuite) TestValidateJSON_Mapping() {
 	}
 	message, _ := json.Marshal(&msg)
 
-	msgType, res, err := validateJSON(message)
+	msgType, res, err := validateJSON("file://../../schemas/federated/", message)
 	assert.Nil(suite.T(), err)
 	assert.True(suite.T(), res.Valid())
 	assert.Equal(suite.T(), "mapping", msgType)
@@ -128,7 +128,7 @@ func (suite *TestSuite) TestValidateJSON_Notype() {
 	}
 	message, _ := json.Marshal(&msg)
 
-	msgType, res, err := validateJSON(message)
+	msgType, res, err := validateJSON("file://../../schemas/federated", message)
 	assert.NotNil(suite.T(), err)
 	assert.Nil(suite.T(), res)
 	assert.Empty(suite.T(), msgType)

@@ -4,6 +4,7 @@ package broker
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 
@@ -48,6 +49,20 @@ type MQConf struct {
 	ClientKey    string
 	ServerName   string
 	Durable      bool
+}
+
+// jsonError struct for sending broken messages to analysis
+type jsonError struct {
+	Error          string `json:"error"`
+	Reason         string `json:"reason"`
+	OrginalMessage []byte `json:"orginal-message"`
+}
+
+// FileError struct for sending file error messages to analysis
+type FileError struct {
+	User     string `json:"user"`
+	FilePath string `json:"filepath"`
+	Reason   string `json:"reason"`
 }
 
 // NewMQ creates a new Broker that can communicate with a backend
@@ -96,7 +111,7 @@ func NewMQ(config MQConf) (*AMQPBroker, error) {
 }
 
 // GetMessages reads messages from the queue
-func GetMessages(broker *AMQPBroker, queue string) (<-chan amqp.Delivery, error) {
+func (broker *AMQPBroker)  GetMessages(queue string) (<-chan amqp.Delivery, error) {
 	ch := broker.Channel
 	return ch.Consume(
 		queue, // queue
@@ -110,7 +125,7 @@ func GetMessages(broker *AMQPBroker, queue string) (<-chan amqp.Delivery, error)
 }
 
 // SendMessage sends a message to RabbitMQ
-func SendMessage(broker *AMQPBroker, corrID, exchange, routingKey string, reliable bool, body []byte) error {
+func (broker *AMQPBroker) SendMessage(corrID, exchange, routingKey string, reliable bool, body []byte) error {
 	if reliable {
 		// Set channel
 		if e := broker.Channel.Confirm(false); e != nil {
@@ -220,7 +235,20 @@ func confirmOne(confirms <-chan amqp.Confirmation) {
 
 
 // ConnectionWatcher listens to events from the server 
-func ConnectionWatcher(conn *amqp.Connection) (*amqp.Error) {
-	amqpError := <-conn.NotifyClose(make(chan *amqp.Error))
+func (broker *AMQPBroker) ConnectionWatcher() (*amqp.Error) {
+	amqpError := <-broker.Connection.NotifyClose(make(chan *amqp.Error))
 	return amqpError
+}
+
+// SendJSONError sends message on JSON error
+func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, reason string, conf MQConf) error {
+	josnError := jsonError{
+		Error:          "Validation of json message failed",
+		Reason:         fmt.Sprintf("%v", reason),
+		OrginalMessage: delivered.Body,
+	}
+	body, _ := json.Marshal(josnError)
+
+	return broker.SendMessage(delivered.CorrelationId, conf.Exchange, conf.RoutingError, conf.Durable, body)
+
 }

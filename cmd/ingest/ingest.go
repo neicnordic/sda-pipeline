@@ -83,13 +83,11 @@ func main() {
 
 	go func() {
 		for {
-			connError := broker.ConnectionWatcher(mq.Connection)
+			connError := mq.ConnectionWatcher()
 			log.Error(connError)
 			os.Exit(1)
 		}
 	}()
-
-	ingestTrigger := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-trigger.json")
 
 	forever := make(chan bool)
 
@@ -97,35 +95,43 @@ func main() {
 	var message trigger
 
 	go func() {
-		messages, err := broker.GetMessages(mq, conf.Broker.Queue)
+		messages, err := mq.GetMessages( conf.Broker.Queue)
 		if err != nil {
 			log.Fatal(err)
 		}
 		for delivered := range messages {
-			res, err := gojsonschema.Validate(ingestTrigger, gojsonschema.NewBytesLoader(delivered.Body))
+			log.Debugf("Received a message: %s", delivered.Body)
+			res, err := validateJSON(conf.SchemasPath, delivered.Body)
 			if err != nil {
-				log.Error(err)
-				// publish MQ error
+				log.Errorf("josn error: %v", err)
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 			if !res.Valid() {
-				log.Error(res.Errors())
-				// publish MQ error
+				log.Errorf("result.error: %v", res.Errors())
+				log.Error("Validation failed")
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 
-			log.Debugf("Received a message: %s", delivered.Body)
-			if err := json.Unmarshal(delivered.Body, &message); err != nil {
-				log.Errorf("Unmarshaling json message failed, reason: %s", err)
-				// publish MQ error
-				continue
-			}
-
-			fileID, err := db.InsertFile(message.Filepath, message.User)
-			if err != nil {
-				log.Errorf("InsertFile failed, reason: %v", err)
-				// This should really be handled by the DB retry mechanism
-			}
+			// we unmarshal the message in the validation step so this is safe to do
+			_ = json.Unmarshal(delivered.Body, &message)
 
 			file, err := inbox.NewFileReader(message.Filepath)
 			if err != nil {
@@ -136,7 +142,40 @@ func main() {
 			fileSize, err := inbox.GetFileSize(message.Filepath)
 			if err != nil {
 				log.Errorf("Failed to get file size of: %s, reason: %v", message.Filepath, err)
+				// Nack message so the server gets notified that something is wrong and requeue the message
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				fileError := broker.FileError{
+					User:     message.User,
+					FilePath: message.Filepath,
+					Reason:   err.Error(),
+				}
+				body, _ := json.Marshal(fileError)
+				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
+					log.Error("faild to publish message, reason: ", e)
+				}
+				// Restart on new message
 				continue
+			}
+
+			// Create a random uuid as file name
+			archivedFile := uuid.New().String()
+			dest, err := archive.NewFileWriter(archivedFile)
+			if err != nil {
+				log.Errorf("Failed to create file: %s, reason: %v", archivedFile, err)
+				// Nack message so the server gets notified that something is wrong and requeue the message
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				continue
+			}
+
+			fileID, err := db.InsertFile(message.Filepath, message.User)
+			if err != nil {
+				log.Errorf("InsertFile failed, reason: %v", err)
+				// This should really be handled by the DB retry mechanism
 			}
 
 			// 4MiB readbuffer, this must be large enough that we get the entire header and the first 64KiB datablock
@@ -149,14 +188,6 @@ func main() {
 			hash := sha256.New()
 			var bytesRead int64
 			var byteBuf bytes.Buffer
-
-			// Create a random uuid as file name
-			archivedFile := uuid.New().String()
-			dest, err := archive.NewFileWriter(archivedFile)
-			if err != nil {
-				log.Errorf("Failed to create file: %s, reason: %v", archivedFile, err)
-				continue
-			}
 
 			for bytesRead < fileSize {
 				i, _ := io.ReadFull(file, readBuffer)
@@ -247,24 +278,38 @@ func main() {
 				},
 			}
 
-			ingestedMsg := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-verification.json")
-			res, err = gojsonschema.Validate(ingestedMsg, gojsonschema.NewGoLoader(msg))
+			archivedMsg, _ := json.Marshal(&msg)
+
+			res, err = validateJSON(conf.SchemasPath, archivedMsg)
 			if err != nil {
-				fmt.Println("error:", err)
-				log.Error(err)
-				// publish MQ error
+				log.Errorf("josn error: %v", err)
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 			if !res.Valid() {
-				fmt.Println("result:", res.Errors())
-				log.Error(res.Errors())
-				// publish MQ error
+				log.Errorf("result.error: %v", res.Errors())
+				log.Error("Validation failed")
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 
-			brokerMsg, _ := json.Marshal(&msg)
-
-			if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, brokerMsg); err != nil {
+			if err := mq.SendMessage( delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, archivedMsg); err != nil {
 				// TODO fix resend mechanism
 				log.Errorln("We need to fix this resend stuff ...")
 			}
@@ -302,4 +347,25 @@ func tryDecrypt(key *[32]byte, buf []byte) ([]byte, error) {
 	}
 
 	return header, nil
+}
+
+// Validate the JSON in a received message
+func validateJSON(schemaPath string, body []byte) (*gojsonschema.Result, error) {
+	message := make(map[string]interface{})
+	err := json.Unmarshal(body, &message)
+	if err != nil {
+		return nil, err
+	}
+
+	var schema gojsonschema.JSONLoader
+
+	_, ok := message["type"]
+	if ok {
+		schema = gojsonschema.NewReferenceLoader(schemaPath + "ingestion-trigger.json")
+	} else {
+		schema = gojsonschema.NewReferenceLoader(schemaPath + "ingestion-verification.json")
+	}
+
+	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
+	return res, err
 }

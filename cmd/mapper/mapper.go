@@ -41,13 +41,11 @@ func main() {
 
 	go func() {
 		for {
-			connError := broker.ConnectionWatcher(mq.Connection)
+			connError := mq.ConnectionWatcher()
 			log.Error(connError)
 			os.Exit(1)
 		}
 	}()
-
-	datasetMapping := gojsonschema.NewReferenceLoader(conf.SchemasPath + "dataset-mapping.json")
 
 	forever := make(chan bool)
 
@@ -55,21 +53,38 @@ func main() {
 	var mappings message
 
 	go func() {
-		messages, err := broker.GetMessages(mq, conf.Broker.Queue)
+		messages, err := mq.GetMessages(conf.Broker.Queue)
 		if err != nil {
 			log.Fatal(err)
 		}
 		for d := range messages {
 			log.Debugf("received a message: %s", d.Body)
-			res, err := gojsonschema.Validate(datasetMapping, gojsonschema.NewBytesLoader(d.Body))
+			res, err := validateJSON(conf.SchemasPath, d.Body)
 			if err != nil {
-				log.Error(err)
-				// publish MQ error
+				log.Errorf("josn error: %v", err)
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
+				if e := d.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&d, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 			if !res.Valid() {
-				log.Error(res.Errors())
-				// publish MQ error
+				log.Errorf("result.error: %v", res.Errors())
+				log.Error("Validation failed")
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
+				if e := d.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&d, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 
@@ -91,4 +106,17 @@ func main() {
 	}()
 
 	<-forever
+}
+
+// Validate the JSON in a received message
+func validateJSON(schemasPath string, body []byte) (*gojsonschema.Result, error) {
+	message := make(map[string]interface{})
+	err := json.Unmarshal(body, &message)
+	if err != nil {
+		return nil, err
+	}
+
+	schema := gojsonschema.NewReferenceLoader(schemasPath + "dataset-mapping.json")
+	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
+	return res, err
 }

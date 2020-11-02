@@ -4,7 +4,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"sda-pipeline/internal/broker"
@@ -16,27 +15,27 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Message struct that holds the json message data
-type Message struct {
+// finalize struct that holds the json message data
+type finalize struct {
 	Type               string      `json:"type"`
 	User               string      `json:"user"`
 	Filepath           string      `json:"filepath"`
 	AccessionID        string      `json:"accession_id"`
-	DecryptedChecksums []Checksums `json:"decrypted_checksums"`
+	DecryptedChecksums []checksums `json:"decrypted_checksums"`
 }
 
 // Checksums is struct for the checksum type and value
-type Checksums struct {
+type checksums struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
 }
 
 // Completed is struct holding the full message data
-type Completed struct {
+type completed struct {
 	User               string      `json:"user"`
 	Filepath           string      `json:"filepath"`
 	AccessionID        string      `json:"accession_id"`
-	DecryptedChecksums []Checksums `json:"decrypted_checksums"`
+	DecryptedChecksums []checksums `json:"decrypted_checksums"`
 }
 
 func main() {
@@ -59,43 +58,57 @@ func main() {
 
 	go func() {
 		for {
-			connError := broker.ConnectionWatcher(mq.Connection)
+			connError := mq.ConnectionWatcher()
 			log.Error(connError)
 			os.Exit(1)
 		}
 	}()
 
-	ingestAccession := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-accession.json")
-
 	forever := make(chan bool)
 
 	log.Info("starting finalize service")
-	var message Message
+	var message finalize
 
 	go func() {
-		messages, err := broker.GetMessages(mq, conf.Broker.Queue)
+		messages, err := mq.GetMessages(conf.Broker.Queue)
 		if err != nil {
 			log.Fatal(err)
 		}
 		for delivered := range messages {
 			log.Debugf("received a message: %s", delivered.Body)
-			res, err := gojsonschema.Validate(ingestAccession, gojsonschema.NewBytesLoader(delivered.Body))
+			res, err := validateJSON(conf.SchemasPath, delivered.Body)
 			if err != nil {
-				log.Error(err)
-				// publish MQ error
+				log.Errorf("josn error: %v", err)
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+
+				// Send the message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 			if !res.Valid() {
-				log.Error(res.Errors())
-				// publish MQ error
+				log.Errorf("result.error: %v", res.Errors())
+				log.Error("Validation failed")
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+
+				// Send the message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", res.Errors())
+				}
+				// Restart on new message
 				continue
 			}
 
-			if err := json.Unmarshal(delivered.Body, &message); err != nil {
-				log.Errorf("Unmarshaling json message failed, reason: %s", err)
-				// publish MQ error
-				continue
-			}
+			// we unmarshal the message in the validation step so this is safe to do
+			_ = json.Unmarshal(delivered.Body, &message)
 
 			// Extract the sha256 from the message and use it for the database
 			var checksumSha256 string
@@ -104,36 +117,57 @@ func main() {
 					checksumSha256 = checksum.Value
 				}
 			}
-			log.Debug("Mark ready")
-			if err := db.MarkReady(message.AccessionID, message.User, message.Filepath, checksumSha256); err != nil {
-				log.Errorf("MarkReady failed, reason: %v", err)
-				continue
-				// this should be handled by the SQL retry mechanism
-			}
-			c := Completed{
+
+			c := completed{
 				User:               message.User,
 				Filepath:           message.Filepath,
 				AccessionID:        message.AccessionID,
 				DecryptedChecksums: message.DecryptedChecksums,
 			}
 
-			completeMsg := gojsonschema.NewReferenceLoader(conf.SchemasPath + "ingestion-completion.json")
-			res, err = gojsonschema.Validate(completeMsg, gojsonschema.NewGoLoader(c))
+			completeMsg, _ := json.Marshal(&c)
+
+			res, err = validateJSON(conf.SchemasPath, completeMsg)
 			if err != nil {
-				fmt.Println("error:", err)
-				log.Error(err)
-				// publish MQ error
+				log.Errorf("josn error: %v", err)
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 			if !res.Valid() {
-				fmt.Println("result:", res.Errors())
-				log.Error(res.Errors())
-				// publish MQ error
+				log.Errorf("result.error: %v", res.Errors())
+				log.Error("Validation failed")
+				// Nack message so the server gets notified that something is wrong but don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+					log.Error("faild to publish message, reason: ", err)
+				}
+				// Restart on new message
 				continue
 			}
 
-			completed, _ := json.Marshal(&c)
-			if err := broker.SendMessage(mq, delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completed); err != nil {
+			log.Debug("Mark ready")
+			if err := db.MarkReady(message.AccessionID, message.User, message.Filepath, checksumSha256); err != nil {
+				log.Errorf("MarkReady failed, reason: %v", err)
+				// nack the message but requeue until we fixed the SQL retry.
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorln("failed to Nack message, reason: ", e)
+				}
+				continue
+				// this should be handled by the SQL retry mechanism
+			}
+
+			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completeMsg); err != nil {
 				// TODO fix resend mechanism
 				log.Errorln("We need to fix this resend stuff ...")
 			}
@@ -145,4 +179,24 @@ func main() {
 	}()
 
 	<-forever
+}
+
+// Validate the JSON in a received message
+func validateJSON(schemasPath string, body []byte) (*gojsonschema.Result, error) {
+	message := make(map[string]interface{})
+	err := json.Unmarshal(body, &message)
+	if err != nil {
+		return nil, err
+	}
+
+	var schema gojsonschema.JSONLoader
+
+	_, ok := message["type"]
+	if ok {
+		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-accession.json")
+	} else {
+		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-completion.json")
+	}
+	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
+	return res, err
 }

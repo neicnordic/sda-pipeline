@@ -51,6 +51,39 @@ func TestBuildConnInfo(t *testing.T) {
 
 }
 
+// testLogFatalf
+func testLogFatalf(f string, args ...interface{}) {
+	s := fmt.Sprintf(f, args...)
+	panic(s)
+}
+
+func TestCheckAndAbortOnBadConn(t *testing.T) {
+
+	// Set up our helper doing panic instead of os.exit
+	logFatalf = testLogFatalf
+
+	db, mock, _ := sqlmock.New(sqlmock.MonitorPingsOption(true))
+
+	mock.ExpectPing().WillReturnError(fmt.Errorf("ping fail for testing bad conn"))
+
+	err := CatchPanicCheckAndAbort(SQLdb{db, ""})
+	assert.Error(t, err, "Should have received error from checkAndAbortOnBadConn fataling")
+
+}
+
+func CatchPanicCheckAndAbort(db SQLdb) (err error) {
+	defer func() {
+		r := recover()
+		if r != nil {
+			err = fmt.Errorf("Caught panic")
+		}
+	}()
+
+	db.checkAndAbortOnBadConn()
+
+	return nil
+}
+
 func CatchNewDBPanic() (err error) {
 	// Recover if NewDB panics
 	// Allow both panic and error return here, so use a custom function rather

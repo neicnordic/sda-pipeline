@@ -29,7 +29,7 @@ type message struct {
 	FileID             int         `json:"file_id"`
 	ArchivePath        string      `json:"archive_path"`
 	EncryptedChecksums []checksums `json:"encrypted_checksums"`
-	ReVerify           bool       `json:"re_verify"`
+	ReVerify           bool        `json:"re_verify"`
 }
 
 // Verified is struct holding the full message data
@@ -74,11 +74,9 @@ func main() {
 	defer db.Close()
 
 	go func() {
-		for {
-			connError := mq.ConnectionWatcher()
-			log.Error(connError)
-			os.Exit(1)
-		}
+		connError := mq.ConnectionWatcher()
+		log.Error(connError)
+		os.Exit(1)
 	}()
 
 	forever := make(chan bool)
@@ -125,7 +123,6 @@ func main() {
 
 			// we unmarshal the message in the validation step so this is safe to do
 			_ = json.Unmarshal(delivered.Body, &message)
-
 
 			header, err := db.GetHeader(message.FileID)
 			if err != nil {
@@ -208,32 +205,32 @@ func main() {
 				res, err = validateJSON(conf.SchemasPath, verified)
 
 				if err != nil {
-				log.Errorf("josn error: %v", err)
-				// Nack message so the server gets notified that something is wrong but don't requeue the message
-				if e := delivered.Nack(false, false); e != nil {
-					log.Errorln("failed to Nack message, reason: ", e)
+					log.Errorf("josn error: %v", err)
+					// Nack message so the server gets notified that something is wrong but don't requeue the message
+					if e := delivered.Nack(false, false); e != nil {
+						log.Errorln("failed to Nack message, reason: ", e)
+					}
+					// Send the message to an error queue so it can be analyzed.
+					if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+						log.Error("faild to publish message, reason: ", err)
+					}
+					// Restart on new message
+					continue
 				}
-				// Send the message to an error queue so it can be analyzed.
-				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
-					log.Error("faild to publish message, reason: ", err)
+				if !res.Valid() {
+					log.Errorf("result.error: %v", res.Errors())
+					log.Error("Validation failed")
+					// Nack message so the server gets notified that something is wrong but don't requeue the message
+					if e := delivered.Nack(false, false); e != nil {
+						log.Errorln("failed to Nack message, reason: ", e)
+					}
+					// Send the message to an error queue so it can be analyzed.
+					if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
+						log.Error("faild to publish message, reason: ", err)
+					}
+					// Restart on new message
+					continue
 				}
-				// Restart on new message
-				continue
-			}
-			if !res.Valid() {
-				log.Errorf("result.error: %v", res.Errors())
-				log.Error("Validation failed")
-				// Nack message so the server gets notified that something is wrong but don't requeue the message
-				if e := delivered.Nack(false, false); e != nil {
-					log.Errorln("failed to Nack message, reason: ", e)
-				}
-				// Send the message to an error queue so it can be analyzed.
-				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
-					log.Error("faild to publish message, reason: ", err)
-				}
-				// Restart on new message
-				continue
-			}
 
 				// Mark file as "COMPLETED"
 				if e := db.MarkCompleted(file, message.FileID); e != nil {

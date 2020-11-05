@@ -40,11 +40,9 @@ func main() {
 	defer db.Close()
 
 	go func() {
-		for {
-			connError := mq.ConnectionWatcher()
-			log.Error(connError)
-			os.Exit(1)
-		}
+		connError := mq.ConnectionWatcher()
+		log.Error(connError)
+		os.Exit(1)
 	}()
 
 	forever := make(chan bool)

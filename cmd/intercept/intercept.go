@@ -15,12 +15,12 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
-	const (
-		msgAccession string = "accession"
-		msgCancel    string = "cancel"
-		msgIngest    string = "ingest"
-		msgMapping   string = "mapping"
-	)
+const (
+	msgAccession string = "accession"
+	msgCancel    string = "cancel"
+	msgIngest    string = "ingest"
+	msgMapping   string = "mapping"
+)
 
 func main() {
 	conf, err := config.NewConfig("intercept")
@@ -35,13 +35,10 @@ func main() {
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
 
-
 	go func() {
-		for {
-			connError := mq.ConnectionWatcher()
-			log.Error(connError)
-			os.Exit(1)
-		}
+		connError := mq.ConnectionWatcher()
+		log.Error(connError)
+		os.Exit(1)
 	}()
 
 	forever := make(chan bool)
@@ -73,19 +70,19 @@ func main() {
 			var routingKey string
 
 			switch msgType {
-				case msgAccession:
-					routingKey = "accessionIDs"
-				case msgCancel:
-					routingKey = ""
-					continue
-				case msgIngest:
-					routingKey = "ingest"
-				case msgMapping:
-					routingKey = "mappings"
-				default:
-					log.Debug("Unknown type")
-					routingKey = ""
-					continue
+			case msgAccession:
+				routingKey = "accessionIDs"
+			case msgCancel:
+				routingKey = ""
+				continue
+			case msgIngest:
+				routingKey = "ingest"
+			case msgMapping:
+				routingKey = "mappings"
+			default:
+				log.Debug("Unknown type")
+				routingKey = ""
+				continue
 			}
 
 			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, routingKey, conf.Broker.Durable, delivered.Body); err != nil {
@@ -118,17 +115,17 @@ func validateJSON(schemasPath string, body []byte) (string, *gojsonschema.Result
 	var res *gojsonschema.Result
 
 	switch msgType {
-		case msgAccession:
-			schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-accession.json")
-		case msgCancel:
-			schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-trigger.json")
-			msgType = ""
-		case msgIngest:
-			schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-trigger.json")
-		case msgMapping:
-			schema = gojsonschema.NewReferenceLoader(schemasPath + "dataset-mapping.json")
-		default:
-			schema = gojsonschema.NewStringLoader(`{"required": ["type"],
+	case msgAccession:
+		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-accession.json")
+	case msgCancel:
+		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-trigger.json")
+		msgType = ""
+	case msgIngest:
+		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-trigger.json")
+	case msgMapping:
+		schema = gojsonschema.NewReferenceLoader(schemasPath + "dataset-mapping.json")
+	default:
+		schema = gojsonschema.NewStringLoader(`{"required": ["type"],
 												"properties": {
 														"type": {
 															"type": "string",
@@ -138,7 +135,7 @@ func validateJSON(schemasPath string, body []byte) (string, *gojsonschema.Result
 														}
 													}
 												}`)
-			msgType = ""
+		msgType = ""
 	}
 
 	res, err = gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))

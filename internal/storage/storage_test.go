@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -36,7 +37,8 @@ var testS3Conf = S3Conf{
 	"region",
 	10,
 	5 * 1024 * 1024,
-	"../../dev_utils/certs/ca.pem"}
+	"../../dev_utils/certs/ca.pem",
+	2 * time.Second}
 
 var testConf = Conf{posixType, testS3Conf, testPosixConf}
 

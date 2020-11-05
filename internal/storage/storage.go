@@ -121,6 +121,7 @@ type s3Backend struct {
 	Client   *s3.S3
 	Uploader *s3manager.Uploader
 	Bucket   string
+	Conf     *S3Conf
 }
 
 // S3Conf stores information about the S3 storage backend
@@ -134,6 +135,7 @@ type S3Conf struct {
 	UploadConcurrency int
 	Chunksize         int
 	Cacert            string
+	NonExistRetryTime time.Duration
 }
 
 func newS3Backend(config S3Conf) (*s3Backend, error) {
@@ -173,7 +175,8 @@ func newS3Backend(config S3Conf) (*s3Backend, error) {
 			u.Concurrency = config.UploadConcurrency
 			u.LeavePartsOnError = false
 		}),
-		Client: s3.New(s3Session)}
+		Client: s3.New(s3Session),
+		Conf:   &config}
 
 	_, err = sb.Client.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: &config.Bucket})
 
@@ -195,8 +198,13 @@ func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 		Key:    aws.String(filePath),
 	})
 
+	retryTime := 2 * time.Minute
+	if sb.Conf != nil {
+		retryTime = sb.Conf.NonExistRetryTime
+	}
+
 	start := time.Now()
-	for err != nil && time.Since(start).Minutes() < 2 {
+	for err != nil && time.Since(start) < retryTime {
 		r, err = sb.Client.GetObject(&s3.GetObjectInput{
 			Bucket: aws.String(sb.Bucket),
 			Key:    aws.String(filePath),
@@ -247,9 +255,14 @@ func (sb *s3Backend) GetFileSize(filePath string) (int64, error) {
 
 	start := time.Now()
 
+	retryTime := 2 * time.Minute
+	if sb.Conf != nil {
+		retryTime = sb.Conf.NonExistRetryTime
+	}
+
 	// Retry on error up to five minutes to allow for
 	// "slow writes' or s3 eventual consistency
-	for err != nil && time.Since(start).Minutes() < 2 {
+	for err != nil && time.Since(start) < retryTime {
 		r, err = sb.Client.HeadObject(&s3.HeadObjectInput{
 			Bucket: aws.String(sb.Bucket),
 			Key:    aws.String(filePath)})

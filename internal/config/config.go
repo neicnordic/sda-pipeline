@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/elixir-oslo/crypt4gh/keys"
 	log "github.com/sirupsen/logrus"
@@ -172,6 +173,7 @@ func configS3Storage(prefix string) storage.S3Conf {
 
 	s3.Port = 443
 	s3.Region = "us-east-1"
+	s3.NonExistRetryTime = 2 * time.Minute
 
 	if viper.IsSet(prefix + ".port") {
 		s3.Port = viper.GetInt(prefix + ".port")

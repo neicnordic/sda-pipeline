@@ -197,7 +197,7 @@ This is an internal helper variable to make testing easier
 		
 			
 			
-			<h2 id="TLSConfigBroker">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=4494:4550#L159">TLSConfigBroker</a>
+			<h2 id="TLSConfigBroker">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=4614:4670#L160">TLSConfigBroker</a>
 				<a class="permalink" href="index.html#TLSConfigBroker">&#xb6;</a>
 				
 				
@@ -213,7 +213,7 @@ TLSConfigBroker is a helper method to setup TLS for the message broker
 		
 			
 			
-			<h2 id="buildMQURI">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=4077:4165#L148">buildMQURI</a>
+			<h2 id="buildMQURI">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=4197:4285#L149">buildMQURI</a>
 				<a class="permalink" href="index.html#buildMQURI">&#xb6;</a>
 				
 				
@@ -229,7 +229,7 @@ buildMQURI builds the MQ connection URI
 		
 			
 			
-			<h2 id="confirmOne">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=6097:6147#L218">confirmOne</a>
+			<h2 id="confirmOne">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=6290:6340#L222">confirmOne</a>
 				<a class="permalink" href="index.html#confirmOne">&#xb6;</a>
 				
 				
@@ -276,7 +276,7 @@ AMQPBroker is a Broker that reads messages from an AMQP broker
 
 			
 				
-				<h3 id="NewMQ">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1778:1824#L60">NewMQ</a>
+				<h3 id="NewMQ">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1899:1945#L61">NewMQ</a>
 					<a class="permalink" href="index.html#NewMQ">&#xb6;</a>
 					
 					
@@ -293,7 +293,7 @@ amqp server.
 
 			
 				
-				<h3 id="AMQPBroker.ConnectionWatcher">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=6413:6472#L228">ConnectionWatcher</a>
+				<h3 id="AMQPBroker.ConnectionWatcher">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=6604:6661#L231">ConnectionWatcher</a>
 					<a class="permalink" href="index.html#AMQPBroker.ConnectionWatcher">&#xb6;</a>
 					
 					
@@ -308,7 +308,7 @@ ConnectionWatcher listens to events from the server
 				
 			
 				
-				<h3 id="AMQPBroker.GetMessages">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=2834:2916#L104">GetMessages</a>
+				<h3 id="AMQPBroker.GetMessages">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=2955:3036#L105">GetMessages</a>
 					<a class="permalink" href="index.html#AMQPBroker.GetMessages">&#xb6;</a>
 					
 					
@@ -323,7 +323,7 @@ GetMessages reads messages from the queue
 				
 			
 				
-				<h3 id="AMQPBroker.SendJSONError">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=6611:6710#L234">SendJSONError</a>
+				<h3 id="AMQPBroker.SendJSONError">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=6800:6899#L237">SendJSONError</a>
 					<a class="permalink" href="index.html#AMQPBroker.SendJSONError">&#xb6;</a>
 					
 					
@@ -338,7 +338,7 @@ SendJSONError sends message on JSON error
 				
 			
 				
-				<h3 id="AMQPBroker.SendMessage">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=3150:3258#L118">SendMessage</a>
+				<h3 id="AMQPBroker.SendMessage">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=3270:3378#L119">SendMessage</a>
 					<a class="permalink" href="index.html#AMQPBroker.SendMessage">&#xb6;</a>
 					
 					
@@ -386,7 +386,7 @@ The AMQPChannel interface gives access to the functions provided
 		
 			
 			
-			<h2 id="FileError">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1570:1694#L52">FileError</a>
+			<h2 id="FileError">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1691:1815#L53">FileError</a>
 				<a class="permalink" href="index.html#FileError">&#xb6;</a>
 				
 				
@@ -416,7 +416,7 @@ FileError struct for sending file error messages to analysis
 		
 			
 			
-			<h2 id="MQConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=943:1292#L25">MQConf</a>
+			<h2 id="MQConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=943:1413#L25">MQConf</a>
 				<a class="permalink" href="index.html#MQConf">&#xb6;</a>
 				
 				
@@ -426,22 +426,23 @@ MQConf stores information about the message broker
 </p>
 
 			<pre>type MQConf struct {
-<span id="MQConf.Host"></span>    Host         <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="MQConf.Port"></span>    Port         <a href="http://localhost:6060/pkg/builtin/#int">int</a>
-<span id="MQConf.User"></span>    User         <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="MQConf.Password"></span>    Password     <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="MQConf.Vhost"></span>    Vhost        <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="MQConf.Queue"></span>    Queue        <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="MQConf.Exchange"></span>    Exchange     <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="MQConf.RoutingKey"></span>    RoutingKey   <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="MQConf.RoutingError"></span>    RoutingError <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="MQConf.Ssl"></span>    Ssl          <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
-<span id="MQConf.VerifyPeer"></span>    VerifyPeer   <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
-<span id="MQConf.CACert"></span>    CACert       <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="MQConf.ClientCert"></span>    ClientCert   <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="MQConf.ClientKey"></span>    ClientKey    <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="MQConf.ServerName"></span>    ServerName   <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="MQConf.Durable"></span>    Durable      <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
+<span id="MQConf.Host"></span>    Host               <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Port"></span>    Port               <a href="http://localhost:6060/pkg/builtin/#int">int</a>
+<span id="MQConf.User"></span>    User               <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Password"></span>    Password           <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Vhost"></span>    Vhost              <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Queue"></span>    Queue              <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Exchange"></span>    Exchange           <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.RoutingKey"></span>    RoutingKey         <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.RoutingError"></span>    RoutingError       <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Ssl"></span>    Ssl                <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
+<span id="MQConf.InsecureSkipVerify"></span>    InsecureSkipVerify <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
+<span id="MQConf.VerifyPeer"></span>    VerifyPeer         <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
+<span id="MQConf.CACert"></span>    CACert             <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.ClientCert"></span>    ClientCert         <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.ClientKey"></span>    ClientKey          <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.ServerName"></span>    ServerName         <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Durable"></span>    Durable            <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
 }
 </pre>
 
@@ -459,7 +460,7 @@ MQConf stores information about the message broker
 		
 			
 			
-			<h2 id="jsonError">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1354:1504#L45">jsonError</a>
+			<h2 id="jsonError">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1475:1625#L46">jsonError</a>
 				<a class="permalink" href="index.html#jsonError">&#xb6;</a>
 				
 				

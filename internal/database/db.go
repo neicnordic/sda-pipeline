@@ -143,7 +143,7 @@ func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 		count int    = 0
 	)
 
-	for (r == nil || err != nil) && count < dbRetryTimes {
+	for count == 0 || (err != nil && count < dbRetryTimes) {
 		r, err = dbs.getHeader(fileID)
 		count++
 	}

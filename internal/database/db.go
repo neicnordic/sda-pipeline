@@ -54,6 +54,15 @@ type FileInfo struct {
 	DecryptedSize     int64
 }
 
+// dbRetryTimes is the number of times to retry the same function if it fails
+var dbRetryTimes = 8
+
+// dbReconnectTimeout is how long to try to re-establish a connection to the database
+var dbReconnectTimeout = 5 * time.Minute
+
+// dbReconnectSleep is how long to wait between attempts to connect to the database
+var dbReconnectSleep = 5 * time.Second
+
 // sqlOpen is an internal variable to ease testing
 var sqlOpen = sql.Open
 
@@ -107,15 +116,6 @@ func buildConnInfo(config DBConf) string {
 	return connInfo
 }
 
-// checkAndAbortOnBadConn validates the current connection
-// with a ping and exits if the connection is not usable
-func (dbs *SQLdb) checkAndAbortOnBadConn() {
-	err := dbs.DB.Ping()
-	if err != nil {
-		logFatalf("Database connection no longer usable, giving up: %v", err)
-	}
-}
-
 // checkAndReconnectIfNeeded validates the current connection with a ping
 // and tries to reconnect if necessary
 func (dbs *SQLdb) checkAndReconnectIfNeeded() {
@@ -125,10 +125,10 @@ func (dbs *SQLdb) checkAndReconnectIfNeeded() {
 		log.Errorln("Database unreachable, reconnecting")
 		dbs.DB.Close()
 
-		if time.Since(start) > 5*time.Minute {
-			log.Fatalf("Could not reconnect to failed database in reasonable time, giving up")
+		if time.Since(start) > dbReconnectTimeout {
+			logFatalf("Could not reconnect to failed database in reasonable time, giving up")
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(dbReconnectSleep)
 		log.Debugf("Reconnecting to DB with <%s>", dbs.ConnInfo)
 		dbs.DB, _ = sqlOpen("postgres", dbs.ConnInfo)
 	}
@@ -137,6 +137,18 @@ func (dbs *SQLdb) checkAndReconnectIfNeeded() {
 
 // GetHeader retrieves the file header
 func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
+	r, err := dbs.getHeader(fileID)
+	count := 0
+
+	for err != nil && count < dbRetryTimes {
+		r, err = dbs.getHeader(fileID)
+		count++
+	}
+	return r, err
+}
+
+// getHeader is the actual function performing work for GetHeader
+func (dbs *SQLdb) getHeader(fileID int) ([]byte, error) {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB
@@ -144,13 +156,11 @@ func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 
 	var hexString string
 	if err := db.QueryRow(query, fileID).Scan(&hexString); err != nil {
-		dbs.checkAndAbortOnBadConn()
 		return nil, err
 	}
 
 	header, err := hex.DecodeString(hexString)
 	if err != nil {
-		dbs.checkAndAbortOnBadConn()
 		return nil, err
 	}
 
@@ -159,6 +169,18 @@ func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 
 // MarkCompleted marks the file as "COMPLETED"
 func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
+	err := dbs.markCompleted(file, fileID)
+	count := 0
+
+	for err != nil && count < dbRetryTimes {
+		err = dbs.markCompleted(file, fileID)
+		count++
+	}
+	return err
+}
+
+// markCompleted performs actual work for MarkCompleted
+func (dbs *SQLdb) markCompleted(file FileInfo, fileID int) error {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB
@@ -179,7 +201,6 @@ func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
 		fmt.Sprintf("%x", file.DecryptedChecksum.Sum(nil)),
 		hashType(file.DecryptedChecksum))
 	if err != nil {
-		dbs.checkAndAbortOnBadConn()
 		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
@@ -190,14 +211,32 @@ func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
 
 // InsertFile inserts a file in the database
 func (dbs *SQLdb) InsertFile(filename, user string) (int64, error) {
+	r, err := dbs.insertFile(filename, user)
+	count := 0
+
+	for err != nil && count < dbRetryTimes {
+		r, err = dbs.insertFile(filename, user)
+		count++
+	}
+	return r, err
+}
+
+// insertFile performs actual work for InsertFile
+func (dbs *SQLdb) insertFile(filename, user string) (int64, error) {
 	dbs.checkAndReconnectIfNeeded()
 
+	// Not really idempotent, but close enough for us
+
 	db := dbs.DB
-	const query = "INSERT INTO local_ega.main(submission_file_path, submission_file_extension, submission_user, status, encryption_method) VALUES($1, $2, $3,'INIT', 'CRYPT4GH') RETURNING id;"
+	const query = "INSERT INTO local_ega.main(submission_file_path, " +
+		"submission_file_extension, " +
+		"submission_user, " +
+		"status, " +
+		"encryption_method) " +
+		"VALUES($1, $2, $3,'INIT', 'CRYPT4GH') RETURNING id;"
 	var fileID int64
 	err := db.QueryRow(query, filename, strings.Replace(filepath.Ext(filename), ".", "", -1), user).Scan(&fileID)
 	if err != nil {
-		dbs.checkAndAbortOnBadConn()
 		return 0, err
 	}
 	return fileID, nil
@@ -205,13 +244,24 @@ func (dbs *SQLdb) InsertFile(filename, user string) (int64, error) {
 
 // StoreHeader stores the file header in the database
 func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
+	err := dbs.storeHeader(header, id)
+	count := 0
+
+	for err != nil && count < dbRetryTimes {
+		err = dbs.storeHeader(header, id)
+		count++
+	}
+	return err
+}
+
+// storeHeader performs actual work for StoreHeader
+func (dbs *SQLdb) storeHeader(header []byte, id int64) error {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB
 	const query = "UPDATE local_ega.files SET header = $1 WHERE id = $2;"
 	result, err := db.Exec(query, hex.EncodeToString(header), id)
 	if err != nil {
-		dbs.checkAndAbortOnBadConn()
 		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
@@ -222,6 +272,18 @@ func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
 
 // SetArchived marks the file as 'ARCHIVED'
 func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
+	err := dbs.setArchived(file, id)
+	count := 0
+
+	for err != nil && count < dbRetryTimes {
+		err = dbs.setArchived(file, id)
+		count++
+	}
+	return err
+}
+
+// setArchived performs actual work for SetArchived
+func (dbs *SQLdb) setArchived(file FileInfo, id int64) error {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB
@@ -238,7 +300,6 @@ func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
 		hashType(file.Checksum),
 		id)
 	if err != nil {
-		dbs.checkAndAbortOnBadConn()
 		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
@@ -249,14 +310,25 @@ func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
 
 // MarkReady marks the file as "READY"
 func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error {
+	err := dbs.markReady(accessionID, user, filepath, checksum)
+	count := 0
+
+	for err != nil && count < dbRetryTimes {
+		err = dbs.markReady(accessionID, user, filepath, checksum)
+		count++
+	}
+	return err
+}
+
+// MarkReady marks the file as "READY"
+func (dbs *SQLdb) markReady(accessionID, user, filepath, checksum string) error {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB
 	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE " +
-		"elixir_id = $2 and inbox_path = $3 and decrypted_file_checksum = $4 and status != 'DISABLED';"
+		"elixir_id = $2 and inbox_path = $3 and decrypted_file_checksum = $4 and status = 'COMPLETED';"
 	result, err := db.Exec(ready, accessionID, user, filepath, checksum)
 	if err != nil {
-		dbs.checkAndAbortOnBadConn()
 		return err
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
@@ -267,27 +339,38 @@ func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error 
 
 // MapFilesToDataset maps a set of files to a dataset in the database
 func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) error {
+	err := dbs.mapFilesToDataset(datasetID, accessionIDs)
+	count := 0
+
+	for err != nil && count < dbRetryTimes {
+		err = dbs.mapFilesToDataset(datasetID, accessionIDs)
+		count++
+	}
+	return err
+}
+
+// mapFilesToDataset performs the real work of MapFilesToDataset
+func (dbs *SQLdb) mapFilesToDataset(datasetID string, accessionIDs []string) error {
 	dbs.checkAndReconnectIfNeeded()
 
 	const getID = "SELECT file_id FROM local_ega.archive_files WHERE stable_id = $1"
-	const mapping = "INSERT INTO local_ega_ebi.filedataset (file_id, dataset_stable_id) VALUES ($1, $2);"
+	const mapping = "INSERT INTO local_ega_ebi.filedataset (file_id, dataset_stable_id) " +
+		"VALUES ($1, $2) ON CONFLICT " +
+		"DO NOTHING;"
 	db := dbs.DB
 	var fileID int64
 	transaction, _ := db.Begin()
 	for _, accessionID := range accessionIDs {
 		err := db.QueryRow(getID, accessionID).Scan(&fileID)
 		if err != nil {
-			dbs.checkAndAbortOnBadConn()
 			log.Errorf("something went wrong with the DB query: %s", err)
 			if e := transaction.Rollback(); e != nil {
-				dbs.checkAndAbortOnBadConn()
 				log.Errorf("failed to rollback the transaction: %s", e)
 			}
 			return err
 		}
 		_, err = transaction.Exec(mapping, fileID, datasetID)
 		if err != nil {
-			dbs.checkAndAbortOnBadConn()
 			log.Errorf("something went wrong with the DB query: %s", err)
 			if e := transaction.Rollback(); e != nil {
 				log.Errorf("failed to rollback the transaction: %s", e)

@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	log "github.com/sirupsen/logrus"
@@ -34,6 +35,17 @@ var testPgconf = DBConf{"localhost",
 
 const testConnInfo = "host=localhost port=42 user=user password=password dbname=database sslmode=verify-full sslrootcert=cacert sslcert=clientcert sslkey=clientkey"
 
+func TestMain(m *testing.M) {
+	// Set up our helper doing panic instead of os.exit
+	logFatalf = testLogFatalf
+	dbRetryTimes = 0
+	dbReconnectTimeout = 200 * time.Millisecond
+	dbReconnectSleep = time.Millisecond
+	code := m.Run()
+
+	os.Exit(code)
+}
+
 func TestBuildConnInfo(t *testing.T) {
 
 	s := buildConnInfo(testPgconf)
@@ -57,21 +69,18 @@ func testLogFatalf(f string, args ...interface{}) {
 	panic(s)
 }
 
-func TestCheckAndAbortOnBadConn(t *testing.T) {
-
-	// Set up our helper doing panic instead of os.exit
-	logFatalf = testLogFatalf
+func TestCheckAndReconnect(t *testing.T) {
 
 	db, mock, _ := sqlmock.New(sqlmock.MonitorPingsOption(true))
 
 	mock.ExpectPing().WillReturnError(fmt.Errorf("ping fail for testing bad conn"))
 
-	err := CatchPanicCheckAndAbort(SQLdb{db, ""})
-	assert.Error(t, err, "Should have received error from checkAndAbortOnBadConn fataling")
+	err := CatchPanicCheckAndReconnect(SQLdb{db, ""})
+	assert.Error(t, err, "Should have received error from checkAndReconnectOnNeeded fataling")
 
 }
 
-func CatchPanicCheckAndAbort(db SQLdb) (err error) {
+func CatchPanicCheckAndReconnect(db SQLdb) (err error) {
 	defer func() {
 		r := recover()
 		if r != nil {
@@ -79,7 +88,7 @@ func CatchPanicCheckAndAbort(db SQLdb) (err error) {
 		}
 	}()
 
-	db.checkAndAbortOnBadConn()
+	db.checkAndReconnectIfNeeded()
 
 	return nil
 }
@@ -372,7 +381,12 @@ func TestMarkReady(t *testing.T) {
 
 		r := sqlmock.NewResult(10, 1)
 
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'READY', stable_id = \\$1 WHERE elixir_id = \\$2 and inbox_path = \\$3 and decrypted_file_checksum = \\$4 and status != 'DISABLED';").
+		mock.ExpectExec("UPDATE local_ega.files SET status = 'READY', "+
+			"stable_id = \\$1 WHERE "+
+			"elixir_id = \\$2 and "+
+			"inbox_path = \\$3 and "+
+			"decrypted_file_checksum = \\$4 and "+
+			"status = 'COMPLETED';").
 			WithArgs("accessionId", "nobody", "/tmp/file.c4gh", "checksum").
 			WillReturnResult(r)
 
@@ -386,7 +400,12 @@ func TestMarkReady(t *testing.T) {
 
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'READY', stable_id = \\$1 WHERE elixir_id = \\$2 and inbox_path = \\$3 and decrypted_file_checksum = \\$4 and status != 'DISABLED';").
+		mock.ExpectExec("UPDATE local_ega.files SET status = 'READY', "+
+			"stable_id = \\$1 WHERE "+
+			"elixir_id = \\$2 and "+
+			"inbox_path = \\$3 and "+
+			"decrypted_file_checksum = \\$4 and "+
+			"status = 'COMPLETED';").
 			WithArgs("accessionId", "nobody", "/tmp/file.c4gh", "checksum").
 			WillReturnError(fmt.Errorf("error for testing"))
 
@@ -422,7 +441,10 @@ func TestMapFilesToDataset(t *testing.T) {
 				mock.ExpectQuery("SELECT file_id FROM local_ega.archive_files WHERE stable_id = \\$1").
 					WithArgs(aID).WillReturnRows(r)
 
-				mock.ExpectExec("INSERT INTO local_ega_ebi.filedataset \\(file_id, dataset_stable_id\\) VALUES \\(\\$1, \\$2\\);").
+				mock.ExpectExec("INSERT INTO local_ega_ebi.filedataset "+
+					"\\(file_id, dataset_stable_id\\) VALUES \\(\\$1, \\$2\\) "+
+					"ON CONFLICT "+
+					"DO NOTHING;").
 					WithArgs(fileID, di).WillReturnResult(success)
 
 			}
@@ -454,7 +476,11 @@ func TestMapFilesToDataset(t *testing.T) {
 		mock.ExpectQuery("SELECT file_id FROM local_ega.archive_files WHERE stable_id = \\$1").
 			WithArgs("aid1").WillReturnRows(sqlmock.NewRows([]string{"file_id"}).AddRow(100))
 
-		mock.ExpectExec("INSERT INTO local_ega_ebi.filedataset \\(file_id, dataset_stable_id\\) VALUES \\(\\$1, \\$2\\);").
+		mock.ExpectExec("INSERT INTO local_ega_ebi.filedataset "+
+			"\\(file_id, dataset_stable_id\\) "+
+			"VALUES \\(\\$1, \\$2\\) "+
+			"ON CONFLICT "+
+			"DO NOTHING;").
 			WithArgs(100, "dataset").WillReturnError(fmt.Errorf("error for testing"))
 
 		mock.ExpectRollback().WillReturnError(fmt.Errorf("error again"))

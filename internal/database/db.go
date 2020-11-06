@@ -137,10 +137,9 @@ func (dbs *SQLdb) checkAndReconnectIfNeeded() {
 
 // GetHeader retrieves the file header
 func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
-	r, err := dbs.getHeader(fileID)
-	count := 0
+	r, err, count := nil, nil, 0
 
-	for err != nil && count < dbRetryTimes {
+	for ( r == nil || err != nil) && count < dbRetryTimes {
 		r, err = dbs.getHeader(fileID)
 		count++
 	}

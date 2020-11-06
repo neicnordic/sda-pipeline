@@ -33,22 +33,23 @@ type AMQPBroker struct {
 
 // MQConf stores information about the message broker
 type MQConf struct {
-	Host         string
-	Port         int
-	User         string
-	Password     string
-	Vhost        string
-	Queue        string
-	Exchange     string
-	RoutingKey   string
-	RoutingError string
-	Ssl          bool
-	VerifyPeer   bool
-	CACert       string
-	ClientCert   string
-	ClientKey    string
-	ServerName   string
-	Durable      bool
+	Host               string
+	Port               int
+	User               string
+	Password           string
+	Vhost              string
+	Queue              string
+	Exchange           string
+	RoutingKey         string
+	RoutingError       string
+	Ssl                bool
+	InsecureSkipVerify bool
+	VerifyPeer         bool
+	CACert             string
+	ClientCert         string
+	ClientKey          string
+	ServerName         string
+	Durable            bool
 }
 
 // jsonError struct for sending broken messages to analysis
@@ -111,7 +112,7 @@ func NewMQ(config MQConf) (*AMQPBroker, error) {
 }
 
 // GetMessages reads messages from the queue
-func (broker *AMQPBroker)  GetMessages(queue string) (<-chan amqp.Delivery, error) {
+func (broker *AMQPBroker) GetMessages(queue string) (<-chan amqp.Delivery, error) {
 	ch := broker.Channel
 	return ch.Consume(
 		queue, // queue
@@ -217,6 +218,9 @@ func TLSConfigBroker(config MQConf) (*tls.Config, error) {
 			logFatalf("No certificates supplied")
 		}
 	}
+	if config.InsecureSkipVerify {
+		tlsConfig.InsecureSkipVerify = true
+	}
 	return &tlsConfig, nil
 }
 
@@ -233,9 +237,8 @@ func confirmOne(confirms <-chan amqp.Confirmation) {
 	log.Debugf("confirmed delivery with delivery tag: %d", confirmed.DeliveryTag)
 }
 
-
-// ConnectionWatcher listens to events from the server 
-func (broker *AMQPBroker) ConnectionWatcher() (*amqp.Error) {
+// ConnectionWatcher listens to events from the server
+func (broker *AMQPBroker) ConnectionWatcher() *amqp.Error {
 	amqpError := <-broker.Connection.NotifyClose(make(chan *amqp.Error))
 	return amqpError
 }

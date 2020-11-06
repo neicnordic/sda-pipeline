@@ -137,9 +137,13 @@ func (dbs *SQLdb) checkAndReconnectIfNeeded() {
 
 // GetHeader retrieves the file header
 func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
-	r, err, count := nil, nil, 0
+	var (
+		r     []byte = nil
+		err   error  = nil
+		count int    = 0
+	)
 
-	for ( r == nil || err != nil) && count < dbRetryTimes {
+	for (r == nil || err != nil) && count < dbRetryTimes {
 		r, err = dbs.getHeader(fileID)
 		count++
 	}
@@ -168,10 +172,12 @@ func (dbs *SQLdb) getHeader(fileID int) ([]byte, error) {
 
 // MarkCompleted marks the file as "COMPLETED"
 func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
-	err := dbs.markCompleted(file, fileID)
-	count := 0
+	var (
+		err   error = nil
+		count int   = 0
+	)
 
-	for err != nil && count < dbRetryTimes {
+	for count == 0 || (err != nil && count < dbRetryTimes) {
 		err = dbs.markCompleted(file, fileID)
 		count++
 	}
@@ -210,10 +216,13 @@ func (dbs *SQLdb) markCompleted(file FileInfo, fileID int) error {
 
 // InsertFile inserts a file in the database
 func (dbs *SQLdb) InsertFile(filename, user string) (int64, error) {
-	r, err := dbs.insertFile(filename, user)
-	count := 0
+	var (
+		err   error = nil
+		r     int64 = 0
+		count int   = 0
+	)
 
-	for err != nil && count < dbRetryTimes {
+	for count == 0 || (err != nil && count < dbRetryTimes) {
 		r, err = dbs.insertFile(filename, user)
 		count++
 	}
@@ -243,10 +252,12 @@ func (dbs *SQLdb) insertFile(filename, user string) (int64, error) {
 
 // StoreHeader stores the file header in the database
 func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
-	err := dbs.storeHeader(header, id)
-	count := 0
+	var (
+		err   error = nil
+		count int   = 0
+	)
 
-	for err != nil && count < dbRetryTimes {
+	for count == 0 || (err != nil && count < dbRetryTimes) {
 		err = dbs.storeHeader(header, id)
 		count++
 	}
@@ -271,10 +282,12 @@ func (dbs *SQLdb) storeHeader(header []byte, id int64) error {
 
 // SetArchived marks the file as 'ARCHIVED'
 func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
-	err := dbs.setArchived(file, id)
-	count := 0
+	var (
+		err   error = nil
+		count int   = 0
+	)
 
-	for err != nil && count < dbRetryTimes {
+	for count == 0 || (err != nil && count < dbRetryTimes) {
 		err = dbs.setArchived(file, id)
 		count++
 	}
@@ -309,10 +322,13 @@ func (dbs *SQLdb) setArchived(file FileInfo, id int64) error {
 
 // MarkReady marks the file as "READY"
 func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error {
-	err := dbs.markReady(accessionID, user, filepath, checksum)
-	count := 0
 
-	for err != nil && count < dbRetryTimes {
+	var (
+		err   error = nil
+		count int   = 0
+	)
+
+	for count == 0 || (err != nil && count < dbRetryTimes) {
 		err = dbs.markReady(accessionID, user, filepath, checksum)
 		count++
 	}
@@ -338,10 +354,12 @@ func (dbs *SQLdb) markReady(accessionID, user, filepath, checksum string) error 
 
 // MapFilesToDataset maps a set of files to a dataset in the database
 func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) error {
-	err := dbs.mapFilesToDataset(datasetID, accessionIDs)
-	count := 0
+	var (
+		err   error = nil
+		count int   = 0
+	)
 
-	for err != nil && count < dbRetryTimes {
+	for count == 0 || (err != nil && count < dbRetryTimes) {
 		err = dbs.mapFilesToDataset(datasetID, accessionIDs)
 		count++
 	}

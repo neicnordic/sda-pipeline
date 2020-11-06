@@ -167,10 +167,28 @@ providing high level functions
 					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.StoreHeader">func (dbs *SQLdb) StoreHeader(header []byte, id int64) error</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.checkAndAbortOnBadConn">func (dbs *SQLdb) checkAndAbortOnBadConn()</a></dd>
+					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.checkAndReconnectIfNeeded">func (dbs *SQLdb) checkAndReconnectIfNeeded()</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.checkAndReconnectIfNeeded">func (dbs *SQLdb) checkAndReconnectIfNeeded()</a></dd>
+					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.getHeader">func (dbs *SQLdb) getHeader(fileID int) ([]byte, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.insertFile">func (dbs *SQLdb) insertFile(filename, user string) (int64, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.mapFilesToDataset">func (dbs *SQLdb) mapFilesToDataset(datasetID string, accessionIDs []string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.markCompleted">func (dbs *SQLdb) markCompleted(file FileInfo, fileID int) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.markReady">func (dbs *SQLdb) markReady(accessionID, user, filepath, checksum string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.setArchived">func (dbs *SQLdb) setArchived(file FileInfo, id int64) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.storeHeader">func (dbs *SQLdb) storeHeader(header []byte, id int64) error</a></dd>
 				
 			
 			
@@ -199,6 +217,24 @@ providing high level functions
 			<h2 id="pkg-variables">Variables</h2>
 			
 				<p>
+dbReconnectSleep is how long to wait between attempts to connect to the database
+</p>
+
+				<pre>var <span id="dbReconnectSleep">dbReconnectSleep</span> = 5 * <a href="http://localhost:6060/pkg/time/">time</a>.<a href="http://localhost:6060/pkg/time/#Second">Second</a></pre>
+			
+				<p>
+dbReconnectTimeout is how long to try to re-establish a connection to the database
+</p>
+
+				<pre>var <span id="dbReconnectTimeout">dbReconnectTimeout</span> = 5 * <a href="http://localhost:6060/pkg/time/">time</a>.<a href="http://localhost:6060/pkg/time/#Minute">Minute</a></pre>
+			
+				<p>
+dbRetryTimes is the number of times to retry the same function if it fails
+</p>
+
+				<pre>var <span id="dbRetryTimes">dbRetryTimes</span> = 8</pre>
+			
+				<p>
 logFatalf is an internal variable to ease testing
 </p>
 
@@ -214,7 +250,7 @@ sqlOpen is an internal variable to ease testing
 		
 			
 			
-			<h2 id="buildConnInfo">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1904:1944#L77">buildConnInfo</a>
+			<h2 id="buildConnInfo">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=2256:2296#L86">buildConnInfo</a>
 				<a class="permalink" href="index.html#buildConnInfo">&#xb6;</a>
 				
 				
@@ -230,7 +266,7 @@ buildConnInfo builds a connection string for the database
 		
 			
 			
-			<h2 id="hashType">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1401:1434#L54">hashType</a>
+			<h2 id="hashType">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1753:1786#L63">hashType</a>
 				<a class="permalink" href="index.html#hashType">&#xb6;</a>
 				
 				
@@ -370,7 +406,7 @@ SQLdb struct that acts as a receiver for the DB update methods
 
 			
 				
-				<h3 id="NewDB">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1523:1564#L60">NewDB</a>
+				<h3 id="NewDB">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1875:1916#L69">NewDB</a>
 					<a class="permalink" href="index.html#NewDB">&#xb6;</a>
 					
 					
@@ -386,7 +422,7 @@ NewDB creates a new DB connection
 
 			
 				
-				<h3 id="SQLdb.Close">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=8427:8452#L292">Close</a>
+				<h3 id="SQLdb.Close">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=10477:10502#L392">Close</a>
 					<a class="permalink" href="index.html#SQLdb.Close">&#xb6;</a>
 					
 					
@@ -401,7 +437,7 @@ Close terminates the connection to the database
 				
 			
 				
-				<h3 id="SQLdb.GetHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=3348:3403#L129">GetHeader</a>
+				<h3 id="SQLdb.GetHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=3427:3482#L129">GetHeader</a>
 					<a class="permalink" href="index.html#SQLdb.GetHeader">&#xb6;</a>
 					
 					
@@ -416,7 +452,7 @@ GetHeader retrieves the file header
 				
 			
 				
-				<h3 id="SQLdb.InsertFile">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=4789:4855#L182">InsertFile</a>
+				<h3 id="SQLdb.InsertFile">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=5391:5457#L208">InsertFile</a>
 					<a class="permalink" href="index.html#SQLdb.InsertFile">&#xb6;</a>
 					
 					
@@ -431,7 +467,7 @@ InsertFile inserts a file in the database
 				
 			
 				
-				<h3 id="SQLdb.MapFilesToDataset">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=7299:7381#L259">MapFilesToDataset</a>
+				<h3 id="SQLdb.MapFilesToDataset">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=9069:9151#L346">MapFilesToDataset</a>
 					<a class="permalink" href="index.html#SQLdb.MapFilesToDataset">&#xb6;</a>
 					
 					
@@ -446,7 +482,7 @@ MapFilesToDataset maps a set of files to a dataset in the database
 				
 			
 				
-				<h3 id="SQLdb.MarkCompleted">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=3849:3913#L151">MarkCompleted</a>
+				<h3 id="SQLdb.MarkCompleted">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=4184:4248#L164">MarkCompleted</a>
 					<a class="permalink" href="index.html#SQLdb.MarkCompleted">&#xb6;</a>
 					
 					
@@ -461,7 +497,7 @@ MarkCompleted marks the file as &#34;COMPLETED&#34;
 				
 			
 				
-				<h3 id="SQLdb.MarkReady">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=6615:6694#L241">MarkReady</a>
+				<h3 id="SQLdb.MarkReady">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=8098:8177#L314">MarkReady</a>
 					<a class="permalink" href="index.html#SQLdb.MarkReady">&#xb6;</a>
 					
 					
@@ -476,7 +512,7 @@ MarkReady marks the file as &#34;READY&#34;
 				
 			
 				
-				<h3 id="SQLdb.SetArchived">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=5887:5947#L214">SetArchived</a>
+				<h3 id="SQLdb.SetArchived">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=7117:7177#L274">SetArchived</a>
 					<a class="permalink" href="index.html#SQLdb.SetArchived">&#xb6;</a>
 					
 					
@@ -491,7 +527,7 @@ SetArchived marks the file as &#39;ARCHIVED&#39;
 				
 			
 				
-				<h3 id="SQLdb.StoreHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=5368:5428#L197">StoreHeader</a>
+				<h3 id="SQLdb.StoreHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=6343:6403#L244">StoreHeader</a>
 					<a class="permalink" href="index.html#SQLdb.StoreHeader">&#xb6;</a>
 					
 					
@@ -506,23 +542,7 @@ StoreHeader stores the file header in the database
 				
 			
 				
-				<h3 id="SQLdb.checkAndAbortOnBadConn">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=2591:2633#L102">checkAndAbortOnBadConn</a>
-					<a class="permalink" href="index.html#SQLdb.checkAndAbortOnBadConn">&#xb6;</a>
-					
-					
-				</h3>
-				<pre>func (dbs *<a href="index.html#SQLdb">SQLdb</a>) checkAndAbortOnBadConn()</pre>
-				<p>
-checkAndAbortOnBadConn validates the current connection
-with a ping and exits if the connection is not usable
-</p>
-
-				
-				
-				
-			
-				
-				<h3 id="SQLdb.checkAndReconnectIfNeeded">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=2866:2911#L111">checkAndReconnectIfNeeded</a>
+				<h3 id="SQLdb.checkAndReconnectIfNeeded">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=2940:2985#L111">checkAndReconnectIfNeeded</a>
 					<a class="permalink" href="index.html#SQLdb.checkAndReconnectIfNeeded">&#xb6;</a>
 					
 					
@@ -531,6 +551,111 @@ with a ping and exits if the connection is not usable
 				<p>
 checkAndReconnectIfNeeded validates the current connection with a ping
 and tries to reconnect if necessary
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.getHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=3745:3800#L144">getHeader</a>
+					<a class="permalink" href="index.html#SQLdb.getHeader">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="index.html#SQLdb">SQLdb</a>) getHeader(fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) ([]<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<p>
+getHeader is the actual function performing work for GetHeader
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.insertFile">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=5708:5774#L223">insertFile</a>
+					<a class="permalink" href="index.html#SQLdb.insertFile">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="index.html#SQLdb">SQLdb</a>) insertFile(filename, user <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (<a href="http://localhost:6060/pkg/builtin/#int64">int64</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<p>
+insertFile performs actual work for InsertFile
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.mapFilesToDataset">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=9409:9491#L360">mapFilesToDataset</a>
+					<a class="permalink" href="index.html#SQLdb.mapFilesToDataset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="index.html#SQLdb">SQLdb</a>) mapFilesToDataset(datasetID <a href="http://localhost:6060/pkg/builtin/#string">string</a>, accessionIDs []<a href="http://localhost:6060/pkg/builtin/#string">string</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+mapFilesToDataset performs the real work of MapFilesToDataset
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.markCompleted">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=4482:4546#L178">markCompleted</a>
+					<a class="permalink" href="index.html#SQLdb.markCompleted">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="index.html#SQLdb">SQLdb</a>) markCompleted(file <a href="index.html%3Fm=all.html#FileInfo">FileInfo</a>, fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+markCompleted performs actual work for MarkCompleted
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.markReady">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=8416:8495#L329">markReady</a>
+					<a class="permalink" href="index.html#SQLdb.markReady">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="index.html#SQLdb">SQLdb</a>) markReady(accessionID, user, filepath, checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+MarkReady marks the file as &#34;READY&#34;
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.setArchived">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=7401:7461#L288">setArchived</a>
+					<a class="permalink" href="index.html#SQLdb.setArchived">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="index.html#SQLdb">SQLdb</a>) setArchived(file <a href="index.html%3Fm=all.html#FileInfo">FileInfo</a>, id <a href="http://localhost:6060/pkg/builtin/#int64">int64</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+setArchived performs actual work for SetArchived
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.storeHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=6629:6689#L258">storeHeader</a>
+					<a class="permalink" href="index.html#SQLdb.storeHeader">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="index.html#SQLdb">SQLdb</a>) storeHeader(header []<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>, id <a href="http://localhost:6060/pkg/builtin/#int64">int64</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+storeHeader performs actual work for StoreHeader
 </p>
 
 				

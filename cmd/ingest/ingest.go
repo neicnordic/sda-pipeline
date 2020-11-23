@@ -99,6 +99,7 @@ func main() {
 		}
 		for delivered := range messages {
 			log.Debugf("Received a message: %s", delivered.Body)
+
 			res, err := validateJSON(conf.SchemasPath, delivered.Body)
 			if err != nil {
 				log.Errorf("josn error: %v", err)
@@ -130,6 +131,13 @@ func main() {
 
 			// we unmarshal the message in the validation step so this is safe to do
 			_ = json.Unmarshal(delivered.Body, &message)
+
+			log.Infof("Received work; correlation-id: \"%s\" "+
+				"filepath: \"%s\" "+
+				"user: \"%s\"",
+				delivered.CorrelationId,
+				message.Filepath,
+				message.User)
 
 			file, err := inbox.NewFileReader(message.Filepath)
 			if err != nil {
@@ -201,31 +209,51 @@ func main() {
 
 				h := bytes.NewReader(readBuffer)
 				if _, err = io.Copy(hash, h); err != nil {
-					log.Error(err)
+					log.Errorf("Copy failed while reading file (corr-id: %s filepath: %s, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						err)
 				}
 
 				//nolint:nestif
 				if bytesRead <= int64(len(readBuffer)) {
 					header, err := tryDecrypt(key, readBuffer)
 					if err != nil {
-						log.Errorln(err)
+						log.Errorln("Trying to decrypt start of file failed "+
+							"(corr-id: %s, filepath: %s, error: %v)",
+							delivered.CorrelationId,
+							message.Filepath,
+							err)
 						continue
 					}
 					log.Debugln("store header")
 					if err := db.StoreHeader(header, fileID); err != nil {
-						log.Error("StoreHeader failed")
+						log.Error("StoreHeader failed"+
+							"(corr-id: %s, filepath: %s, error: %v)",
+							delivered.CorrelationId,
+							message.Filepath,
+							err)
+
 						// This should really be handled by the DB retry mechanism
 					}
 
 					if _, err = byteBuf.Write(readBuffer); err != nil {
-						log.Errorf("Failed to write buffer, reason: %v", err)
+						log.Errorf("Failed to write buffer"+
+							"(corr-id: %s, filepath: %s, error: %v)",
+							delivered.CorrelationId,
+							message.Filepath,
+							err)
 						continue
 					}
 
 					// Strip header from buffer
 					h := make([]byte, len(header))
 					if _, err = byteBuf.Read(h); err != nil {
-						log.Errorf("Failed to read buffer, reason: %v", err)
+						log.Errorf("Failed to read buffer "+
+							"(corr-id: %s, filepath: %s, error: %v)",
+							delivered.CorrelationId,
+							message.Filepath,
+							err)
 						continue
 					}
 
@@ -234,34 +262,55 @@ func main() {
 						readBuffer = readBuffer[:i]
 					}
 					if _, err = byteBuf.Write(readBuffer); err != nil {
-						log.Errorf("failed to write to buffer, reason: %v", err)
+						log.Errorf("failed to write to buffer "+
+							"(corr-id: %s, filepath: %s, error: %v)",
+							delivered.CorrelationId,
+							message.Filepath,
+							err)
 						continue
 					}
 				}
 
 				// Write data to file
 				if _, err = byteBuf.WriteTo(dest); err != nil {
-					log.Errorf("Failed to write buffer to file, reason: %v", err)
+					log.Errorf("Failed to write buffer to file "+
+						"(corr-id: %s, filepath: %s, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						err)
 					continue
 				}
 			}
 
 			file.Close()
 			dest.Close()
-			log.Debugln("Mark as archived")
+			log.Debugln("Mark as archived "+
+				"(corr-id: %s, filepath: %s)",
+				delivered.CorrelationId,
+				message.Filepath)
+
 			fileInfo := database.FileInfo{}
 			fileInfo.Path = archivedFile
 
 			fileInfo.Size, err = archive.GetFileSize(archivedFile)
 
 			if err != nil {
-				log.Error("Couldn't get file size from archive")
+				log.Error("Couldn't get file size from archive "+
+					"(corr-id: %s, filepath: %s, error: %v)",
+					delivered.CorrelationId,
+					message.Filepath,
+					err)
 				continue
 			}
 
 			fileInfo.Checksum = hash
 			if err := db.SetArchived(fileInfo, fileID); err != nil {
-				log.Error("SetArchived failed")
+				log.Error("SetArchived failed "+
+					"(corr-id: %s, filepath: %s, error: %v)",
+					delivered.CorrelationId,
+					message.Filepath,
+					err)
+
 				// This should really be handled by the DB retry mechanism
 			}
 
@@ -280,7 +329,11 @@ func main() {
 
 			res, err = validateJSON(conf.SchemasPath, archivedMsg)
 			if err != nil {
-				log.Errorf("josn error: %v", err)
+				log.Errorf("JSON error "+"(corr-id: %s, filepath: %s, error: %v)",
+					delivered.CorrelationId,
+					message.Filepath,
+					err)
+
 				// Nack message so the server gets notified that something is wrong but don't requeue the message
 				if e := delivered.Nack(false, false); e != nil {
 					log.Errorln("failed to Nack message, reason: ", e)
@@ -293,15 +346,26 @@ func main() {
 				continue
 			}
 			if !res.Valid() {
-				log.Errorf("result.error: %v", res.Errors())
-				log.Error("Validation failed")
+				log.Errorf("Validation failed "+
+					"(corr-id: %s, filepath: %s, error: %v)",
+					delivered.CorrelationId,
+					message.Filepath,
+					res.Errors())
 				// Nack message so the server gets notified that something is wrong but don't requeue the message
-				if e := delivered.Nack(false, false); e != nil {
-					log.Errorln("failed to Nack message, reason: ", e)
+				if err := delivered.Nack(false, false); err != nil {
+					log.Errorln("Failed to Nack message "+
+						"(corr-id: %s, filepath: %s, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						err)
 				}
 				// Send the message to an error queue so it can be analyzed.
 				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
-					log.Error("faild to publish message, reason: ", err)
+					log.Error("Failed to publish message "+
+						"(corr-id: %s, filepath: %s, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						err)
 				}
 				// Restart on new message
 				continue
@@ -309,10 +373,21 @@ func main() {
 
 			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, archivedMsg); err != nil {
 				// TODO fix resend mechanism
-				log.Errorln("We need to fix this resend stuff ...")
+				log.Errorln("Sending message failed "+
+					"(corr-id: %s, filepath: %s, error: %v)",
+					delivered.CorrelationId,
+					message.Filepath,
+					err)
+
+				// Do not try to ACK message to make sure we have another go
+				continue
 			}
 			if err := delivered.Ack(false); err != nil {
-				log.Errorf("failed to ack message for reason: %v", err)
+				log.Errorf("Failed to ack message for reason "+
+					"(corr-id: %s, filepath: %s, error: %v)",
+					delivered.CorrelationId,
+					message.Filepath,
+					err)
 			}
 		}
 	}()

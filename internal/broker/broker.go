@@ -2,6 +2,7 @@
 package broker
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -9,6 +10,7 @@ import (
 	"io/ioutil"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/streadway/amqp"
 )
@@ -29,6 +31,7 @@ type AMQPChannel interface {
 type AMQPBroker struct {
 	Connection *amqp.Connection
 	Channel    AMQPChannel
+	Conf       MQConf
 }
 
 // MQConf stores information about the message broker
@@ -50,6 +53,7 @@ type MQConf struct {
 	ClientKey          string
 	ServerName         string
 	Durable            bool
+	SchemasPath        string
 }
 
 // jsonError struct for sending broken messages to analysis
@@ -108,7 +112,7 @@ func NewMQ(config MQConf) (*AMQPBroker, error) {
 		return nil, err
 	}
 
-	return &AMQPBroker{Connection, Channel}, nil
+	return &AMQPBroker{Connection, Channel, config}, nil
 }
 
 // GetMessages reads messages from the queue
@@ -244,14 +248,106 @@ func (broker *AMQPBroker) ConnectionWatcher() *amqp.Error {
 }
 
 // SendJSONError sends message on JSON error
-func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, reason string, conf MQConf) error {
-	josnError := jsonError{
-		Error:          "Validation of json message failed",
+func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody []byte, reason string, conf MQConf) error {
+
+	jsonErrorMessage := jsonError{
+		Error:          "Validation of JSON message failed",
 		Reason:         fmt.Sprintf("%v", reason),
-		OrginalMessage: delivered.Body,
+		OrginalMessage: originalBody,
 	}
-	body, _ := json.Marshal(josnError)
+
+	body, _ := json.Marshal(jsonErrorMessage)
 
 	return broker.SendMessage(delivered.CorrelationId, conf.Exchange, conf.RoutingError, conf.Durable, body)
+}
 
+func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery,
+	messageType string,
+	body []byte,
+	dest interface{}) error {
+	res, err := validateJSON(messageType, broker.Conf.SchemasPath, body)
+
+	if err != nil {
+		log.Errorf("JSON error while validating "+
+			"(corr-id: %s, error: %v, message body: %s)",
+			delivered.CorrelationId,
+			err,
+			body)
+
+		// Nack message so the server gets notified that something is wrong but don't requeue the message
+		if e := delivered.Nack(false, false); e != nil {
+			log.Errorln("Failed to Nack message "+
+				"(corr-id: %s, errror: %v) ", e)
+		}
+		// Send the message to an error queue so it can be analyzed.
+		if e := broker.SendJSONError(delivered, body, err.Error(), broker.Conf); e != nil {
+			log.Error("Failed to publish JSON decode error message "+
+				"(corr-id: %s, error: %v)",
+				delivered.CorrelationId,
+				e)
+		}
+		// Return error to restart on new message
+		return err
+	}
+
+	if !res.Valid() {
+
+		errorString := ""
+
+		for _, validErr := range res.Errors() {
+			errorString += validErr.String() + "\n\n"
+		}
+
+		log.Errorf("Error(s) while schema validation "+
+			"(corr-id: %s, error: %s)",
+			delivered.CorrelationId,
+			errorString)
+		log.Error("Validation failed")
+		// Nack message so the server gets notified that something is wrong but don't requeue the message
+		if e := delivered.Nack(false, false); e != nil {
+			log.Errorln("Failed to Nack message "+
+				"(corr-id: %s, error: %v)",
+				delivered.CorrelationId,
+				e)
+		}
+		// Send the message to an error queue so it can be analyzed.
+		if e := broker.SendJSONError(delivered, body, errorString, broker.Conf); e != nil {
+			log.Error("Failed to publish JSON validity error message "+
+				"(corr-id: %s, error: %v)",
+				delivered.CorrelationId,
+				e)
+
+		}
+		// Return error to restart on new message
+
+		return fmt.Errorf("Errors while validating JSON %s", errorString)
+	}
+
+	if dest == nil {
+		// Skip unmarshalling test
+		return nil
+	}
+	//
+	d := json.NewDecoder(bytes.NewBuffer(body))
+	d.DisallowUnknownFields()
+	err = d.Decode(dest)
+
+	if err != nil {
+
+		log.Errorf("Error while unmarshalling JSON "+
+			"(corr-id: %s, error: %v, message body: %s)",
+			delivered.CorrelationId,
+			err,
+			body)
+	}
+
+	return err
+}
+
+// Validate the JSON in a received message
+func validateJSON(messageType string, schemasPath string, body []byte) (*gojsonschema.Result, error) {
+
+	schema := gojsonschema.NewReferenceLoader(schemasPath + "/" + messageType + ".json")
+	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
+	return res, err
 }

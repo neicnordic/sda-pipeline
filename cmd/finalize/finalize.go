@@ -10,8 +10,6 @@ import (
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/database"
 
-	"github.com/xeipuuv/gojsonschema"
-
 	log "github.com/sirupsen/logrus"
 )
 
@@ -73,35 +71,20 @@ func main() {
 			log.Fatal(err)
 		}
 		for delivered := range messages {
-			log.Debugf("received a message: %s", delivered.Body)
-			res, err := validateJSON(conf.SchemasPath, delivered.Body)
+			log.Debugf("Received a message (corr-id: %s, message: ***%s***)",
+				delivered.CorrelationId,
+				delivered.Body)
+
+			err := mq.ValidateJSON(&delivered,
+				"ingestion-accession",
+				delivered.Body,
+				&message)
+
 			if err != nil {
-				log.Errorf("josn error: %v", err)
-				// Nack message so the server gets notified that something is wrong but don't requeue the message
-				if e := delivered.Nack(false, false); e != nil {
-					log.Errorln("failed to Nack message, reason: ", e)
-				}
-
-				// Send the message to an error queue so it can be analyzed.
-				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
-					log.Error("faild to publish message, reason: ", err)
-				}
-				// Restart on new message
-				continue
-			}
-			if !res.Valid() {
-				log.Errorf("result.error: %v", res.Errors())
-				log.Error("Validation failed")
-				// Nack message so the server gets notified that something is wrong but don't requeue the message
-				if e := delivered.Nack(false, false); e != nil {
-					log.Errorln("failed to Nack message, reason: ", e)
-				}
-
-				// Send the message to an error queue so it can be analyzed.
-				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
-					log.Error("faild to publish message, reason: ", res.Errors())
-				}
-				// Restart on new message
+				log.Errorf("Validation of incoming message failed "+
+					"(corr-id: %s, error: %v",
+					delivered.CorrelationId,
+					err)
 				continue
 			}
 
@@ -125,36 +108,20 @@ func main() {
 
 			completeMsg, _ := json.Marshal(&c)
 
-			res, err = validateJSON(conf.SchemasPath, completeMsg)
+			err = mq.ValidateJSON(&delivered,
+				"ingestion-completion",
+				completeMsg,
+				new(completed))
+
 			if err != nil {
-				log.Errorf("josn error: %v", err)
-				// Nack message so the server gets notified that something is wrong but don't requeue the message
-				if e := delivered.Nack(false, false); e != nil {
-					log.Errorln("failed to Nack message, reason: ", e)
-				}
-				// Send the message to an error queue so it can be analyzed.
-				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
-					log.Error("faild to publish message, reason: ", err)
-				}
-				// Restart on new message
-				continue
-			}
-			if !res.Valid() {
-				log.Errorf("result.error: %v", res.Errors())
-				log.Error("Validation failed")
-				// Nack message so the server gets notified that something is wrong but don't requeue the message
-				if e := delivered.Nack(false, false); e != nil {
-					log.Errorln("failed to Nack message, reason: ", e)
-				}
-				// Send the message to an error queue so it can be analyzed.
-				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
-					log.Error("faild to publish message, reason: ", err)
-				}
-				// Restart on new message
+				log.Errorf("Validation of outgoing message failed "+
+					"(corr-id: %s, error: %v",
+					delivered.CorrelationId,
+					err)
+
 				continue
 			}
 
-			log.Debug("Mark ready")
 			if err := db.MarkReady(message.AccessionID, message.User, message.Filepath, checksumSha256); err != nil {
 				log.Errorf("MarkReady failed, reason: %v", err)
 				// nack the message but requeue until we fixed the SQL retry.
@@ -164,6 +131,8 @@ func main() {
 				continue
 				// this should be handled by the SQL retry mechanism
 			}
+
+			log.Debug("Mark ready")
 
 			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completeMsg); err != nil {
 				// TODO fix resend mechanism
@@ -177,24 +146,4 @@ func main() {
 	}()
 
 	<-forever
-}
-
-// Validate the JSON in a received message
-func validateJSON(schemasPath string, body []byte) (*gojsonschema.Result, error) {
-	message := make(map[string]interface{})
-	err := json.Unmarshal(body, &message)
-	if err != nil {
-		return nil, err
-	}
-
-	var schema gojsonschema.JSONLoader
-
-	_, ok := message["type"]
-	if ok {
-		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-accession.json")
-	} else {
-		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-completion.json")
-	}
-	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
-	return res, err
 }

@@ -99,6 +99,8 @@ func main() {
 	<-forever
 }
 
+// schemaNameFromType returns the schema to use for messages of
+// type msgType
 func schemaNameFromType(msgType string) (string, error) {
 	m := map[string]string{
 		msgAccession: "ingestion-accession",
@@ -114,6 +116,8 @@ func schemaNameFromType(msgType string) (string, error) {
 	return "", fmt.Errorf("Don't know what schema to use for %s", msgType)
 }
 
+// typeFromMessage returns the type value given a JSON structure for the message
+// supplied in body
 func typeFromMessage(body []byte) (string, error) {
 	message := make(map[string]interface{})
 	err := json.Unmarshal(body, &message)

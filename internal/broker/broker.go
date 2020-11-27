@@ -261,6 +261,9 @@ func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody [
 	return broker.SendMessage(delivered.CorrelationId, conf.Exchange, conf.RoutingError, conf.Durable, body)
 }
 
+// ValidateJSON validates JSON in body, verifying that it's valid JSON as well
+// as conforming to the schema specified by messageType. It also optionally
+// verifies that the message can be decoded into the supplied data structure dest
 func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery,
 	messageType string,
 	body []byte,
@@ -344,7 +347,7 @@ func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery,
 	return err
 }
 
-// Validate the JSON in a received message
+// validateJSON is a helper function for ValidateJson
 func validateJSON(messageType string, schemasPath string, body []byte) (*gojsonschema.Result, error) {
 
 	schema := gojsonschema.NewReferenceLoader(schemasPath + "/" + messageType + ".json")

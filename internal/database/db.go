@@ -79,7 +79,7 @@ func hashType(h hash.Hash) string {
 func NewDB(config DBConf) (*SQLdb, error) {
 	connInfo := buildConnInfo(config)
 
-	log.Debugf("Connecting to DB with <%s>", connInfo)
+	log.Debugf("Connecting to DB %s:%d on database: %s with user: %s", config.Host, config.Port, config.Database, config.User)
 	db, err := sqlOpen("postgres", connInfo)
 	if err != nil {
 		return nil, err
@@ -129,7 +129,7 @@ func (dbs *SQLdb) checkAndReconnectIfNeeded() {
 			logFatalf("Could not reconnect to failed database in reasonable time, giving up")
 		}
 		time.Sleep(dbReconnectSleep)
-		log.Debugf("Reconnecting to DB with <%s>", dbs.ConnInfo)
+		log.Debugf("Reconnecting to DB with")
 		dbs.DB, _ = sqlOpen("postgres", dbs.ConnInfo)
 	}
 

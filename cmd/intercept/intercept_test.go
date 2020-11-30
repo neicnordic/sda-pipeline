@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -52,7 +51,7 @@ type missing struct {
 	FilePath string `json:"filepath"`
 }
 
-func (suite *TestSuite) TestValidateJSON_Accession() {
+func (suite *TestSuite) TestMessageSelection_Accession() {
 	msg := accession{
 		Type:        "accession",
 		User:        "foo",
@@ -64,14 +63,17 @@ func (suite *TestSuite) TestValidateJSON_Accession() {
 	}
 	message, _ := json.Marshal(&msg)
 
-	msgType, res, err := validateJSON("file://../../schemas/federated/", message)
-	assert.Nil(suite.T(), err)
-	assert.True(suite.T(), res.Valid())
-	assert.Equal(suite.T(), "accession", msgType)
+	msgType, err := typeFromMessage(message)
 
+	assert.Nil(suite.T(), err, "Unexpected error from typeFromMessage")
+	assert.Equal(suite.T(), msgType, msgAccession, "message type from message does not match expected")
+
+	schema, err := schemaNameFromType(msgType)
+	assert.Equal(suite.T(), schema, "ingestion-accession")
+	assert.Nil(suite.T(), err, "Unexpected error from schemaNameFromType")
 }
 
-func (suite *TestSuite) TestValidateJSON_Cancel() {
+func (suite *TestSuite) TestMessageSelection_Cancel() {
 	msg := ingest{
 		Type:     "cancel",
 		User:     "foo",
@@ -79,17 +81,17 @@ func (suite *TestSuite) TestValidateJSON_Cancel() {
 	}
 	message, _ := json.Marshal(&msg)
 
-	msgType, res, err := validateJSON("file://../../schemas/federated/", message)
-	if fmt.Sprintf("%v", msgType) == "" {
-		fmt.Println("empty")
-	}
-	assert.Nil(suite.T(), err)
-	assert.True(suite.T(), res.Valid())
-	assert.Empty(suite.T(), msgType)
+	msgType, err := typeFromMessage(message)
 
+	assert.Nil(suite.T(), err, "Unexpected error from typeFromMessage")
+	assert.Equal(suite.T(), msgType, msgCancel, "message type from message does not match expected")
+
+	schema, err := schemaNameFromType(msgType)
+	assert.Equal(suite.T(), schema, "ingestion-trigger")
+	assert.Nil(suite.T(), err, "Unexpected error from schemaNameFromType")
 }
 
-func (suite *TestSuite) TestValidateJSON_Ingest() {
+func (suite *TestSuite) TestMessageSelection_Ingest() {
 	msg := ingest{
 		Type:     "ingest",
 		User:     "foo",
@@ -97,14 +99,18 @@ func (suite *TestSuite) TestValidateJSON_Ingest() {
 	}
 	message, _ := json.Marshal(&msg)
 
-	msgType, res, err := validateJSON("file://../../schemas/federated/", message)
-	assert.Nil(suite.T(), err)
-	assert.True(suite.T(), res.Valid())
-	assert.Equal(suite.T(), "ingest", msgType)
+	msgType, err := typeFromMessage(message)
+
+	assert.Nil(suite.T(), err, "Unexpected error from typeFromMessage")
+	assert.Equal(suite.T(), msgIngest, msgType, "message type from message does not match expected")
+
+	schema, err := schemaNameFromType(msgType)
+	assert.Equal(suite.T(), schema, "ingestion-trigger")
+	assert.Nil(suite.T(), err, "Unexpected error from schemaNameFromType")
 
 }
 
-func (suite *TestSuite) TestValidateJSON_Mapping() {
+func (suite *TestSuite) TestMessageSelection_Mapping() {
 	msg := mapping{
 		Type:      "mapping",
 		DatasetID: "EGAD12345678900",
@@ -114,23 +120,29 @@ func (suite *TestSuite) TestValidateJSON_Mapping() {
 	}
 	message, _ := json.Marshal(&msg)
 
-	msgType, res, err := validateJSON("file://../../schemas/federated/", message)
-	assert.Nil(suite.T(), err)
-	assert.True(suite.T(), res.Valid())
-	assert.Equal(suite.T(), "mapping", msgType)
+	msgType, err := typeFromMessage(message)
 
+	assert.Nil(suite.T(), err, "Unexpected error from typeFromMessage")
+	assert.Equal(suite.T(), msgMapping, msgType, "message type from message does not match expected")
+
+	schema, err := schemaNameFromType(msgType)
+	assert.Equal(suite.T(), schema, "dataset-mapping")
+	assert.Nil(suite.T(), err, "Unexpected error from schemaNameFromType")
 }
 
-func (suite *TestSuite) TestValidateJSON_Notype() {
+func (suite *TestSuite) TestMessageSelection_Notype() {
 	msg := missing{
 		User:     "foo",
 		FilePath: "/tmp/foo",
 	}
 	message, _ := json.Marshal(&msg)
 
-	msgType, res, err := validateJSON("file://../../schemas/federated", message)
-	assert.NotNil(suite.T(), err)
-	assert.Nil(suite.T(), res)
-	assert.Empty(suite.T(), msgType)
+	msgType, err := typeFromMessage(message)
+
+	assert.Error(suite.T(), err, "Unexpected lack of error from typeFromMessage")
+	assert.Equal(suite.T(), "", msgType, "message type from message does not match expected")
+
+	_, err = schemaNameFromType(msgType)
+	assert.Error(suite.T(), err, "schemaNameFromType did not fail as expected")
 
 }

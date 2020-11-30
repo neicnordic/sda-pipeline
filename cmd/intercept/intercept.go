@@ -12,7 +12,6 @@ import (
 	"sda-pipeline/internal/config"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/xeipuuv/gojsonschema"
 )
 
 const (
@@ -52,36 +51,38 @@ func main() {
 		}
 		for delivered := range messages {
 			log.Debugf("received a message: %s", delivered.Body)
-			msgType, res, err := validateJSON(conf.SchemasPath, delivered.Body)
-			if res == nil {
-				continue
-			}
+
+			msgType, err := typeFromMessage(delivered.Body)
 			if err != nil {
-				log.Error(err)
-				// publish MQ error
-				continue
-			}
-			if !res.Valid() {
-				log.Error(res.Errors())
-				// publish MQ error
+				log.Errorf("Failed to get type for message "+
+					"(corr-id: %s, error: %v)",
+					delivered.CorrelationId,
+					err)
 				continue
 			}
 
-			var routingKey string
+			schema, err := schemaNameFromType(msgType)
 
-			switch msgType {
-			case msgAccession:
-				routingKey = "accessionIDs"
-			case msgCancel:
-				routingKey = ""
+			if err != nil {
+				log.Errorf("Don't know schema for %s", msgType)
 				continue
-			case msgIngest:
-				routingKey = "ingest"
-			case msgMapping:
-				routingKey = "mappings"
-			default:
-				log.Debug("Unknown type")
-				routingKey = ""
+			}
+
+			err = mq.ValidateJSON(&delivered, schema, delivered.Body, nil)
+
+			if err != nil {
+				continue
+			}
+
+			routing := map[string]string{
+				msgAccession: "accessionIDs",
+				msgIngest:    "ingest",
+				msgMapping:   "mappings",
+			}
+
+			routingKey := routing[msgType]
+
+			if routingKey == "" {
 				continue
 			}
 
@@ -98,46 +99,41 @@ func main() {
 	<-forever
 }
 
-// Validate the JSON in a received message
-func validateJSON(schemasPath string, body []byte) (string, *gojsonschema.Result, error) {
+// schemaNameFromType returns the schema to use for messages of
+// type msgType
+func schemaNameFromType(msgType string) (string, error) {
+	m := map[string]string{
+		msgAccession: "ingestion-accession",
+		msgCancel:    "ingestion-trigger",
+		msgIngest:    "ingestion-trigger",
+		msgMapping:   "dataset-mapping",
+	}
+
+	if m[msgType] != "" {
+		return m[msgType], nil
+	}
+
+	return "", fmt.Errorf("Don't know what schema to use for %s", msgType)
+}
+
+// typeFromMessage returns the type value given a JSON structure for the message
+// supplied in body
+func typeFromMessage(body []byte) (string, error) {
 	message := make(map[string]interface{})
 	err := json.Unmarshal(body, &message)
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
-	msgType, ok := message["type"]
+	msgTypeFetch, ok := message["type"]
 	if !ok {
-		return "", nil, errors.New("Malformed message, type is missing")
+		return "", errors.New("Malformed message, type is missing")
 	}
 
-	var schema gojsonschema.JSONLoader
-	var res *gojsonschema.Result
-
-	switch msgType {
-	case msgAccession:
-		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-accession.json")
-	case msgCancel:
-		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-trigger.json")
-		msgType = ""
-	case msgIngest:
-		schema = gojsonschema.NewReferenceLoader(schemasPath + "ingestion-trigger.json")
-	case msgMapping:
-		schema = gojsonschema.NewReferenceLoader(schemasPath + "dataset-mapping.json")
-	default:
-		schema = gojsonschema.NewStringLoader(`{"required": ["type"],
-												"properties": {
-														"type": {
-															"type": "string",
-															"title": "The message type",
-															"description": "The message type",
-															"enum": ["accession", "cancel", "ingest", "mapping"]
-														}
-													}
-												}`)
-		msgType = ""
+	msgType, ok := msgTypeFetch.(string)
+	if !ok {
+		return "", errors.New("Could not cast type attribute to string")
 	}
 
-	res, err = gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
-	return fmt.Sprintf("%v", msgType), res, err
+	return msgType, nil
 }

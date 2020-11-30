@@ -3,8 +3,10 @@ package broker
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -31,6 +33,7 @@ func testLogFatalf(f string, args ...interface{}) {
 
 type mockChannel struct {
 	failConfirm    bool
+	failPublish    bool
 	confirmChannel chan amqp.Confirmation
 }
 
@@ -51,15 +54,21 @@ func (c *mockChannel) Confirm(noWait bool) error {
 }
 
 func (c *mockChannel) NotifyPublish(confirm chan amqp.Confirmation) chan amqp.Confirmation {
+
 	c.confirmChannel = confirm
 	return confirm
 }
 
 func (c *mockChannel) Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error {
+
 	go func() {
 		time.Sleep(10000)
 		c.confirmChannel <- amqp.Confirmation{}
 	}()
+
+	if c.failPublish {
+		return fmt.Errorf("failPublish")
+	}
 
 	return nil
 }
@@ -133,7 +142,8 @@ var tMqconf = MQConf{"127.0.0.1",
 	"../../dev_utils/certs/client.pem",
 	"../../dev_utils/certs/client-key.pem",
 	"servername",
-	true}
+	true,
+	"file://../../schemas/federated/"}
 
 func TestBuildMqURI(t *testing.T) {
 	amqps := buildMQURI("localhost", "user", "pass", "/vhost", 5555, true)
@@ -319,4 +329,76 @@ func TestConfirmOne(t *testing.T) {
 	c <- amqp.Confirmation{}
 
 	wg.Wait()
+}
+
+func TestValidateJSON(t *testing.T) {
+	b := AMQPBroker{}
+	c := mockChannel{}
+
+	b.Channel = &c
+	b.Conf = tMqconf
+
+	type checksums struct {
+		Type  string `json:"type"`
+		Value string `json:"value"`
+	}
+
+	type finalize struct {
+		Type               string      `json:"type"`
+		User               string      `json:"user"`
+		Filepath           string      `json:"filepath"`
+		AccessionID        string      `json:"accession_id"`
+		DecryptedChecksums []checksums `json:"decrypted_checksums"`
+	}
+
+	type testStruct struct {
+		Test string `json:"test"`
+	}
+
+	msg := amqp.Delivery{CorrelationId: "2"}
+	message := finalize{
+		Type:        "accession",
+		User:        "foo",
+		Filepath:    "dummy_data.c4gh",
+		AccessionID: "EGAF12345678901",
+		DecryptedChecksums: []checksums{
+			{"sha256", "da886a89637d125ef9f15f6d676357f3a9e5e10306929f0bad246375af89c2e2"},
+		},
+	}
+
+	messageText, _ := json.Marshal(message)
+	decoded := finalize{}
+	c.failPublish = true
+
+	var buf bytes.Buffer
+
+	log.SetOutput(&buf)
+	err := b.ValidateJSON(&msg, "ingestion-accession", messageText, &decoded)
+	assert.Nil(t, err, "ValidateJSON failed unexpectedly")
+	assert.Zero(t, buf.Len(), "Logs from correct validation")
+
+	err = b.ValidateJSON(&msg, "ingestion-accession", messageText, nil)
+	assert.Nil(t, err, "ValidateJSON failed unexpectedly")
+	assert.Zero(t, buf.Len(), "Logs from correct validation")
+
+	err = b.ValidateJSON(&msg, "ingestion-accession", messageText[:20], &decoded)
+	assert.Error(t, err, "ValidateJSON did not fail when it should")
+	assert.True(t, strings.Contains(buf.String(), "JSON decode error"),
+		"Did not see expected log from failed validation")
+
+	buf.Reset()
+	err = b.ValidateJSON(&msg, "ingestion-accession", messageText, new(testStruct))
+	assert.Error(t, err, "ValidateJSON did not fail when it should")
+	assert.NotZero(t, buf.Len(), "Did not get expected logs from failed ValidateJSON")
+
+	buf.Reset()
+
+	err = b.ValidateJSON(&msg, "ingestion-accession", []byte("{\"test\":\"valid_json\"}"), new(testStruct))
+	assert.Error(t, err, "ValidateJSON did not fail when it should")
+	assert.True(t, strings.Contains(buf.String(), "JSON validity error"),
+		"Did not see expected log from failed validation")
+
+	err = b.ValidateJSON(&msg, "notfound", messageText, &decoded)
+	assert.Error(t, err, "ValidateJSON did not fail when it should")
+	assert.NotZero(t, buf.Len(), "Did not get expected logs from failed ValidateJSON")
 }

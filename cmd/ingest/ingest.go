@@ -19,15 +19,15 @@ import (
 	"github.com/elixir-oslo/crypt4gh/model/headers"
 	"github.com/elixir-oslo/crypt4gh/streaming"
 	"github.com/google/uuid"
-	"github.com/xeipuuv/gojsonschema"
 
 	log "github.com/sirupsen/logrus"
 )
 
 type trigger struct {
-	Type     string `json:"type"`
-	User     string `json:"user"`
-	Filepath string `json:"filepath"`
+	Type               string      `json:"type"`
+	User               string      `json:"user"`
+	Filepath           string      `json:"filepath"`
+	EncryptedChecksums []checksums `json:"encrypted_checksums"`
 }
 
 // archived holds what should go in an message to inform about
@@ -100,32 +100,16 @@ func main() {
 		for delivered := range messages {
 			log.Debugf("Received a message: %s", delivered.Body)
 
-			res, err := validateJSON(conf.SchemasPath, delivered.Body)
+			err := mq.ValidateJSON(&delivered,
+				"ingestion-trigger",
+				delivered.Body,
+				&message)
+
 			if err != nil {
-				log.Errorf("josn error: %v", err)
-				// Nack message so the server gets notified that something is wrong but don't requeue the message
-				if e := delivered.Nack(false, false); e != nil {
-					log.Errorln("failed to Nack message, reason: ", e)
-				}
-				// Send the message to an error queue so it can be analyzed.
-				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
-					log.Error("faild to publish message, reason: ", err)
-				}
-				// Restart on new message
-				continue
-			}
-			if !res.Valid() {
-				log.Errorf("result.error: %v", res.Errors())
-				log.Error("Validation failed")
-				// Nack message so the server gets notified that something is wrong but don't requeue the message
-				if e := delivered.Nack(false, false); e != nil {
-					log.Errorln("failed to Nack message, reason: ", e)
-				}
-				// Send the message to an error queue so it can be analyzed.
-				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
-					log.Error("faild to publish message, reason: ", err)
-				}
-				// Restart on new message
+				log.Errorf("Validation of incoming message failed "+
+					"(corr-id: %s, error: %v",
+					delivered.CorrelationId,
+					err)
 				continue
 			}
 
@@ -327,47 +311,16 @@ func main() {
 
 			archivedMsg, _ := json.Marshal(&msg)
 
-			res, err = validateJSON(conf.SchemasPath, archivedMsg)
-			if err != nil {
-				log.Errorf("JSON error "+"(corr-id: %s, filepath: %s, error: %v)",
-					delivered.CorrelationId,
-					message.Filepath,
-					err)
+			err = mq.ValidateJSON(&delivered,
+				"ingestion-verification",
+				archivedMsg,
+				new(archived))
 
-				// Nack message so the server gets notified that something is wrong but don't requeue the message
-				if e := delivered.Nack(false, false); e != nil {
-					log.Errorln("failed to Nack message, reason: ", e)
-				}
-				// Send the message to an error queue so it can be analyzed.
-				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
-					log.Error("faild to publish message, reason: ", err)
-				}
-				// Restart on new message
-				continue
-			}
-			if !res.Valid() {
-				log.Errorf("Validation failed "+
-					"(corr-id: %s, filepath: %s, error: %v)",
+			if err != nil {
+				log.Errorf("Validation of outgoing message failed "+
+					"(corr-id: %s, error: %v",
 					delivered.CorrelationId,
-					message.Filepath,
-					res.Errors())
-				// Nack message so the server gets notified that something is wrong but don't requeue the message
-				if err := delivered.Nack(false, false); err != nil {
-					log.Errorln("Failed to Nack message "+
-						"(corr-id: %s, filepath: %s, error: %v)",
-						delivered.CorrelationId,
-						message.Filepath,
-						err)
-				}
-				// Send the message to an error queue so it can be analyzed.
-				if e := mq.SendJSONError(&delivered, err.Error(), conf.Broker); e != nil {
-					log.Error("Failed to publish message "+
-						"(corr-id: %s, filepath: %s, error: %v)",
-						delivered.CorrelationId,
-						message.Filepath,
-						err)
-				}
-				// Restart on new message
+					err)
 				continue
 			}
 
@@ -420,25 +373,4 @@ func tryDecrypt(key *[32]byte, buf []byte) ([]byte, error) {
 	}
 
 	return header, nil
-}
-
-// Validate the JSON in a received message
-func validateJSON(schemaPath string, body []byte) (*gojsonschema.Result, error) {
-	message := make(map[string]interface{})
-	err := json.Unmarshal(body, &message)
-	if err != nil {
-		return nil, err
-	}
-
-	var schema gojsonschema.JSONLoader
-
-	_, ok := message["type"]
-	if ok {
-		schema = gojsonschema.NewReferenceLoader(schemaPath + "ingestion-trigger.json")
-	} else {
-		schema = gojsonschema.NewReferenceLoader(schemaPath + "ingestion-verification.json")
-	}
-
-	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
-	return res, err
 }

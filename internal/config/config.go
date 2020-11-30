@@ -26,11 +26,10 @@ var requiredConfVars []string
 
 // Config is a parent object for all the different configuration parts
 type Config struct {
-	Archive     storage.Conf
-	Broker      broker.MQConf
-	Inbox       storage.Conf
-	Database    database.DBConf
-	SchemasPath string
+	Archive  storage.Conf
+	Broker   broker.MQConf
+	Inbox    storage.Conf
+	Database database.DBConf
 }
 
 // NewConfig initializes and parses the config file and/or environment using
@@ -153,9 +152,9 @@ func NewConfig(app string) (*Config, error) {
 // the type IDs of connection Federated EGA or isolate (stand-alone)
 func (c *Config) configSchemas() {
 	if viper.GetString("schema.type") == "federated" {
-		c.SchemasPath = "file://schemas/federated/"
+		c.Broker.SchemasPath = "file://schemas/federated/"
 	} else {
-		c.SchemasPath = "file://schemas/isolated/"
+		c.Broker.SchemasPath = "file://schemas/isolated/"
 	}
 }
 

@@ -42,7 +42,7 @@ func main() {
 
 	forever := make(chan bool)
 
-	log.Info("starting intercept service")
+	log.Info("Starting intercept service")
 
 	go func() {
 		messages, err := mq.GetMessages(conf.Broker.Queue)
@@ -50,27 +50,41 @@ func main() {
 			log.Fatal(err)
 		}
 		for delivered := range messages {
-			log.Debugf("received a message: %s", delivered.Body)
+			log.Debugf("Received a message: %s", delivered.Body)
 
 			msgType, err := typeFromMessage(delivered.Body)
 			if err != nil {
 				log.Errorf("Failed to get type for message "+
-					"(corr-id: %s, error: %v)",
+					"(corr-id: %s, error: %v, message: %s)",
 					delivered.CorrelationId,
-					err)
+					err,
+					delivered.Body)
 				continue
 			}
 
 			schema, err := schemaNameFromType(msgType)
 
 			if err != nil {
-				log.Errorf("Don't know schema for %s", msgType)
+
+				log.Errorf("Don't know schema for message type "+
+					"(corr-id: %s, msgType: %s, error: %v, message: %s)",
+					delivered.CorrelationId,
+					msgType,
+					err,
+					delivered.Body)
 				continue
 			}
 
 			err = mq.ValidateJSON(&delivered, schema, delivered.Body, nil)
 
 			if err != nil {
+				log.Errorf("Validation failed for message "+
+					"(corr-id: %s, error: %v, schema: %s, message: %s)",
+					delivered.CorrelationId,
+					err,
+					schema,
+					delivered.Body)
+
 				continue
 			}
 
@@ -85,6 +99,11 @@ func main() {
 			if routingKey == "" {
 				continue
 			}
+
+			log.Infof("Routing message "+
+				"(corr-id: %s, routingkey: %s)",
+				delivered.CorrelationId,
+				routingKey)
 
 			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, routingKey, conf.Broker.Durable, delivered.Body); err != nil {
 				// TODO fix resend mechanism

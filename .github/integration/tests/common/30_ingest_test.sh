@@ -69,7 +69,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 
 
     RETRY_TIMES=0
-    until docker logs ingest --since="$now" 2>&1 | grep "Mark as archived"
+    until docker logs ingest --since="$now" 2>&1 | grep "File marked as archived"
     do echo "waiting for ingestion to complete"
        RETRY_TIMES=$((RETRY_TIMES+1));
        if [ "$RETRY_TIMES" -eq 60 ]; then
@@ -86,7 +86,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
     done
 
     RETRY_TIMES=0
-    until docker logs verify --since="$now" 2>&1 | grep "Mark completed"
+    until docker logs verify --since="$now" 2>&1 | grep "File marked completed"
     do echo "waiting for verification to complete"
        RETRY_TIMES=$((RETRY_TIMES+1));
        if [ "$RETRY_TIMES" -eq 60 ]; then

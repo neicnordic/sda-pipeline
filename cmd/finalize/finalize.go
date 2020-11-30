@@ -62,7 +62,7 @@ func main() {
 
 	forever := make(chan bool)
 
-	log.Info("starting finalize service")
+	log.Info("Starting finalize service")
 	var message finalize
 
 	go func() {
@@ -71,7 +71,7 @@ func main() {
 			log.Fatal(err)
 		}
 		for delivered := range messages {
-			log.Debugf("Received a message (corr-id: %s, message: ***%s***)",
+			log.Debugf("Received a message (corr-id: %s, message: %s)",
 				delivered.CorrelationId,
 				delivered.Body)
 
@@ -82,7 +82,7 @@ func main() {
 
 			if err != nil {
 				log.Errorf("Validation of incoming message failed "+
-					"(corr-id: %s, error: %v",
+					"(corr-id: %s, error: %v)",
 					delivered.CorrelationId,
 					err)
 				continue
@@ -90,6 +90,17 @@ func main() {
 
 			// we unmarshal the message in the validation step so this is safe to do
 			_ = json.Unmarshal(delivered.Body, &message)
+
+			log.Infof("Received work (corr-id: %s, "+
+				"filepath: %s, "+
+				"user: %s, "+
+				"accessionid: %s, "+
+				"decryptedChecksums: %v)",
+				delivered.CorrelationId,
+				message.Filepath,
+				message.User,
+				message.AccessionID,
+				message.DecryptedChecksums)
 
 			// Extract the sha256 from the message and use it for the database
 			var checksumSha256 string
@@ -115,32 +126,101 @@ func main() {
 
 			if err != nil {
 				log.Errorf("Validation of outgoing message failed "+
-					"(corr-id: %s, error: %v",
+					"(corr-id: %s, "+
+					"filepath: %s, "+
+					"user: %s, "+
+					"accessionid: %s, "+
+					"decryptedChecksums: %v, error: %v)",
 					delivered.CorrelationId,
+					message.Filepath,
+					message.User,
+					message.AccessionID,
+					message.DecryptedChecksums,
 					err)
 
 				continue
 			}
 
 			if err := db.MarkReady(message.AccessionID, message.User, message.Filepath, checksumSha256); err != nil {
-				log.Errorf("MarkReady failed, reason: %v", err)
+				log.Errorf("MarkReady failed "+
+					"(corr-id: %s, "+
+					"filepath: %s, "+
+					"user: %s, "+
+					"accessionid: %s, "+
+					"decryptedChecksums: %v, error: %v)",
+					delivered.CorrelationId,
+					message.Filepath,
+					message.User,
+					message.AccessionID,
+					message.DecryptedChecksums,
+					err)
+
 				// nack the message but requeue until we fixed the SQL retry.
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorln("failed to Nack message, reason: ", e)
+					log.Errorf("Failed to NAck because of MarkReady failed "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						e)
 				}
 				continue
-				// this should be handled by the SQL retry mechanism
 			}
+
+			log.Infof("Set accession id for file "+
+				"(corr-id: %s, "+
+				"filepath: %s, "+
+				"user: %s, "+
+				"accessionid: %s, "+
+				"decryptedChecksums: %v)",
+				delivered.CorrelationId,
+				message.Filepath,
+				message.User,
+				message.AccessionID,
+				message.DecryptedChecksums)
 
 			log.Debug("Mark ready")
 
 			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completeMsg); err != nil {
 				// TODO fix resend mechanism
-				log.Errorln("We need to fix this resend stuff ...")
+				log.Errorf("Failed to send message for completed "+
+					"(corr-id: %s, "+
+					"filepath: %s, "+
+					"user: %s, "+
+					"accessionid: %s, "+
+					"decryptedChecksums: %v, error: %v)",
+					delivered.CorrelationId,
+					message.Filepath,
+					message.User,
+					message.AccessionID,
+					message.DecryptedChecksums,
+					err)
+
+				// Restart loop, do not ack
+				continue
 			}
 
 			if err := delivered.Ack(false); err != nil {
-				log.Errorf("failed to ack message for reason: %v", err)
+
+				log.Errorf("Failed to ack message after work completed "+
+					"(corr-id: %s, "+
+					"filepath: %s, "+
+					"user: %s, "+
+					"accessionid: %s, "+
+					"decryptedChecksums: %v, error: %v)",
+					delivered.CorrelationId,
+					message.Filepath,
+					message.User,
+					message.AccessionID,
+					message.DecryptedChecksums,
+					err)
+
 			}
 		}
 	}()

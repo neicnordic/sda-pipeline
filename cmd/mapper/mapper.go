@@ -45,38 +45,74 @@ func main() {
 
 	forever := make(chan bool)
 
-	log.Info("starting mapper service")
+	log.Info("Starting mapper service")
 	var mappings message
 
 	go func() {
 		messages, err := mq.GetMessages(conf.Broker.Queue)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Failed to get message from mq (error: %v)", err)
 		}
 		for d := range messages {
 			log.Debugf("received a message: %s", d.Body)
 			err := mq.ValidateJSON(&d, "dataset-mapping", d.Body, &mappings)
 			if err != nil {
-				log.Errorf("Validation of incoming message failed "+
-					"(corr-id: %s, error: %v",
+				log.Errorf("Failed to validate message for work "+
+					"(corr-id: %s, "+
+					"message: %s, "+
+					"error: %v)",
 					d.CorrelationId,
+					d.Body,
 					err)
+
 				continue
 			}
 
 			if err := json.Unmarshal(d.Body, &mappings); err != nil {
-				log.Errorf("Unmarshaling json message failed, reason: %s", err)
-				// publish MQ error
+				log.Errorf("Failed to unmarshal message for work "+
+					"(corr-id: %s, "+
+					"message: %s, "+
+					"error: %v)",
+					d.CorrelationId,
+					d.Body,
+					err)
+
 				continue
 			}
 
 			if err := db.MapFilesToDataset(mappings.DatasetID, mappings.AccessionIDs); err != nil {
-				log.Errorf("MapfileToDataset failed, reason: %v", err)
-				// this should be handled by the SQL retry mechanism
+				log.Errorf("MapFilesToDataset failed  "+
+					"(corr-id: %s, "+
+					"datasetid: %s, "+
+					"accessionids: %v, "+
+					"error: %v)",
+					d.CorrelationId,
+					mappings.DatasetID,
+					mappings.AccessionIDs,
+					err)
+			}
+
+			for _, aId := range mappings.AccessionIDs {
+				log.Infof("Mapped file to dataset "+
+					"(corr-id: %s, "+
+					"datasetid: %s, "+
+					"accessionid: %s)",
+					d.CorrelationId,
+					mappings.DatasetID,
+					aId)
 			}
 
 			if err := d.Ack(false); err != nil {
-				log.Errorf("failed to ack message for reason: %v", err)
+				log.Errorf("Failed to ack message for work "+
+					"(corr-id: %s, "+
+					"datasetid: %s, "+
+					"accessionids: %v, "+
+					"error: %v)",
+					d.CorrelationId,
+					mappings.DatasetID,
+					mappings.AccessionIDs,
+					err)
+
 			}
 		}
 	}()

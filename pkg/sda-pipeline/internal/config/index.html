@@ -185,7 +185,7 @@ Package config manages configuration
 		
 			
 			
-			<h2 id="GetC4GHKey">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=8619:8655#L304">GetC4GHKey</a>
+			<h2 id="GetC4GHKey">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=8601:8637#L303">GetC4GHKey</a>
 				<a class="permalink" href="index.html#GetC4GHKey">&#xb6;</a>
 				
 				
@@ -201,7 +201,7 @@ GetC4GHKey reads and decrypts and returns the c4gh key
 		
 			
 			
-			<h2 id="configS3Storage">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4292:4342#L154">configS3Storage</a>
+			<h2 id="configS3Storage">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4274:4324#L153">configS3Storage</a>
 				<a class="permalink" href="index.html#configS3Storage">&#xb6;</a>
 				
 				
@@ -219,7 +219,7 @@ configuration
 		
 			
 			
-			<h2 id="Config">type <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=476:626#L18">Config</a>
+			<h2 id="Config">type <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=476:594#L18">Config</a>
 				<a class="permalink" href="index.html#Config">&#xb6;</a>
 				
 				
@@ -229,11 +229,10 @@ Config is a parent object for all the different configuration parts
 </p>
 
 			<pre>type Config struct {
-<span id="Config.Archive"></span>    Archive     <a href="../storage/index.html">storage</a>.<a href="../storage/index.html#Conf">Conf</a>
-<span id="Config.Broker"></span>    Broker      <a href="../broker/index.html">broker</a>.<a href="../broker/index.html#MQConf">MQConf</a>
-<span id="Config.Inbox"></span>    Inbox       <a href="../storage/index.html">storage</a>.<a href="../storage/index.html#Conf">Conf</a>
-<span id="Config.Database"></span>    Database    <a href="../database/index.html">database</a>.<a href="../database/index.html#DBConf">DBConf</a>
-<span id="Config.SchemasPath"></span>    SchemasPath <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="Config.Archive"></span>    Archive  <a href="../storage/index.html">storage</a>.<a href="../storage/index.html#Conf">Conf</a>
+<span id="Config.Broker"></span>    Broker   <a href="../broker/index.html">broker</a>.<a href="../broker/index.html#MQConf">MQConf</a>
+<span id="Config.Inbox"></span>    Inbox    <a href="../storage/index.html">storage</a>.<a href="../storage/index.html#Conf">Conf</a>
+<span id="Config.Database"></span>    Database <a href="../database/index.html">database</a>.<a href="../database/index.html#DBConf">DBConf</a>
 }
 </pre>
 
@@ -247,7 +246,7 @@ Config is a parent object for all the different configuration parts
 
 			
 				
-				<h3 id="NewConfig">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=727:770#L28">NewConfig</a>
+				<h3 id="NewConfig">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=695:738#L27">NewConfig</a>
 					<a class="permalink" href="index.html#NewConfig">&#xb6;</a>
 					
 					
@@ -264,7 +263,7 @@ the viper library.
 
 			
 				
-				<h3 id="Config.configArchive">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5166:5198#L188">configArchive</a>
+				<h3 id="Config.configArchive">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5148:5180#L187">configArchive</a>
 					<a class="permalink" href="index.html#Config.configArchive">&#xb6;</a>
 					
 					
@@ -279,7 +278,7 @@ configArchive provides configuration for the archive storage
 				
 			
 				
-				<h3 id="Config.configBroker">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5774:5811#L210">configBroker</a>
+				<h3 id="Config.configBroker">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5756:5793#L209">configBroker</a>
 					<a class="permalink" href="index.html#Config.configBroker">&#xb6;</a>
 					
 					
@@ -294,7 +293,7 @@ configBroker provides configuration for the message broker
 				
 			
 				
-				<h3 id="Config.configDatabase">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=7634:7673#L271">configDatabase</a>
+				<h3 id="Config.configDatabase">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=7616:7655#L270">configDatabase</a>
 					<a class="permalink" href="index.html#Config.configDatabase">&#xb6;</a>
 					
 					
@@ -309,7 +308,7 @@ configDatabase provides configuration for the database
 				
 			
 				
-				<h3 id="Config.configInbox">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5477:5507#L199">configInbox</a>
+				<h3 id="Config.configInbox">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5459:5489#L198">configInbox</a>
 					<a class="permalink" href="index.html#Config.configInbox">&#xb6;</a>
 					
 					
@@ -324,7 +323,7 @@ configInbox provides configuration for the inbox storage
 				
 			
 				
-				<h3 id="Config.configSchemas">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4022:4054#L144">configSchemas</a>
+				<h3 id="Config.configSchemas">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=3990:4022#L143">configSchemas</a>
 					<a class="permalink" href="index.html#Config.configSchemas">&#xb6;</a>
 					
 					

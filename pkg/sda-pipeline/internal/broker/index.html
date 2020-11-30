@@ -121,6 +121,9 @@ Package broker contains logic for communicating with a message broker
 				
 				<dd><a href="index.html#confirmOne">func confirmOne(confirms &lt;-chan amqp.Confirmation)</a></dd>
 			
+				
+				<dd><a href="index.html#validateJSON">func validateJSON(messageType string, schemasPath string, body []byte) (*gojsonschema.Result, error)</a></dd>
+			
 			
 				
 				<dd><a href="index.html#AMQPBroker">type AMQPBroker</a></dd>
@@ -136,10 +139,13 @@ Package broker contains logic for communicating with a message broker
 					<dd>&nbsp; &nbsp; <a href="index.html#AMQPBroker.GetMessages">func (broker *AMQPBroker) GetMessages(queue string) (&lt;-chan amqp.Delivery, error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="index.html#AMQPBroker.SendJSONError">func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, reason string, conf MQConf) error</a></dd>
+					<dd>&nbsp; &nbsp; <a href="index.html#AMQPBroker.SendJSONError">func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody []byte, reason string, conf MQConf) error</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="index.html#AMQPBroker.SendMessage">func (broker *AMQPBroker) SendMessage(corrID, exchange, routingKey string, reliable bool, body []byte) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html#AMQPBroker.ValidateJSON">func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery, messageType string, body []byte, dest interface{}) error</a></dd>
 				
 			
 				
@@ -197,7 +203,7 @@ This is an internal helper variable to make testing easier
 		
 			
 			
-			<h2 id="TLSConfigBroker">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=4614:4670#L160">TLSConfigBroker</a>
+			<h2 id="TLSConfigBroker">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=4712:4768#L164">TLSConfigBroker</a>
 				<a class="permalink" href="index.html#TLSConfigBroker">&#xb6;</a>
 				
 				
@@ -213,7 +219,7 @@ TLSConfigBroker is a helper method to setup TLS for the message broker
 		
 			
 			
-			<h2 id="buildMQURI">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=4197:4285#L149">buildMQURI</a>
+			<h2 id="buildMQURI">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=4295:4383#L153">buildMQURI</a>
 				<a class="permalink" href="index.html#buildMQURI">&#xb6;</a>
 				
 				
@@ -229,7 +235,7 @@ buildMQURI builds the MQ connection URI
 		
 			
 			
-			<h2 id="confirmOne">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=6290:6340#L222">confirmOne</a>
+			<h2 id="confirmOne">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=6388:6438#L226">confirmOne</a>
 				<a class="permalink" href="index.html#confirmOne">&#xb6;</a>
 				
 				
@@ -248,10 +254,26 @@ is closed.
 			
 
 		
+			
+			
+			<h2 id="validateJSON">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=9865:9965#L341">validateJSON</a>
+				<a class="permalink" href="index.html#validateJSON">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func validateJSON(messageType <a href="http://localhost:6060/pkg/builtin/#string">string</a>, schemasPath <a href="http://localhost:6060/pkg/builtin/#string">string</a>, body []<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>) (*<a href="http://localhost:6060/pkg/github.com/xeipuuv/gojsonschema/">gojsonschema</a>.<a href="http://localhost:6060/pkg/github.com/xeipuuv/gojsonschema/#Result">Result</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+			<p>
+validateJSON is a helper function for ValidateJson
+</p>
+
+			
+			
+
+		
 		
 			
 			
-			<h2 id="AMQPBroker">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=808:887#L19">AMQPBroker</a>
+			<h2 id="AMQPBroker">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=852:950#L21">AMQPBroker</a>
 				<a class="permalink" href="index.html#AMQPBroker">&#xb6;</a>
 				
 				
@@ -263,6 +285,7 @@ AMQPBroker is a Broker that reads messages from an AMQP broker
 			<pre>type AMQPBroker struct {
 <span id="AMQPBroker.Connection"></span>    Connection *<a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Connection">Connection</a>
 <span id="AMQPBroker.Channel"></span>    Channel    <a href="index.html#AMQPChannel">AMQPChannel</a>
+<span id="AMQPBroker.Conf"></span>    Conf       <a href="index.html#MQConf">MQConf</a>
 }
 </pre>
 
@@ -276,7 +299,7 @@ AMQPBroker is a Broker that reads messages from an AMQP broker
 
 			
 				
-				<h3 id="NewMQ">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1899:1945#L61">NewMQ</a>
+				<h3 id="NewMQ">func <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1989:2035#L65">NewMQ</a>
 					<a class="permalink" href="index.html#NewMQ">&#xb6;</a>
 					
 					
@@ -293,7 +316,7 @@ amqp server.
 
 			
 				
-				<h3 id="AMQPBroker.ConnectionWatcher">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=6604:6661#L231">ConnectionWatcher</a>
+				<h3 id="AMQPBroker.ConnectionWatcher">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=6702:6759#L235">ConnectionWatcher</a>
 					<a class="permalink" href="index.html#AMQPBroker.ConnectionWatcher">&#xb6;</a>
 					
 					
@@ -308,7 +331,7 @@ ConnectionWatcher listens to events from the server
 				
 			
 				
-				<h3 id="AMQPBroker.GetMessages">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=2955:3036#L105">GetMessages</a>
+				<h3 id="AMQPBroker.GetMessages">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=3053:3134#L109">GetMessages</a>
 					<a class="permalink" href="index.html#AMQPBroker.GetMessages">&#xb6;</a>
 					
 					
@@ -323,12 +346,12 @@ GetMessages reads messages from the queue
 				
 			
 				
-				<h3 id="AMQPBroker.SendJSONError">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=6800:6899#L237">SendJSONError</a>
+				<h3 id="AMQPBroker.SendJSONError">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=6898:7018#L241">SendJSONError</a>
 					<a class="permalink" href="index.html#AMQPBroker.SendJSONError">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (broker *<a href="index.html#AMQPBroker">AMQPBroker</a>) SendJSONError(delivered *<a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Delivery">Delivery</a>, reason <a href="http://localhost:6060/pkg/builtin/#string">string</a>, conf <a href="index.html%3Fm=all.html#MQConf">MQConf</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<pre>func (broker *<a href="index.html#AMQPBroker">AMQPBroker</a>) SendJSONError(delivered *<a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Delivery">Delivery</a>, originalBody []<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>, reason <a href="http://localhost:6060/pkg/builtin/#string">string</a>, conf <a href="index.html%3Fm=all.html#MQConf">MQConf</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
 				<p>
 SendJSONError sends message on JSON error
 </p>
@@ -338,7 +361,7 @@ SendJSONError sends message on JSON error
 				
 			
 				
-				<h3 id="AMQPBroker.SendMessage">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=3270:3378#L119">SendMessage</a>
+				<h3 id="AMQPBroker.SendMessage">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=3368:3476#L123">SendMessage</a>
 					<a class="permalink" href="index.html#AMQPBroker.SendMessage">&#xb6;</a>
 					
 					
@@ -352,10 +375,30 @@ SendMessage sends a message to RabbitMQ
 				
 				
 			
+				
+				<h3 id="AMQPBroker.ValidateJSON">func (*AMQPBroker) <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=7580:7704#L257">ValidateJSON</a>
+					<a class="permalink" href="index.html#AMQPBroker.ValidateJSON">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (broker *<a href="index.html#AMQPBroker">AMQPBroker</a>) ValidateJSON(delivered *<a href="http://localhost:6060/pkg/github.com/streadway/amqp/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/streadway/amqp/#Delivery">Delivery</a>,
+    messageType <a href="http://localhost:6060/pkg/builtin/#string">string</a>,
+    body []<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>,
+    dest interface{}) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+ValidateJSON validates JSON in body, verifying that it&#39;s valid JSON as well
+as conforming to the schema specified by messageType. It also optionally
+verifies that the message can be decoded into the supplied data structure dest
+</p>
+
+				
+				
+				
+			
 		
 			
 			
-			<h2 id="AMQPChannel">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=390:740#L10">AMQPChannel</a>
+			<h2 id="AMQPChannel">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=434:784#L12">AMQPChannel</a>
 				<a class="permalink" href="index.html#AMQPChannel">&#xb6;</a>
 				
 				
@@ -386,7 +429,7 @@ The AMQPChannel interface gives access to the functions provided
 		
 			
 			
-			<h2 id="FileError">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1691:1815#L53">FileError</a>
+			<h2 id="FileError">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1781:1905#L57">FileError</a>
 				<a class="permalink" href="index.html#FileError">&#xb6;</a>
 				
 				
@@ -416,7 +459,7 @@ FileError struct for sending file error messages to analysis
 		
 			
 			
-			<h2 id="MQConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=943:1413#L25">MQConf</a>
+			<h2 id="MQConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1006:1503#L28">MQConf</a>
 				<a class="permalink" href="index.html#MQConf">&#xb6;</a>
 				
 				
@@ -443,6 +486,7 @@ MQConf stores information about the message broker
 <span id="MQConf.ClientKey"></span>    ClientKey          <a href="http://localhost:6060/pkg/builtin/#string">string</a>
 <span id="MQConf.ServerName"></span>    ServerName         <a href="http://localhost:6060/pkg/builtin/#string">string</a>
 <span id="MQConf.Durable"></span>    Durable            <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
+<span id="MQConf.SchemasPath"></span>    SchemasPath        <a href="http://localhost:6060/pkg/builtin/#string">string</a>
 }
 </pre>
 
@@ -460,7 +504,7 @@ MQConf stores information about the message broker
 		
 			
 			
-			<h2 id="jsonError">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1475:1625#L46">jsonError</a>
+			<h2 id="jsonError">type <a href="http://localhost:6060/src/sda-pipeline/internal/broker/broker.go?s=1565:1715#L50">jsonError</a>
 				<a class="permalink" href="index.html#jsonError">&#xb6;</a>
 				
 				

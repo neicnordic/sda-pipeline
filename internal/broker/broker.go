@@ -79,7 +79,7 @@ func NewMQ(config MQConf) (*AMQPBroker, error) {
 	var Channel *amqp.Channel
 	var err error
 
-	log.Debugf("Connecting to broker with <%s>", brokerURI)
+	log.Debugf("Connecting to broker host: %s:%d vhost: %s with user: %s", config.Host, config.Port, config.Vhost, config.User)
 	if config.Ssl {
 		var tlsConfig *tls.Config
 		tlsConfig, err = TLSConfigBroker(config)

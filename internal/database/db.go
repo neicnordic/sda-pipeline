@@ -129,7 +129,7 @@ func (dbs *SQLdb) checkAndReconnectIfNeeded() {
 			logFatalf("Could not reconnect to failed database in reasonable time, giving up")
 		}
 		time.Sleep(dbReconnectSleep)
-		log.Debugf("Reconnecting to DB with")
+		log.Debugln("Reconnecting to DB")
 		dbs.DB, _ = sqlOpen("postgres", dbs.ConnInfo)
 	}
 

@@ -151,7 +151,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
                             }'| sed -e "s/FILENAME/$filepath/" -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/${access}/" -e "s/CORRID/$count/" )"
 
     RETRY_TIMES=0
-    until docker logs finalize --since="$now" 2>&1 | grep "Mark ready"
+    until docker logs finalize --since="$now" 2>&1 | grep "Set accession"
     do echo "waiting for finalize to complete"
        RETRY_TIMES=$((RETRY_TIMES+1));
        if [ $RETRY_TIMES -eq 60 ]; then

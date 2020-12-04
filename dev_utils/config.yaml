@@ -30,10 +30,10 @@ broker:
   user: "test"
   password: "test"
   vhost: "test"
-  queue: "accessionIDs"
+  queue: ""
   exchange: "sda"
-  routingKey: "completed"
-  routingError: "error"
+  routingKey: ""
+  routingError: ""
   ssl: "true"
   verifyPeer: "true"
   cacert: "./dev_utils/certs/ca.pem"
@@ -59,7 +59,7 @@ db:
   sslmode: "verify-ca"
 
 inbox:
-  type: "s3"
+  type: ""
   # S3 backend
   url: "https://localhost"
   port: 9000
@@ -69,7 +69,7 @@ inbox:
   chunksize: 32
   cacert: "./dev_utils/certs/ca.pem"
   # posix backend
-  location: "./dev_utils"
+  location: "dev_utils"
 
 log:
   level: "debug"

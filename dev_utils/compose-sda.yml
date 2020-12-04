@@ -48,6 +48,19 @@ services:
       - certs:/dev_utils/certs
     mem_limit: 64m
     restart: always
+  sync:
+    command: sda-sync
+    container_name: sync
+    depends_on: 
+      - certfixer
+    env_file: ./env.sync
+    image: neicnordic/sda-pipeline:latest
+    volumes:
+      - ./config.yaml:/config.yaml
+      - ./:/dev_utils/
+      - certs:/dev_utils/certs
+    mem_limit: 64m
+    restart: always
   mapper:
     command: sda-mapper
     container_name: mapper

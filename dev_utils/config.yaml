@@ -11,16 +11,29 @@ archive:
   # posix backend
   location: "/tmp"
 
+backup:
+  type: ""
+  # S3 backend
+  url: "https://localhost"
+  port: 9000
+  accesskey: "access"
+  secretkey: "secretkey"
+  bucket: "backup"
+  chunksize: 5
+  cacert: "./dev_utils/certs/ca.pem"
+  # posix backend
+  location: "dev_utils"
+
 broker:
   host: "localhost"
   port: 5671
   user: "test"
   password: "test"
   vhost: "test"
-  queue: ""
+  queue: "accessionIDs"
   exchange: "sda"
-  routingKey: ""
-  routingError: ""
+  routingKey: "completed"
+  routingError: "error"
   ssl: "true"
   verifyPeer: "true"
   cacert: "./dev_utils/certs/ca.pem"
@@ -46,7 +59,7 @@ db:
   sslmode: "verify-ca"
 
 inbox:
-  type: ""
+  type: "s3"
   # S3 backend
   url: "https://localhost"
   port: 9000
@@ -56,7 +69,7 @@ inbox:
   chunksize: 32
   cacert: "./dev_utils/certs/ca.pem"
   # posix backend
-  location: "dev_utils"
+  location: "./dev_utils"
 
 log:
   level: "debug"

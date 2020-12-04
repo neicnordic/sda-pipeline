@@ -29,6 +29,7 @@ type Config struct {
 	Archive     storage.Conf
 	Broker      broker.MQConf
 	Inbox       storage.Conf
+	Backup      storage.Conf
 	Database    database.DBConf
 	SchemasPath string
 }
@@ -88,6 +89,12 @@ func NewConfig(app string) (*Config, error) {
 		requiredConfVars = append(requiredConfVars, []string{"inbox.location"}...)
 	}
 
+	if viper.GetString("backup.type") == S3 {
+		requiredConfVars = append(requiredConfVars, []string{"backup.url", "backup.accesskey", "backup.secretkey", "backup.bucket"}...)
+	} else if viper.GetString("backup.type") == POSIX {
+		requiredConfVars = append(requiredConfVars, []string{"backup.location"}...)
+	}
+
 	for _, s := range requiredConfVars {
 		if !viper.IsSet(s) {
 			return nil, fmt.Errorf("%s not set", s)
@@ -133,6 +140,15 @@ func NewConfig(app string) (*Config, error) {
 		}
 		return c, nil
 	case "finalize":
+		err = c.configDatabase()
+		if err != nil {
+			return nil, err
+		}
+		return c, nil
+	case "sync":
+		c.configInbox()
+		c.configBackup()
+
 		err = c.configDatabase()
 		if err != nil {
 			return nil, err
@@ -213,6 +229,17 @@ func (c *Config) configInbox() {
 	} else {
 		c.Inbox.Type = POSIX
 		c.Inbox.Posix.Location = viper.GetString("inbox.location")
+	}
+}
+
+// configBackup provides configuration for the backup storage
+func (c *Config) configBackup() {
+	if viper.GetString("backup.type") == S3 {
+		c.Backup.Type = S3
+		c.Backup.S3 = configS3Storage("backup")
+	} else {
+		c.Backup.Type = POSIX
+		c.Backup.Posix.Location = viper.GetString("backup.location")
 	}
 }
 

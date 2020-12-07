@@ -47,3 +47,7 @@ For local development/testing see instructions in [dev_utils](/dev_utils) folder
 `sda-pipeline` documentation can be found at: https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/
 
 NeIC Sensitive Data Archive documentation can be found at: https://neic-sda.readthedocs.io/en/latest/
+
+## Contributing
+
+We happily accepts contributions. Please see our [contributing documentation](CONTRIBUTING.md) for some tips on getting started.

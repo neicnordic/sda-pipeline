@@ -1,4 +1,4 @@
-# sda-pipeline 
+# sda-pipeline
 
 [![License](https://img.shields.io/github/license/neicnordic/sda-pipeline)](https://shields.io)
 [![GoDoc](https://godoc.org/github.com/neicnordic/sda-pipeline?status.svg)](https://pkg.go.dev/github.com/neicnordic/sda-pipeline?tab=subdirectories)
@@ -18,7 +18,7 @@ It can be used as part of a [Federated EGA](https://ega-archive.org/federated) o
 
 Recommended provisioning method for production is:
 
-* on a [Kubernetes cluster](https://github.com/neicnordic/sda-helm/), using `kubernetes` and `helm` charts;
+* on a , `kubernetes cluster` using the [helm chart](https://github.com/neicnordic/sda-helm/);
 
 For local development/testing see instructions in [dev_utils](/dev_utils) folder.
 

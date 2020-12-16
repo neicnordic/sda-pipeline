@@ -1,5 +1,5 @@
 // The mapper service register mapping of accessionIDs
-// (stable ids for files) to datasetIDs.
+// (IDs for files) to datasetIDs.
 package main
 
 import (

@@ -23,6 +23,7 @@ type Database interface {
 	GetHeader(fileID int) ([]byte, error)
 	MarkCompleted(checksum string, fileID int) error
 	MarkReady(accessionID, user, filepath, checksum string) error
+	GetArchived(user, filepath, checksum string) (string, int, error)
 	Close()
 }
 
@@ -396,6 +397,39 @@ func (dbs *SQLdb) mapFilesToDataset(datasetID string, accessionIDs []string) err
 		}
 	}
 	return transaction.Commit()
+}
+
+// GetArchived retrieves the location and size of archive
+func (dbs *SQLdb) GetArchived(user, filepath, checksum string) (string, int, error) {
+	var (
+		filePath string = ""
+		fileSize int    = 0
+		err      error  = nil
+		count    int    = 0
+	)
+
+	for count == 0 || (err != nil && count < dbRetryTimes) {
+		filePath, fileSize, err = dbs.getArchived(user, filepath, checksum)
+		count++
+	}
+	return filePath, fileSize, err
+}
+
+// getArchived is the actual function performing work for GetArchived
+func (dbs *SQLdb) getArchived(user, filepath, checksum string) (string, int, error) {
+	dbs.checkAndReconnectIfNeeded()
+
+	db := dbs.DB
+	const query = "SELECT archive_path, archive_filesize from local_ega.files WHERE " +
+		"elixir_id = $1 and inbox_path = $2 and decrypted_file_checksum = $3 and status = 'COMPLETED';"
+
+	var filePath string
+	var fileSize int
+	if err := db.QueryRow(query, user, filepath, checksum).Scan(&filePath, &fileSize); err != nil {
+		return "", 0, err
+	}
+
+	return filePath, fileSize, nil
 }
 
 // Close terminates the connection to the database

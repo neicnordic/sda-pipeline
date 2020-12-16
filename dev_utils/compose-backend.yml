@@ -72,6 +72,7 @@ services:
       /usr/bin/mc config host add s3 https://s3:9000 access secretkey;
       /usr/bin/mc mb s3/inbox;
       /usr/bin/mc mb s3/archive;
+      /usr/bin/mc mb s3/backup;
       exit 0;
       "
     volumes:

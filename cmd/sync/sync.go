@@ -30,14 +30,6 @@ type checksums struct {
 	Value string `json:"value"`
 }
 
-// Completed is struct holding the full message data
-type completed struct {
-	User               string      `json:"user"`
-	Filepath           string      `json:"filepath"`
-	AccessionID        string      `json:"accession_id"`
-	DecryptedChecksums []checksums `json:"decrypted_checksums"`
-}
-
 func main() {
 	conf, err := config.NewConfig("sync")
 	if err != nil {

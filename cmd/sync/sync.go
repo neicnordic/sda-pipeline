@@ -46,12 +46,10 @@ func main() {
 	backup, err := storage.NewBackend(conf.Backup)
 	if err != nil {
 		log.Fatal(err)
-
 	}
 	archive, err := storage.NewBackend(conf.Archive)
 	if err != nil {
 		log.Fatal(err)
-
 	}
 
 	defer mq.Channel.Close()
@@ -146,7 +144,6 @@ func main() {
 						e)
 				}
 				continue
-
 			}
 
 			log.Info("Sync initiated")

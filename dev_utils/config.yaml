@@ -11,6 +11,19 @@ archive:
   # posix backend
   location: "/tmp"
 
+backup:
+  type: ""
+  # S3 backend
+  url: "https://localhost"
+  port: 9000
+  accesskey: "access"
+  secretkey: "secretkey"
+  bucket: "backup"
+  chunksize: 5
+  cacert: "./dev_utils/certs/ca.pem"
+  # posix backend
+  location: "dev_utils"
+
 broker:
   host: "localhost"
   port: 5671

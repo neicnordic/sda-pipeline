@@ -12,7 +12,7 @@
 
 
 
-<script>var goVersion = "go1.15.5";</script>
+<script>var goVersion = "go1.15.6";</script>
 <script src="../../../../lib/godoc/godocs.js" defer></script>
 </head>
 <body>
@@ -146,6 +146,9 @@ providing high level functions
 					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.Close">func (dbs *SQLdb) Close()</a></dd>
 				
 					
+					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.GetArchived">func (dbs *SQLdb) GetArchived(user, filepath, checksum string) (string, int, error)</a></dd>
+				
+					
 					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.GetHeader">func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error)</a></dd>
 				
 					
@@ -168,6 +171,9 @@ providing high level functions
 				
 					
 					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.checkAndReconnectIfNeeded">func (dbs *SQLdb) checkAndReconnectIfNeeded()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.getArchived">func (dbs *SQLdb) getArchived(user, filepath, checksum string) (string, int, error)</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="index.html#SQLdb.getHeader">func (dbs *SQLdb) getHeader(fileID int) ([]byte, error)</a></dd>
@@ -250,7 +256,7 @@ sqlOpen is an internal variable to ease testing
 		
 			
 			
-			<h2 id="buildConnInfo">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=2328:2368#L86">buildConnInfo</a>
+			<h2 id="buildConnInfo">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=2395:2435#L87">buildConnInfo</a>
 				<a class="permalink" href="index.html#buildConnInfo">&#xb6;</a>
 				
 				
@@ -266,7 +272,7 @@ buildConnInfo builds a connection string for the database
 		
 			
 			
-			<h2 id="hashType">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1753:1786#L63">hashType</a>
+			<h2 id="hashType">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1820:1853#L64">hashType</a>
 				<a class="permalink" href="index.html#hashType">&#xb6;</a>
 				
 				
@@ -283,7 +289,7 @@ hashType returns the identification string for the hash type
 		
 			
 			
-			<h2 id="DBConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=758:948#L26">DBConf</a>
+			<h2 id="DBConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=825:1015#L27">DBConf</a>
 				<a class="permalink" href="index.html#DBConf">&#xb6;</a>
 				
 				
@@ -319,7 +325,7 @@ DBConf stores information about the database backend
 		
 			
 			
-			<h2 id="Database">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=388:576#L12">Database</a>
+			<h2 id="Database">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=388:643#L12">Database</a>
 				<a class="permalink" href="index.html#Database">&#xb6;</a>
 				
 				
@@ -332,6 +338,7 @@ Database defines methods to be implemented by SQLdb
     GetHeader(fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) ([]<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)
     MarkCompleted(checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>, fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a>
     MarkReady(accessionID, user, filepath, checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a>
+    GetArchived(user, filepath, checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (<a href="http://localhost:6060/pkg/builtin/#string">string</a>, <a href="http://localhost:6060/pkg/builtin/#int">int</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)
     Close()
 }</pre>
 
@@ -349,7 +356,7 @@ Database defines methods to be implemented by SQLdb
 		
 			
 			
-			<h2 id="FileInfo">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1021:1179#L39">FileInfo</a>
+			<h2 id="FileInfo">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1088:1246#L40">FileInfo</a>
 				<a class="permalink" href="index.html#FileInfo">&#xb6;</a>
 				
 				
@@ -381,7 +388,7 @@ FileInfo is used by ingest for file metadata (path, size, checksum)
 		
 			
 			
-			<h2 id="SQLdb">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=644:700#L20">SQLdb</a>
+			<h2 id="SQLdb">type <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=711:767#L21">SQLdb</a>
 				<a class="permalink" href="index.html#SQLdb">&#xb6;</a>
 				
 				
@@ -406,7 +413,7 @@ SQLdb struct that acts as a receiver for the DB update methods
 
 			
 				
-				<h3 id="NewDB">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1875:1916#L69">NewDB</a>
+				<h3 id="NewDB">func <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=1942:1983#L70">NewDB</a>
 					<a class="permalink" href="index.html#NewDB">&#xb6;</a>
 					
 					
@@ -422,7 +429,7 @@ NewDB creates a new DB connection
 
 			
 				
-				<h3 id="SQLdb.Close">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=10526:10551#L392">Close</a>
+				<h3 id="SQLdb.Close">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=11598:11623#L426">Close</a>
 					<a class="permalink" href="index.html#SQLdb.Close">&#xb6;</a>
 					
 					
@@ -437,7 +444,22 @@ Close terminates the connection to the database
 				
 			
 				
-				<h3 id="SQLdb.GetHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=3476:3531#L129">GetHeader</a>
+				<h3 id="SQLdb.GetArchived">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=10600:10683#L393">GetArchived</a>
+					<a class="permalink" href="index.html#SQLdb.GetArchived">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="index.html#SQLdb">SQLdb</a>) GetArchived(user, filepath, checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (<a href="http://localhost:6060/pkg/builtin/#string">string</a>, <a href="http://localhost:6060/pkg/builtin/#int">int</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<p>
+GetArchived retrieves the location and size of archive
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.GetHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=3543:3598#L130">GetHeader</a>
 					<a class="permalink" href="index.html#SQLdb.GetHeader">&#xb6;</a>
 					
 					
@@ -452,7 +474,7 @@ GetHeader retrieves the file header
 				
 			
 				
-				<h3 id="SQLdb.InsertFile">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=5440:5506#L208">InsertFile</a>
+				<h3 id="SQLdb.InsertFile">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=5507:5573#L209">InsertFile</a>
 					<a class="permalink" href="index.html#SQLdb.InsertFile">&#xb6;</a>
 					
 					
@@ -467,7 +489,7 @@ InsertFile inserts a file in the database
 				
 			
 				
-				<h3 id="SQLdb.MapFilesToDataset">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=9118:9200#L346">MapFilesToDataset</a>
+				<h3 id="SQLdb.MapFilesToDataset">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=9185:9267#L347">MapFilesToDataset</a>
 					<a class="permalink" href="index.html#SQLdb.MapFilesToDataset">&#xb6;</a>
 					
 					
@@ -482,7 +504,7 @@ MapFilesToDataset maps a set of files to a dataset in the database
 				
 			
 				
-				<h3 id="SQLdb.MarkCompleted">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=4233:4297#L164">MarkCompleted</a>
+				<h3 id="SQLdb.MarkCompleted">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=4300:4364#L165">MarkCompleted</a>
 					<a class="permalink" href="index.html#SQLdb.MarkCompleted">&#xb6;</a>
 					
 					
@@ -497,7 +519,7 @@ MarkCompleted marks the file as &#34;COMPLETED&#34;
 				
 			
 				
-				<h3 id="SQLdb.MarkReady">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=8147:8226#L314">MarkReady</a>
+				<h3 id="SQLdb.MarkReady">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=8214:8293#L315">MarkReady</a>
 					<a class="permalink" href="index.html#SQLdb.MarkReady">&#xb6;</a>
 					
 					
@@ -512,7 +534,7 @@ MarkReady marks the file as &#34;READY&#34;
 				
 			
 				
-				<h3 id="SQLdb.SetArchived">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=7166:7226#L274">SetArchived</a>
+				<h3 id="SQLdb.SetArchived">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=7233:7293#L275">SetArchived</a>
 					<a class="permalink" href="index.html#SQLdb.SetArchived">&#xb6;</a>
 					
 					
@@ -527,7 +549,7 @@ SetArchived marks the file as &#39;ARCHIVED&#39;
 				
 			
 				
-				<h3 id="SQLdb.StoreHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=6392:6452#L244">StoreHeader</a>
+				<h3 id="SQLdb.StoreHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=6459:6519#L245">StoreHeader</a>
 					<a class="permalink" href="index.html#SQLdb.StoreHeader">&#xb6;</a>
 					
 					
@@ -542,7 +564,7 @@ StoreHeader stores the file header in the database
 				
 			
 				
-				<h3 id="SQLdb.checkAndReconnectIfNeeded">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=3012:3057#L111">checkAndReconnectIfNeeded</a>
+				<h3 id="SQLdb.checkAndReconnectIfNeeded">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=3079:3124#L112">checkAndReconnectIfNeeded</a>
 					<a class="permalink" href="index.html#SQLdb.checkAndReconnectIfNeeded">&#xb6;</a>
 					
 					
@@ -558,7 +580,22 @@ and tries to reconnect if necessary
 				
 			
 				
-				<h3 id="SQLdb.getHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=3794:3849#L144">getHeader</a>
+				<h3 id="SQLdb.getArchived">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=11034:11117#L409">getArchived</a>
+					<a class="permalink" href="index.html#SQLdb.getArchived">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="index.html#SQLdb">SQLdb</a>) getArchived(user, filepath, checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (<a href="http://localhost:6060/pkg/builtin/#string">string</a>, <a href="http://localhost:6060/pkg/builtin/#int">int</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<p>
+getArchived is the actual function performing work for GetArchived
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.getHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=3861:3916#L145">getHeader</a>
 					<a class="permalink" href="index.html#SQLdb.getHeader">&#xb6;</a>
 					
 					
@@ -573,7 +610,7 @@ getHeader is the actual function performing work for GetHeader
 				
 			
 				
-				<h3 id="SQLdb.insertFile">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=5757:5823#L223">insertFile</a>
+				<h3 id="SQLdb.insertFile">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=5824:5890#L224">insertFile</a>
 					<a class="permalink" href="index.html#SQLdb.insertFile">&#xb6;</a>
 					
 					
@@ -588,7 +625,7 @@ insertFile performs actual work for InsertFile
 				
 			
 				
-				<h3 id="SQLdb.mapFilesToDataset">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=9458:9540#L360">mapFilesToDataset</a>
+				<h3 id="SQLdb.mapFilesToDataset">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=9525:9607#L361">mapFilesToDataset</a>
 					<a class="permalink" href="index.html#SQLdb.mapFilesToDataset">&#xb6;</a>
 					
 					
@@ -603,7 +640,7 @@ mapFilesToDataset performs the real work of MapFilesToDataset
 				
 			
 				
-				<h3 id="SQLdb.markCompleted">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=4531:4595#L178">markCompleted</a>
+				<h3 id="SQLdb.markCompleted">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=4598:4662#L179">markCompleted</a>
 					<a class="permalink" href="index.html#SQLdb.markCompleted">&#xb6;</a>
 					
 					
@@ -618,7 +655,7 @@ markCompleted performs actual work for MarkCompleted
 				
 			
 				
-				<h3 id="SQLdb.markReady">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=8465:8544#L329">markReady</a>
+				<h3 id="SQLdb.markReady">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=8532:8611#L330">markReady</a>
 					<a class="permalink" href="index.html#SQLdb.markReady">&#xb6;</a>
 					
 					
@@ -633,7 +670,7 @@ MarkReady marks the file as &#34;READY&#34;
 				
 			
 				
-				<h3 id="SQLdb.setArchived">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=7450:7510#L288">setArchived</a>
+				<h3 id="SQLdb.setArchived">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=7517:7577#L289">setArchived</a>
 					<a class="permalink" href="index.html#SQLdb.setArchived">&#xb6;</a>
 					
 					
@@ -648,7 +685,7 @@ setArchived performs actual work for SetArchived
 				
 			
 				
-				<h3 id="SQLdb.storeHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=6678:6738#L258">storeHeader</a>
+				<h3 id="SQLdb.storeHeader">func (*SQLdb) <a href="http://localhost:6060/src/sda-pipeline/internal/database/db.go?s=6745:6805#L259">storeHeader</a>
 					<a class="permalink" href="index.html#SQLdb.storeHeader">&#xb6;</a>
 					
 					
@@ -674,7 +711,7 @@ storeHeader performs actual work for StoreHeader
 
 
 <div id="footer">
-Build version go1.15.5.<br>
+Build version go1.15.6.<br>
 Except as <a href="https://developers.google.com/site-policies#restrictions">noted</a>,
 the content of this page is licensed under the
 Creative Commons Attribution 3.0 License,

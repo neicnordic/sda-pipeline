@@ -12,7 +12,7 @@
 
 
 
-<script>var goVersion = "go1.15.5";</script>
+<script>var goVersion = "go1.15.6";</script>
 <script src="../../../../lib/godoc/godocs.js" defer></script>
 </head>
 <body>
@@ -132,6 +132,9 @@ Package config manages configuration
 					<dd>&nbsp; &nbsp; <a href="index.html#Config.configArchive">func (c *Config) configArchive()</a></dd>
 				
 					
+					<dd>&nbsp; &nbsp; <a href="index.html#Config.configBackup">func (c *Config) configBackup()</a></dd>
+				
+					
 					<dd>&nbsp; &nbsp; <a href="index.html#Config.configBroker">func (c *Config) configBroker() error</a></dd>
 				
 					
@@ -185,7 +188,7 @@ Package config manages configuration
 		
 			
 			
-			<h2 id="GetC4GHKey">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=8601:8637#L303">GetC4GHKey</a>
+			<h2 id="GetC4GHKey">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=9375:9411#L330">GetC4GHKey</a>
 				<a class="permalink" href="index.html#GetC4GHKey">&#xb6;</a>
 				
 				
@@ -201,7 +204,7 @@ GetC4GHKey reads and decrypts and returns the c4gh key
 		
 			
 			
-			<h2 id="configS3Storage">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4274:4324#L153">configS3Storage</a>
+			<h2 id="configS3Storage">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4743:4793#L169">configS3Storage</a>
 				<a class="permalink" href="index.html#configS3Storage">&#xb6;</a>
 				
 				
@@ -219,7 +222,7 @@ configuration
 		
 			
 			
-			<h2 id="Config">type <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=476:594#L18">Config</a>
+			<h2 id="Config">type <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=476:617#L18">Config</a>
 				<a class="permalink" href="index.html#Config">&#xb6;</a>
 				
 				
@@ -232,6 +235,7 @@ Config is a parent object for all the different configuration parts
 <span id="Config.Archive"></span>    Archive  <a href="../storage/index.html">storage</a>.<a href="../storage/index.html#Conf">Conf</a>
 <span id="Config.Broker"></span>    Broker   <a href="../broker/index.html">broker</a>.<a href="../broker/index.html#MQConf">MQConf</a>
 <span id="Config.Inbox"></span>    Inbox    <a href="../storage/index.html">storage</a>.<a href="../storage/index.html#Conf">Conf</a>
+<span id="Config.Backup"></span>    Backup   <a href="../storage/index.html">storage</a>.<a href="../storage/index.html#Conf">Conf</a>
 <span id="Config.Database"></span>    Database <a href="../database/index.html">database</a>.<a href="../database/index.html#DBConf">DBConf</a>
 }
 </pre>
@@ -246,7 +250,7 @@ Config is a parent object for all the different configuration parts
 
 			
 				
-				<h3 id="NewConfig">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=695:738#L27">NewConfig</a>
+				<h3 id="NewConfig">func <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=718:761#L28">NewConfig</a>
 					<a class="permalink" href="index.html#NewConfig">&#xb6;</a>
 					
 					
@@ -263,7 +267,7 @@ the viper library.
 
 			
 				
-				<h3 id="Config.configArchive">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5148:5180#L187">configArchive</a>
+				<h3 id="Config.configArchive">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5617:5649#L203">configArchive</a>
 					<a class="permalink" href="index.html#Config.configArchive">&#xb6;</a>
 					
 					
@@ -278,7 +282,22 @@ configArchive provides configuration for the archive storage
 				
 			
 				
-				<h3 id="Config.configBroker">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5756:5793#L209">configBroker</a>
+				<h3 id="Config.configBackup">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=6225:6256#L225">configBackup</a>
+					<a class="permalink" href="index.html#Config.configBackup">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (c *<a href="index.html#Config">Config</a>) configBackup()</pre>
+				<p>
+configBackup provides configuration for the backup storage
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="Config.configBroker">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=6530:6567#L236">configBroker</a>
 					<a class="permalink" href="index.html#Config.configBroker">&#xb6;</a>
 					
 					
@@ -293,7 +312,7 @@ configBroker provides configuration for the message broker
 				
 			
 				
-				<h3 id="Config.configDatabase">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=7616:7655#L270">configDatabase</a>
+				<h3 id="Config.configDatabase">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=8390:8429#L297">configDatabase</a>
 					<a class="permalink" href="index.html#Config.configDatabase">&#xb6;</a>
 					
 					
@@ -308,7 +327,7 @@ configDatabase provides configuration for the database
 				
 			
 				
-				<h3 id="Config.configInbox">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5459:5489#L198">configInbox</a>
+				<h3 id="Config.configInbox">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=5928:5958#L214">configInbox</a>
 					<a class="permalink" href="index.html#Config.configInbox">&#xb6;</a>
 					
 					
@@ -323,7 +342,7 @@ configInbox provides configuration for the inbox storage
 				
 			
 				
-				<h3 id="Config.configSchemas">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=3990:4022#L143">configSchemas</a>
+				<h3 id="Config.configSchemas">func (*Config) <a href="http://localhost:6060/src/sda-pipeline/internal/config/config.go?s=4459:4491#L159">configSchemas</a>
 					<a class="permalink" href="index.html#Config.configSchemas">&#xb6;</a>
 					
 					
@@ -350,7 +369,7 @@ the type IDs of connection Federated EGA or isolate (stand-alone)
 
 
 <div id="footer">
-Build version go1.15.5.<br>
+Build version go1.15.6.<br>
 Except as <a href="https://developers.google.com/site-policies#restrictions">noted</a>,
 the content of this page is licensed under the
 Creative Commons Attribution 3.0 License,

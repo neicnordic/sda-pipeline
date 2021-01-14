@@ -146,15 +146,91 @@ func main() {
 				continue
 			}
 
-			log.Info("Sync initiated")
-			file, err := archive.NewFileReader(filePath)
+			log.Debug("Sync initiated")
+
+			// Get size on disk, will also give some time for the file to
+			// appear if it has not already
+
+			diskFileSize, err := archive.GetFileSize(filePath)
+
 			if err != nil {
-				log.Errorf("Failed to open archived file "+
+				log.Errorf("Failed to get size info for archived file %s "+
 					"(corr-id: %s, "+
 					"filepath: %s, "+
 					"user: %s, "+
 					"accessionid: %s, "+
 					"decryptedChecksums: %v, error: %v)",
+					filePath,
+					delivered.CorrelationId,
+					message.Filepath,
+					message.User,
+					message.AccessionID,
+					message.DecryptedChecksums,
+					err)
+
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorf("Failed to NAck because of GetFileSize failed "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						e)
+				}
+
+				continue
+			}
+
+			if diskFileSize != int64(fileSize) {
+				log.Errorf("File size in archive does not match database for archive file %s "+
+					"- archive size is %d, database has %d "+
+					"(corr-id: %s, "+
+					"filepath: %s, "+
+					"user: %s, "+
+					"accessionid: %s, "+
+					"decryptedChecksums: %v, error: %v)",
+					filePath,
+					diskFileSize,
+					fileSize,
+					delivered.CorrelationId,
+					message.Filepath,
+					message.User,
+					message.AccessionID,
+					message.DecryptedChecksums,
+					err)
+
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorf("Failed to NAck because of file size differences failed "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						e)
+				}
+				continue
+
+			}
+
+			file, err := archive.NewFileReader(filePath)
+			if err != nil {
+				log.Errorf("Failed to open archived file %s "+
+					"(corr-id: %s, "+
+					"filepath: %s, "+
+					"user: %s, "+
+					"accessionid: %s, "+
+					"decryptedChecksums: %v, error: %v)",
+					filePath,
 					delivered.CorrelationId,
 					message.Filepath,
 					message.User,
@@ -182,12 +258,13 @@ func main() {
 
 			dest, err := backup.NewFileWriter(filePath)
 			if err != nil {
-				log.Errorf("Failed to write archived file "+
+				log.Errorf("Failed to open backup file %s for writing "+
 					"(corr-id: %s, "+
 					"filepath: %s, "+
 					"user: %s, "+
 					"accessionid: %s, "+
 					"decryptedChecksums: %v, error: %v)",
+					filePath,
 					delivered.CorrelationId,
 					message.Filepath,
 					message.User,
@@ -250,12 +327,14 @@ func main() {
 			file.Close()
 			dest.Close()
 
-			log.Infof("Synced file "+
+			log.Infof("Synced file %s (%d bytes) from archive to backup "+
 				"(corr-id: %s, "+
 				"filepath: %s, "+
 				"user: %s, "+
 				"accessionid: %s, "+
 				"decryptedChecksums: %v)",
+				filePath,
+				fileSize,
 				delivered.CorrelationId,
 				message.Filepath,
 				message.User,

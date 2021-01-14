@@ -89,7 +89,7 @@ func main() {
 			}
 
 			routing := map[string]string{
-				msgAccession: "accessionIDs",
+				msgAccession: conf.Route.RouteAccessionIDs,
 				msgIngest:    "ingest",
 				msgMapping:   "mappings",
 			}
@@ -97,6 +97,10 @@ func main() {
 			routingKey := routing[msgType]
 
 			if routingKey == "" {
+			log.Infof("Skipping sending for message with no route"+
+				"(corr-id: %s)",
+				delivered.CorrelationId,
+		)
 				continue
 			}
 

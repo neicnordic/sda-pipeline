@@ -24,6 +24,10 @@ const S3 = "s3"
 
 var requiredConfVars []string
 
+type RouteConfig struct {
+	RouteAccessionIDs string
+}
+
 // Config is a parent object for all the different configuration parts
 type Config struct {
 	Archive  storage.Conf
@@ -31,6 +35,7 @@ type Config struct {
 	Inbox    storage.Conf
 	Backup   storage.Conf
 	Database database.DBConf
+	Route 	 RouteConfig
 }
 
 // NewConfig initializes and parses the config file and/or environment using
@@ -129,6 +134,7 @@ func NewConfig(app string) (*Config, error) {
 		}
 		return c, nil
 	case "intercept":
+		c.configIntercept()
 		return c, nil
 	case "verify":
 		c.configArchive()
@@ -301,6 +307,15 @@ func (c *Config) configBroker() error {
 	c.Broker = broker
 
 	return nil
+}
+
+// configIntercept provides configuration for intercept
+func (c *Config) configIntercept() {
+	r := RouteConfig{}
+
+	viper.SetDefault("route.accessionids", "accessionIDs")
+	r.RouteAccessionIDs = viper.GetString("route.accessionids")
+	c.Route = r
 }
 
 // configDatabase provides configuration for the database

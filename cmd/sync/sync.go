@@ -16,12 +16,20 @@ import (
 )
 
 // Sync struct that holds the json message data
-type sync struct {
-	Type               string      `json:"type"`
+type common struct {
 	User               string      `json:"user"`
 	Filepath           string      `json:"filepath"`
 	AccessionID        string      `json:"accession_id"`
 	DecryptedChecksums []checksums `json:"decrypted_checksums"`
+}
+
+type accession struct {
+	common
+	Type string `json:"type"`
+}
+
+type completion struct {
+	common
 }
 
 // Checksums is struct for the checksum type and value
@@ -65,7 +73,7 @@ func main() {
 	forever := make(chan bool)
 
 	log.Info("Starting sync service")
-	var message sync
+	var message common
 
 	go func() {
 		messages, err := mq.GetMessages(conf.Broker.Queue)
@@ -73,6 +81,9 @@ func main() {
 			log.Fatal(err)
 		}
 		for delivered := range messages {
+			var accessionMessage accession
+			var completionMessage completion
+
 			log.Debugf("Received a message (corr-id: %s, message: %s)",
 				delivered.CorrelationId,
 				delivered.Body)
@@ -80,14 +91,25 @@ func main() {
 			err := mq.ValidateJSON(&delivered,
 				"ingestion-accession",
 				delivered.Body,
-				&message)
+				&accessionMessage)
 
 			if err != nil {
-				log.Errorf("Validation of incoming message failed "+
-					"(corr-id: %s, error: %v)",
-					delivered.CorrelationId,
-					err)
-				continue
+				err := mq.ValidateJSON(&delivered,
+					"ingestion-completion",
+					delivered.Body,
+					&completionMessage)
+
+				if err != nil {
+					log.Errorf("Validation of incoming message failed "+
+						"(corr-id: %s, error: %v)",
+						delivered.CorrelationId,
+						err)
+					continue
+				} else {
+					message = completionMessage.common
+				}
+			} else {
+				message = accessionMessage.common
 			}
 
 			// we unmarshal the message in the validation step so this is safe to do

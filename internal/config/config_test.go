@@ -465,6 +465,16 @@ func (suite *TestSuite) TestInterceptConfiguration() {
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), config)
 }
+func (suite *TestSuite) TestInterceptDefault() {
+	config, err := NewConfig("intercept")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), config.Route.RouteAccessionIDs, "accessionIDs")
+	viper.Set("route.accessionids", "testvalue")
+	config, err = NewConfig("intercept")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), config.Route.RouteAccessionIDs, "testvalue")
+}
+
 func (suite *TestSuite) TestDefaultLogLevel() {
 	viper.Set("log.level", "test")
 	config, err := NewConfig("test")

@@ -60,6 +60,7 @@ services:
       - ./:/dev_utils/
       - certs:/dev_utils/certs
       - archive:/tmp
+      - backup:/backup
     mem_limit: 64m
     restart: always
   mapper:
@@ -93,3 +94,4 @@ services:
 volumes:
      archive:
      certs:
+     backup:

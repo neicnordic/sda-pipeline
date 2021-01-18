@@ -17,7 +17,7 @@ import (
 
 // Sync struct that holds the json message data
 type sync struct {
-	Type               string      `json:"type"`
+	Type               string      `json:"type,omitempty"`
 	User               string      `json:"user"`
 	Filepath           string      `json:"filepath"`
 	AccessionID        string      `json:"accession_id"`
@@ -66,6 +66,11 @@ func main() {
 
 	log.Info("Starting sync service")
 	var message sync
+	jsonSchema := "ingestion-completion"
+
+	if (conf.Broker.Queue == "accessionIDs") {
+		jsonSchema = "ingestion-accession"
+	}
 
 	go func() {
 		messages, err := mq.GetMessages(conf.Broker.Queue)
@@ -78,7 +83,7 @@ func main() {
 				delivered.Body)
 
 			err := mq.ValidateJSON(&delivered,
-				"ingestion-accession",
+				jsonSchema,
 				delivered.Body,
 				&message)
 

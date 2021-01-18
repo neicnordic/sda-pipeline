@@ -421,7 +421,7 @@ func (dbs *SQLdb) getArchived(user, filepath, checksum string) (string, int, err
 
 	db := dbs.DB
 	const query = "SELECT archive_path, archive_filesize from local_ega.files WHERE " +
-		"elixir_id = $1 and inbox_path = $2 and decrypted_file_checksum = $3 and status = 'COMPLETED';"
+		"elixir_id = $1 and inbox_path = $2 and decrypted_file_checksum = $3 and status in ('COMPLETED', 'READY');"
 
 	var filePath string
 	var fileSize int

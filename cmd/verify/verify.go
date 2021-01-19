@@ -324,7 +324,7 @@ func main() {
 						message.ArchivePath,
 						message.EncryptedChecksums,
 						message.ReVerify,
-						err)
+						e)
 
 					continue
 					// this should really be hadled by the DB retry mechanism

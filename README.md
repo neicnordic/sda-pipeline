@@ -30,7 +30,8 @@ For local development/testing see instructions in [dev_utils](/dev_utils) folder
 | ingest        | The ingest service accepts messages for files uploaded to the inbox, registers the files in the database with their headers, and stores them header-stripped in the archive storage. |
 | verify        | The verify service reads and decrypts ingested files from the archive storage and sends accession requests. |
 | finalize      | The finalize command accepts messages with _accessionIDs_ for ingested files and registers them in the database. |
-| mapper        | The mapper service register mapping of accessionIDs (IDs for files) to datasetIDs. |
+| mapper        | The mapper service registers the mapping of _accessionIDs_ (IDs for files) to _datasetIDs_. |
+| sync          | The sync service accepts messages with _accessionIDs_ for ingested files and copies them to the second/backup storage. |
 
 ## Internal Components
 

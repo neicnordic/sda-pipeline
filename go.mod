@@ -6,7 +6,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/aws/aws-sdk-go v1.36.28
 	github.com/elixir-oslo/crypt4gh v1.3.0
-	github.com/google/uuid v1.1.5
+	github.com/google/uuid v1.2.0
 	github.com/johannesboyne/gofakes3 v0.0.0-20200716060623-6b2b4cb092cc
 	github.com/lib/pq v1.9.0
 	github.com/pkg/errors v0.9.1

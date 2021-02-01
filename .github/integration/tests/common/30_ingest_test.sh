@@ -12,6 +12,12 @@ docker run --rm --name client --network dev_utils_default \
 neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 -t -c "SELECT id, status, stable_id, archive_path FROM local_ega.files ORDER BY id DESC"
 
+
+# "Disable" old files to not confuse later tests.
+docker run --rm --name client --network dev_utils_default \
+neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
+-t -A -c "UPDATE local_ega.files SET status='DISABLED' where status='READY';"
+
 cd dev_utils
 
 count=1
@@ -204,6 +210,26 @@ for file in dummy_data.c4gh largefile.c4gh; do
 
     dataset=$(printf "EGAD%011d" "$count" )
 
+   # Check that it showed up in the database as well
+
+   RETRY_TIMES=0
+   statusindb=''
+
+   until [ -n "$statusindb" ]; do
+       statusindb=$(docker run --rm --name client --network dev_utils_default \
+				neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
+				-t -A -c "SELECT id FROM local_ega.files where stable_id='$access' AND status='READY';")
+       sleep 3
+       RETRY_TIMES=$((RETRY_TIMES+1))
+
+       if [ "$RETRY_TIMES" -eq 150 ]; then
+	   echo "Timed out waiting correct status in database, aborting"
+	   exit 1
+       fi
+   done
+
+
+
    # Map dataset ids
    curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
    -H 'Content-Type: application/json;charset=UTF-8' \
@@ -225,7 +251,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
                            }'| sed -e "s/DATASET/$dataset/" -e "s/ACCESSIONID/$access/" -e "s/CORRID/$count/")"
 
    RETRY_TIMES=0
-   dbcheck=firstrun
+   dbcheck=''
 
    until [ "${#dbcheck}" -ne 0 ]; do
 

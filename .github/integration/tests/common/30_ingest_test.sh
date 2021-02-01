@@ -225,7 +225,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
                            }'| sed -e "s/DATASET/$dataset/" -e "s/ACCESSIONID/$access/" -e "s/CORRID/$count/")"
 
    RETRY_TIMES=0
-   dbcheck=firstrun
+   dbcheck=''
 
    until [ "${#dbcheck}" -ne 0 ]; do
 

@@ -278,11 +278,7 @@ func (c *Config) configBroker() error {
 	if viper.IsSet("broker.ssl") {
 		broker.Ssl = viper.GetBool("broker.ssl")
 	}
-	if viper.IsSet("broker.insecureSkipVerify") {
-		broker.InsecureSkipVerify = viper.GetBool("broker.insecureSkipVerify")
-	} else {
-		broker.InsecureSkipVerify = false
-	}
+
 	if viper.IsSet("broker.verifyPeer") {
 		broker.VerifyPeer = viper.GetBool("broker.verifyPeer")
 		if broker.VerifyPeer {

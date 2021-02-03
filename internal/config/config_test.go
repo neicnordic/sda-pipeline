@@ -107,6 +107,41 @@ func (suite *TestSuite) TestMissingRequiredArchivePosixConfVar() {
 	}
 }
 
+func (suite *TestSuite) TestMissingRequiredBackupS3ConfVar() {
+	viper.Set("backup.type", S3)
+	viper.Set("backup.url", "test")
+	viper.Set("backup.accesskey", "test")
+	viper.Set("backup.secretkey", "test")
+	viper.Set("backup.bucket", "test")
+	for _, requiredConfVar := range append([]string{"backup.url", "backup.accesskey", "backup.secretkey", "backup.bucket"}, requiredConfVars...) {
+		requiredConfVarValue := viper.Get(requiredConfVar)
+		viper.Set(requiredConfVar, nil)
+		expectedError := fmt.Errorf("%s not set", requiredConfVar)
+		config, err := NewConfig("test")
+		assert.Nil(suite.T(), config)
+		if assert.Error(suite.T(), err) {
+			assert.Equal(suite.T(), expectedError, err)
+		}
+		viper.Set(requiredConfVar, requiredConfVarValue)
+	}
+}
+
+func (suite *TestSuite) TestMissingRequiredBackupPosixConfVar() {
+	viper.Set("backup.type", POSIX)
+	viper.Set("backup.location", "test")
+	for _, requiredConfVar := range append([]string{"backup.location"}, requiredConfVars...) {
+		requiredConfVarValue := viper.Get(requiredConfVar)
+		viper.Set(requiredConfVar, nil)
+		expectedError := fmt.Errorf("%s not set", requiredConfVar)
+		config, err := NewConfig("test")
+		assert.Nil(suite.T(), config)
+		if assert.Error(suite.T(), err) {
+			assert.Equal(suite.T(), expectedError, err)
+		}
+		viper.Set(requiredConfVar, requiredConfVarValue)
+	}
+}
+
 func (suite *TestSuite) TestMissingRequiredInboxS3ConfVar() {
 	viper.Set("inbox.type", S3)
 	viper.Set("inbox.url", "test")
@@ -186,6 +221,52 @@ func (suite *TestSuite) TestConfigS3Storage() {
 	assert.Equal(suite.T(), "test", config.Archive.S3.Region)
 	assert.Equal(suite.T(), 128974848, config.Archive.S3.Chunksize)
 	assert.Equal(suite.T(), "test", config.Archive.S3.Cacert)
+}
+
+func (suite *TestSuite) TestConfigSyncS3Storage() {
+	viper.Set("archive.type", S3)
+	viper.Set("archive.url", "test")
+	viper.Set("archive.accesskey", "test")
+	viper.Set("archive.secretkey", "test")
+	viper.Set("archive.bucket", "test")
+	viper.Set("archive.port", 123)
+	viper.Set("archive.region", "test")
+	viper.Set("archive.chunksize", 123)
+	viper.Set("archive.cacert", "test")
+	viper.Set("backup.type", S3)
+	viper.Set("backup.url", "test")
+	viper.Set("backup.accesskey", "test")
+	viper.Set("backup.secretkey", "test")
+	viper.Set("backup.bucket", "test")
+	viper.Set("backup.port", 123)
+	viper.Set("backup.region", "test")
+	viper.Set("backup.chunksize", 123)
+	viper.Set("backup.cacert", "test")
+	config, err := NewConfig("sync")
+	assert.NotNil(suite.T(), config)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config.Archive)
+	assert.NotNil(suite.T(), config.Archive.S3)
+	assert.Equal(suite.T(), S3, config.Archive.Type)
+	assert.Equal(suite.T(), "test", config.Archive.S3.URL)
+	assert.Equal(suite.T(), "test", config.Archive.S3.AccessKey)
+	assert.Equal(suite.T(), "test", config.Archive.S3.SecretKey)
+	assert.Equal(suite.T(), "test", config.Archive.S3.Bucket)
+	assert.Equal(suite.T(), 123, config.Archive.S3.Port)
+	assert.Equal(suite.T(), "test", config.Archive.S3.Region)
+	assert.Equal(suite.T(), 128974848, config.Archive.S3.Chunksize)
+	assert.Equal(suite.T(), "test", config.Archive.S3.Cacert)
+	assert.NotNil(suite.T(), config.Backup)
+	assert.NotNil(suite.T(), config.Backup.S3)
+	assert.Equal(suite.T(), S3, config.Backup.Type)
+	assert.Equal(suite.T(), "test", config.Backup.S3.URL)
+	assert.Equal(suite.T(), "test", config.Backup.S3.AccessKey)
+	assert.Equal(suite.T(), "test", config.Backup.S3.SecretKey)
+	assert.Equal(suite.T(), "test", config.Backup.S3.Bucket)
+	assert.Equal(suite.T(), 123, config.Backup.S3.Port)
+	assert.Equal(suite.T(), "test", config.Backup.S3.Region)
+	assert.Equal(suite.T(), 128974848, config.Backup.S3.Chunksize)
+	assert.Equal(suite.T(), "test", config.Backup.S3.Cacert)
 }
 
 func (suite *TestSuite) TestConfigBroker() {

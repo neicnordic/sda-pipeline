@@ -592,3 +592,57 @@ func (suite *TestSuite) TestGetC4GHKey_passError() {
 	assert.Nil(suite.T(), key)
 	assert.EqualError(suite.T(), err, "chacha20poly1305: message authentication failed")
 }
+
+func (suite *TestSuite) TestSyncConfiguration() {
+	viper.Set("archive.location", "test")
+	viper.Set("backup.location", "test")
+	config, err := NewConfig("sync")
+	assert.NotNil(suite.T(), config)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config.Broker)
+	assert.Equal(suite.T(), "test", config.Broker.Host)
+	assert.Equal(suite.T(), 123, config.Broker.Port)
+	assert.Equal(suite.T(), "test", config.Broker.User)
+	assert.Equal(suite.T(), "test", config.Broker.Password)
+	assert.Equal(suite.T(), "test", config.Broker.Queue)
+	assert.Equal(suite.T(), "test", config.Broker.RoutingKey)
+	assert.NotNil(suite.T(), config.Database)
+	assert.Equal(suite.T(), "test", config.Database.Host)
+	assert.Equal(suite.T(), 123, config.Database.Port)
+	assert.Equal(suite.T(), "test", config.Database.User)
+	assert.Equal(suite.T(), "test", config.Database.Password)
+	assert.Equal(suite.T(), "test", config.Database.Database)
+	assert.NotNil(suite.T(), config.Archive)
+	assert.NotNil(suite.T(), config.Archive.Posix)
+	assert.Equal(suite.T(), "test", config.Archive.Posix.Location)
+	assert.NotNil(suite.T(), config.Backup)
+	assert.NotNil(suite.T(), config.Backup.Posix)
+	assert.Equal(suite.T(), "test", config.Backup.Posix.Location)
+
+	// Clear variables
+	viper.Reset()
+	requiredConfVars = defaultRequiredConfVars
+
+	// At this point we should fail because we lack configuration
+	config, err = NewConfig("sync")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	viper.Set("broker.host", "test")
+	viper.Set("broker.port", 123)
+	viper.Set("broker.user", "test")
+	viper.Set("broker.password", "test")
+	viper.Set("broker.queue", "test")
+	viper.Set("broker.routingkey", "test")
+
+	// We should still fail here
+	config, err = NewConfig("sync")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	suite.SetupTest()
+	// Now we should have enough
+	config, err = NewConfig("sync")
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config)
+}

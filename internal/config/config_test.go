@@ -563,6 +563,14 @@ func (suite *TestSuite) TestConfigPath() {
 	assert.Equal(suite.T(), absPath, viper.ConfigFileUsed())
 }
 
+func (suite *TestSuite) TestGetC4GHKey() {
+	viper.Set("c4gh.filepath", "../../dev_utils/c4gh.sec.pem")
+	viper.Set("c4gh.passphrase", "oaagCP1YgAZeEyl2eJAkHv9lkcWXWFgm")
+	byte, err := GetC4GHKey()
+	assert.NotNil(suite.T(), byte)
+	assert.NoError(suite.T(), err)
+}
+
 func (suite *TestSuite) TestGetC4GHKey_keyError() {
 
 	viper.Set("c4gh.filepath", "/doesnotexist")

@@ -107,6 +107,41 @@ func (suite *TestSuite) TestMissingRequiredArchivePosixConfVar() {
 	}
 }
 
+func (suite *TestSuite) TestMissingRequiredBackupS3ConfVar() {
+	viper.Set("backup.type", S3)
+	viper.Set("backup.url", "test")
+	viper.Set("backup.accesskey", "test")
+	viper.Set("backup.secretkey", "test")
+	viper.Set("backup.bucket", "test")
+	for _, requiredConfVar := range append([]string{"backup.url", "backup.accesskey", "backup.secretkey", "backup.bucket"}, requiredConfVars...) {
+		requiredConfVarValue := viper.Get(requiredConfVar)
+		viper.Set(requiredConfVar, nil)
+		expectedError := fmt.Errorf("%s not set", requiredConfVar)
+		config, err := NewConfig("test")
+		assert.Nil(suite.T(), config)
+		if assert.Error(suite.T(), err) {
+			assert.Equal(suite.T(), expectedError, err)
+		}
+		viper.Set(requiredConfVar, requiredConfVarValue)
+	}
+}
+
+func (suite *TestSuite) TestMissingRequiredBackupPosixConfVar() {
+	viper.Set("backup.type", POSIX)
+	viper.Set("backup.location", "test")
+	for _, requiredConfVar := range append([]string{"backup.location"}, requiredConfVars...) {
+		requiredConfVarValue := viper.Get(requiredConfVar)
+		viper.Set(requiredConfVar, nil)
+		expectedError := fmt.Errorf("%s not set", requiredConfVar)
+		config, err := NewConfig("test")
+		assert.Nil(suite.T(), config)
+		if assert.Error(suite.T(), err) {
+			assert.Equal(suite.T(), expectedError, err)
+		}
+		viper.Set(requiredConfVar, requiredConfVarValue)
+	}
+}
+
 func (suite *TestSuite) TestMissingRequiredInboxS3ConfVar() {
 	viper.Set("inbox.type", S3)
 	viper.Set("inbox.url", "test")
@@ -188,6 +223,52 @@ func (suite *TestSuite) TestConfigS3Storage() {
 	assert.Equal(suite.T(), "test", config.Archive.S3.Cacert)
 }
 
+func (suite *TestSuite) TestConfigSyncS3Storage() {
+	viper.Set("archive.type", S3)
+	viper.Set("archive.url", "test")
+	viper.Set("archive.accesskey", "test")
+	viper.Set("archive.secretkey", "test")
+	viper.Set("archive.bucket", "test")
+	viper.Set("archive.port", 123)
+	viper.Set("archive.region", "test")
+	viper.Set("archive.chunksize", 123)
+	viper.Set("archive.cacert", "test")
+	viper.Set("backup.type", S3)
+	viper.Set("backup.url", "test")
+	viper.Set("backup.accesskey", "test")
+	viper.Set("backup.secretkey", "test")
+	viper.Set("backup.bucket", "test")
+	viper.Set("backup.port", 123)
+	viper.Set("backup.region", "test")
+	viper.Set("backup.chunksize", 123)
+	viper.Set("backup.cacert", "test")
+	config, err := NewConfig("sync")
+	assert.NotNil(suite.T(), config)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config.Archive)
+	assert.NotNil(suite.T(), config.Archive.S3)
+	assert.Equal(suite.T(), S3, config.Archive.Type)
+	assert.Equal(suite.T(), "test", config.Archive.S3.URL)
+	assert.Equal(suite.T(), "test", config.Archive.S3.AccessKey)
+	assert.Equal(suite.T(), "test", config.Archive.S3.SecretKey)
+	assert.Equal(suite.T(), "test", config.Archive.S3.Bucket)
+	assert.Equal(suite.T(), 123, config.Archive.S3.Port)
+	assert.Equal(suite.T(), "test", config.Archive.S3.Region)
+	assert.Equal(suite.T(), 128974848, config.Archive.S3.Chunksize)
+	assert.Equal(suite.T(), "test", config.Archive.S3.Cacert)
+	assert.NotNil(suite.T(), config.Backup)
+	assert.NotNil(suite.T(), config.Backup.S3)
+	assert.Equal(suite.T(), S3, config.Backup.Type)
+	assert.Equal(suite.T(), "test", config.Backup.S3.URL)
+	assert.Equal(suite.T(), "test", config.Backup.S3.AccessKey)
+	assert.Equal(suite.T(), "test", config.Backup.S3.SecretKey)
+	assert.Equal(suite.T(), "test", config.Backup.S3.Bucket)
+	assert.Equal(suite.T(), 123, config.Backup.S3.Port)
+	assert.Equal(suite.T(), "test", config.Backup.S3.Region)
+	assert.Equal(suite.T(), 128974848, config.Backup.S3.Chunksize)
+	assert.Equal(suite.T(), "test", config.Backup.S3.Cacert)
+}
+
 func (suite *TestSuite) TestConfigBroker() {
 	viper.Set("broker.durable", true)
 	viper.Set("broker.routingerror", "test")
@@ -209,9 +290,12 @@ func (suite *TestSuite) TestConfigBroker() {
 	assert.Equal(suite.T(), "test", config.Broker.ClientCert)
 	assert.Equal(suite.T(), "test", config.Broker.ClientKey)
 	assert.Equal(suite.T(), "test", config.Broker.CACert)
+	assert.Equal(suite.T(), "file://schemas/federated/", config.Broker.SchemasPath)
+	viper.Set("schema.type", "standalone")
 	viper.Set("broker.vhost", "/test")
 	config, _ = NewConfig("ingest")
 	assert.Equal(suite.T(), "/test", config.Broker.Vhost)
+	assert.Equal(suite.T(), "file://schemas/isolated/", config.Broker.SchemasPath)
 	viper.Set("broker.vhost", "")
 	config, _ = NewConfig("ingest")
 	assert.Equal(suite.T(), "/", config.Broker.Vhost)
@@ -482,6 +566,14 @@ func (suite *TestSuite) TestConfigPath() {
 	assert.Equal(suite.T(), absPath, viper.ConfigFileUsed())
 }
 
+func (suite *TestSuite) TestGetC4GHKey() {
+	viper.Set("c4gh.filepath", "../../dev_utils/c4gh.sec.pem")
+	viper.Set("c4gh.passphrase", "oaagCP1YgAZeEyl2eJAkHv9lkcWXWFgm")
+	byte, err := GetC4GHKey()
+	assert.NotNil(suite.T(), byte)
+	assert.NoError(suite.T(), err)
+}
+
 func (suite *TestSuite) TestGetC4GHKey_keyError() {
 
 	viper.Set("c4gh.filepath", "/doesnotexist")
@@ -499,4 +591,58 @@ func (suite *TestSuite) TestGetC4GHKey_passError() {
 	key, err := GetC4GHKey()
 	assert.Nil(suite.T(), key)
 	assert.EqualError(suite.T(), err, "chacha20poly1305: message authentication failed")
+}
+
+func (suite *TestSuite) TestSyncConfiguration() {
+	viper.Set("archive.location", "test")
+	viper.Set("backup.location", "test")
+	config, err := NewConfig("sync")
+	assert.NotNil(suite.T(), config)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config.Broker)
+	assert.Equal(suite.T(), "test", config.Broker.Host)
+	assert.Equal(suite.T(), 123, config.Broker.Port)
+	assert.Equal(suite.T(), "test", config.Broker.User)
+	assert.Equal(suite.T(), "test", config.Broker.Password)
+	assert.Equal(suite.T(), "test", config.Broker.Queue)
+	assert.Equal(suite.T(), "test", config.Broker.RoutingKey)
+	assert.NotNil(suite.T(), config.Database)
+	assert.Equal(suite.T(), "test", config.Database.Host)
+	assert.Equal(suite.T(), 123, config.Database.Port)
+	assert.Equal(suite.T(), "test", config.Database.User)
+	assert.Equal(suite.T(), "test", config.Database.Password)
+	assert.Equal(suite.T(), "test", config.Database.Database)
+	assert.NotNil(suite.T(), config.Archive)
+	assert.NotNil(suite.T(), config.Archive.Posix)
+	assert.Equal(suite.T(), "test", config.Archive.Posix.Location)
+	assert.NotNil(suite.T(), config.Backup)
+	assert.NotNil(suite.T(), config.Backup.Posix)
+	assert.Equal(suite.T(), "test", config.Backup.Posix.Location)
+
+	// Clear variables
+	viper.Reset()
+	requiredConfVars = defaultRequiredConfVars
+
+	// At this point we should fail because we lack configuration
+	config, err = NewConfig("sync")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	viper.Set("broker.host", "test")
+	viper.Set("broker.port", 123)
+	viper.Set("broker.user", "test")
+	viper.Set("broker.password", "test")
+	viper.Set("broker.queue", "test")
+	viper.Set("broker.routingkey", "test")
+
+	// We should still fail here
+	config, err = NewConfig("sync")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	suite.SetupTest()
+	// Now we should have enough
+	config, err = NewConfig("sync")
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config)
 }

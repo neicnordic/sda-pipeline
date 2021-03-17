@@ -85,14 +85,17 @@ type pipe struct {
 	w *io.PipeWriter
 }
 
+//nolint:deadcode,unused
 func (p pipe) Read(b []byte) (int, error) {
 	return p.r.Read(b)
 }
 
+//nolint:deadcode,unused
 func (p pipe) Write(b []byte) (int, error) {
 	return p.w.Write(b)
 }
 
+//nolint:deadcode,unused
 func (p pipe) Close() error {
 	p.r.Close()
 	p.w.Close()
@@ -106,6 +109,7 @@ type logIO struct {
 	proxy  io.ReadWriteCloser
 }
 
+//nolint:deadcode,unused
 func (log *logIO) Read(p []byte) (n int, err error) {
 	log.t.Logf("%s reading %d\n", log.prefix, len(p))
 	n, err = log.proxy.Read(p)
@@ -118,6 +122,7 @@ func (log *logIO) Read(p []byte) (n int, err error) {
 	return
 }
 
+//nolint:deadcode,unused
 func (log *logIO) Write(p []byte) (n int, err error) {
 	log.t.Logf("%s writing %d\n", log.prefix, len(p))
 	n, err = log.proxy.Write(p)
@@ -130,6 +135,7 @@ func (log *logIO) Write(p []byte) (n int, err error) {
 	return
 }
 
+//nolint:deadcode,unused
 func (log *logIO) Close() (err error) {
 	err = log.proxy.Close()
 	if err != nil {

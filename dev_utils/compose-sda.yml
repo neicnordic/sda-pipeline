@@ -90,6 +90,20 @@ services:
       - certs:/dev_utils/certs
     mem_limit: 64m
     restart: always
+  orchestrate:
+    command: sda-orchestrate
+    container_name: orchestrate
+    depends_on: 
+      - certfixer
+    env_file: ./env.orchestrate
+    image: neicnordic/sda-pipeline:latest
+    
+    volumes:
+      - ./config.yaml:/config.yaml
+      - ./:/dev_utils/
+      - certs:/dev_utils/certs
+    mem_limit: 64m
+    restart: always
 
 volumes:
      archive:

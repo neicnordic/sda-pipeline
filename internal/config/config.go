@@ -60,8 +60,13 @@ func NewConfig(app string) (*Config, error) {
 	}
 
 	switch app {
+	case "orchestrate":
+		// Orchestrate requires only broker connection and a series of queues
+		requiredConfVars = []string{
+			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue",
+		}
 	case "intercept":
-		// Intercept does not require these extra settings
+		// Intercept requires only broker connection
 		requiredConfVars = []string{
 			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue",
 		}
@@ -158,6 +163,8 @@ func NewConfig(app string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+		return c, nil
+	case "orchestrate":
 		return c, nil
 	}
 

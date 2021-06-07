@@ -11,7 +11,6 @@ updates:
       - "pontus"
       - "jonandernovella"
       - "blankdots"
-      - "dtitov"
   - package-ecosystem: gomod
     directory: "/"
     schedule:

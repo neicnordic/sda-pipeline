@@ -8,8 +8,6 @@ updates:
     reviewers:
       - "dbampalikis"
       - "jbygdell"
-      - "pontus"
-      - "jonandernovella"
       - "blankdots"
   - package-ecosystem: gomod
     directory: "/"

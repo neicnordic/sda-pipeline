@@ -17,8 +17,6 @@ updates:
     reviewers:
       - "dbampalikis"
       - "jbygdell"
-      - "pontus"
-      - "jonandernovella"
       - "blankdots"
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -28,6 +26,4 @@ updates:
     reviewers:
       - "dbampalikis"
       - "jbygdell"
-      - "pontus"
-      - "jonandernovella"
       - "blankdots"

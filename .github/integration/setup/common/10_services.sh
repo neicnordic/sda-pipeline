@@ -21,6 +21,7 @@ for p in $tostart; do
        RETRY_TIMES=$((RETRY_TIMES+1));
        if [ "$RETRY_TIMES" -eq 30 ]; then
 	   # Time out
+      docker logs $p
 	   exit 1;
        fi
        sleep 10
@@ -35,8 +36,10 @@ for p in ingest verify finalize mapper intercept; do
     do echo "waiting for $p to become ready"
        RETRY_TIMES=$((RETRY_TIMES+1));
        if [ "$RETRY_TIMES" -eq 30 ]; then
-	   # Time out
-	   exit 1;
+      # Time out
+      docker logs $p
+      docker logs mq
+      exit 1;
        fi
        sleep 10
     done

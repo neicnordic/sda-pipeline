@@ -29,6 +29,12 @@ jobs:
               dep ensure
           fi
 
+      - name: Create certificates
+        run: |
+          cd dev_utils
+          bash ./make_certs.sh
+          cd ..
+
       - name: Test
         run: go test -v -coverprofile=coverage.txt -covermode=atomic ./...
 

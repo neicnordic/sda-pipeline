@@ -31,6 +31,7 @@ services:
      - MQ_USER=test
      - MQ_PASSWORD_HASH=C5ufXbYlww6ZBcEqDUB04YdUptO81s+ozI3Ll5GCHTnv8NAm
      - MQ_VHOST=test
+     - MQ_VERIFY=verify_none
     ports:
       - "15672:15672"
       - "5672:5672"

@@ -6,6 +6,8 @@ docker build -t neicnordic/sda-pipeline:latest . || exit 1
 
 cd dev_utils || exit 1
 
+bash ./make_certs.sh
+
 tostart="mq db"
 
 if [ "$STORAGETYPE" = s3 ]; then

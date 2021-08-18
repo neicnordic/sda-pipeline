@@ -7,7 +7,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/neicnordic/sda-pipeline)](https://goreportcard.com/report/github.com/neicnordic/sda-pipeline)
 [![Code Coverage](https://img.shields.io/coveralls/github/neicnordic/sda-pipeline)](https://shields.io)
 
-[![DeepSource](https://static.deepsource.io/deepsource-badge-light.svg)](https://deepsource.io/gh/neicnordic/sda-pipeline/?ref=repository-badge)
+[![DeepSource](https://static.deepsource.io/deepsource-badge-light.svg)](https://deepsource.io/gh/neicnordic/sda-pipeline/?ref=repository-badge) [![Join the chat at https://gitter.im/neicnordic/sda-pipeline](https://badges.gitter.im/neicnordic/sda-pipeline.svg)](https://gitter.im/neicnordic/sda-pipeline?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 
 `sda-pipeline` is part of [NeIC Sensitive Data Archive](https://neic-sda.readthedocs.io/en/latest/) and implements the components required for data submission.

@@ -283,7 +283,7 @@ func (c *Config) configBroker() error {
 	} else {
 		broker.InsecureSkipVerify = false
 	}
-	log.Debugf("INSECURESKIPVERIFY=%t", broker.InsecureSkipVerify)
+
 	if viper.IsSet("broker.verifyPeer") {
 		broker.VerifyPeer = viper.GetBool("broker.verifyPeer")
 		if broker.VerifyPeer {

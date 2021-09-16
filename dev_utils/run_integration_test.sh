@@ -20,18 +20,18 @@ if [ "$1" != "" ]; then
     FILE="$(realpath "$1")"
 fi
 
-file=$(basename "$FILE")
+file=test/$(basename "$FILE")
 
 cd "$(dirname "$0")" || exit
 
-s3cmd -c s3cmd.conf put "$FILE" s3://inbox/test/"$file"
+s3cmd -c s3cmd.conf put "$FILE" s3://inbox/"$file"
 
 curl -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
 -H 'Content-Type: application/json;charset=UTF-8' \
 --data-binary '{"vhost":"test","name":"sda","properties":{"delivery_mode":2,"correlation_id":"1","content_encoding":"UTF-8","content_type":"application/json"},"routing_key":"files","payload_encoding":"string","payload":"{\"type\":\"ingest\",\"user\":\"test\",\"filepath\":\"'"$file"'\",\"encrypted_checksums\":[{\"type\":\"sha256\",\"value\":\"'"$SHA"'\",\"type\":\"md5\",\"value\":\"'"$MD5"'\"}]}"}'
 
 RETRY_TIMES=0
-until docker logs --since 30s ingest 2>&1 | grep "Mark as archived"
+until docker logs --since 30s ingest 2>&1 | grep "File marked as archived"
 do 
     echo "waiting for ingestion to complete"
     RETRY_TIMES=$((RETRY_TIMES+1));
@@ -43,7 +43,7 @@ do
 done
 
 RETRY_TIMES=0
-until docker logs --since 30s verify 2>&1 | grep "Mark completed"
+until docker logs --since 30s verify 2>&1 | grep "File marked completed"
 do
     echo "waiting for verification to complete"
     RETRY_TIMES=$((RETRY_TIMES+1));

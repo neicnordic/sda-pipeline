@@ -8,7 +8,7 @@ require (
 	github.com/elixir-oslo/crypt4gh v1.3.0
 	github.com/google/uuid v1.3.0
 	github.com/johannesboyne/gofakes3 v0.0.0-20200716060623-6b2b4cb092cc
-	github.com/lib/pq v1.10.3
+	github.com/lib/pq v1.10.4
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.9.0

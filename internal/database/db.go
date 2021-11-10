@@ -18,15 +18,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// Database defines methods to be implemented by SQLdb
-type Database interface {
-	GetHeader(fileID int) ([]byte, error)
-	MarkCompleted(checksum string, fileID int) error
-	MarkReady(accessionID, user, filepath, checksum string) error
-	GetArchived(user, filepath, checksum string) (string, int, error)
-	Close()
-}
-
 // SQLdb struct that acts as a receiver for the DB update methods
 type SQLdb struct {
 	DB       *sql.DB

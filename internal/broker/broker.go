@@ -29,9 +29,10 @@ type AMQPChannel interface {
 
 // AMQPBroker is a Broker that reads messages from an AMQP broker
 type AMQPBroker struct {
-	Connection *amqp.Connection
-	Channel    AMQPChannel
-	Conf       MQConf
+	Connection   *amqp.Connection
+	Channel      AMQPChannel
+	Conf         MQConf
+	confirmsChan <-chan amqp.Confirmation
 }
 
 // MQConf stores information about the message broker
@@ -112,7 +113,14 @@ func NewMQ(config MQConf) (*AMQPBroker, error) {
 		return nil, err
 	}
 
-	return &AMQPBroker{Connection, Channel, config}, nil
+	if e := Channel.Confirm(false); e != nil {
+		fmt.Printf("channel could not be put into confirm mode: %s", e)
+		return nil, fmt.Errorf("channel could not be put into confirm mode: %s", e)
+	}
+
+	confirms := Channel.NotifyPublish(make(chan amqp.Confirmation, 1))
+
+	return &AMQPBroker{Connection, Channel, config, confirms}, nil
 }
 
 // GetMessages reads messages from the queue
@@ -131,15 +139,6 @@ func (broker *AMQPBroker) GetMessages(queue string) (<-chan amqp.Delivery, error
 
 // SendMessage sends a message to RabbitMQ
 func (broker *AMQPBroker) SendMessage(corrID, exchange, routingKey string, reliable bool, body []byte) error {
-	if reliable {
-		// Set channel
-		if e := broker.Channel.Confirm(false); e != nil {
-			logFatalf("channel could not be put into confirm mode: %s", e)
-		}
-		// Shouldn't this be setup once and for all?
-		confirms := broker.Channel.NotifyPublish(make(chan amqp.Confirmation, 100))
-		defer confirmOne(confirms)
-	}
 	err := broker.Channel.Publish(
 		exchange,
 		routingKey,
@@ -156,7 +155,16 @@ func (broker *AMQPBroker) SendMessage(corrID, exchange, routingKey string, relia
 			// a bunch of application/implementation-specific fields
 		},
 	)
-	return err
+	if err != nil {
+		return err
+	}
+
+	confirmed := <-broker.confirmsChan
+	if !confirmed.Ack {
+		return fmt.Errorf("failed delivery of delivery tag: %d", confirmed.DeliveryTag)
+	}
+	log.Debugf("confirmed delivery with delivery tag: %d", confirmed.DeliveryTag)
+	return nil
 }
 
 // buildMQURI builds the MQ connection URI

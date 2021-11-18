@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 	"testing"
 
 	log "github.com/sirupsen/logrus"
@@ -288,25 +287,6 @@ func TestTLSConfigBroker(t *testing.T) {
 	// Should we fail here?
 	//	assert.NotNil(t, err, "Expected failure was missing")
 
-}
-
-func TestConfirmOne(t *testing.T) {
-
-	var str bytes.Buffer
-	log.SetOutput(&str)
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	c := make(chan amqp.Confirmation)
-	go func(c <-chan amqp.Confirmation) {
-		confirmOne(c)
-		assert.NotZero(t, str.Len(), "Expected warnings were missing")
-		assert.Contains(t, str.String(), "failed delivery of delivery tag")
-		wg.Done()
-	}(c)
-	c <- amqp.Confirmation{}
-
-	wg.Wait()
 }
 
 func TestValidateJSON(t *testing.T) {

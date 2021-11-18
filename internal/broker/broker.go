@@ -236,19 +236,6 @@ func TLSConfigBroker(config MQConf) (*tls.Config, error) {
 	return &tlsConfig, nil
 }
 
-// confirmOne accepts confirmation for a message sent with reliable.
-//
-// One would typically keep a channel of publishings, a sequence number, and a
-// set of unacknowledged sequence numbers and loop until the publishing channel
-// is closed.
-func confirmOne(confirms <-chan amqp.Confirmation) {
-	confirmed := <-confirms
-	if !confirmed.Ack {
-		log.Errorf("failed delivery of delivery tag: %d", confirmed.DeliveryTag)
-	}
-	log.Debugf("confirmed delivery with delivery tag: %d", confirmed.DeliveryTag)
-}
-
 // ConnectionWatcher listens to events from the server
 func (broker *AMQPBroker) ConnectionWatcher() *amqp.Error {
 	amqpError := <-broker.Connection.NotifyClose(make(chan *amqp.Error))

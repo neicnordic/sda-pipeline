@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 	"testing"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
@@ -61,14 +59,14 @@ func (c *mockChannel) NotifyPublish(confirm chan amqp.Confirmation) chan amqp.Co
 
 func (c *mockChannel) Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error {
 
-	go func() {
-		time.Sleep(10000)
-		c.confirmChannel <- amqp.Confirmation{}
-	}()
-
 	if c.failPublish {
 		return fmt.Errorf("failPublish")
 	}
+
+	ack := amqp.Confirmation{}
+	ack.DeliveryTag = 1
+	ack.Ack = true
+	c.confirmChannel <- ack
 
 	return nil
 }
@@ -89,34 +87,16 @@ func TestGetMessages_Error(t *testing.T) {
 	assert.Error(t, err, "Must be an error")
 }
 
-func CatchSendMessage(b *AMQPBroker, corrID, exchange, routingkey string, reliable bool, body []byte) (err error) {
-	defer func() {
-		r := recover()
-		if r != nil {
-			err = fmt.Errorf("Caught panic")
-		}
-	}()
-	err = b.SendMessage(corrID, exchange, routingkey, reliable, body)
-
-	return err
-}
-
 func TestSendMessage(t *testing.T) {
-
 	b := AMQPBroker{}
 	c := mockChannel{}
 
 	var err error
-	c.failConfirm = true
 	b.Channel = &c
+	err = b.Channel.Confirm(false)
+	assert.Nil(t, err, "Could not Channle in confirm mode")
+	b.confirmsChan = b.Channel.NotifyPublish(make(chan amqp.Confirmation, 1))
 	msg := []byte("Message")
-
-	// Aborts run for some not yet understood reason
-
-	err = CatchSendMessage(&b, "corrID1", "exchange", "routingkey", true, msg)
-	assert.NotNil(t, err, "Unexpected non-error from SendMessage (reliable)")
-
-	c.failConfirm = false
 
 	err = b.SendMessage("corrID1", "exchange", "routingkey", false, msg)
 	assert.Nil(t, err, "Unexpected error from SendMessage (not reliable)")
@@ -164,20 +144,17 @@ func TestNewMQ(t *testing.T) {
 	noSslConf.Port = noSSLPort
 
 	go handleOneConnection(s.Sessions, false, false)
-	b, _ := NewMQ(noSslConf)
-
+	b, e := NewMQ(noSslConf)
+	assert.Nil(t, e, "Unwanted Error")
 	assert.NotNil(t, b, "NewMQ without ssl did not return a broker")
-
 	// Fail the queuedeclarepassive
 	go handleOneConnection(s.Sessions, false, true)
 	errret := CatchNewMQPanic(t, noSslConf)
 	assert.NotNil(t, errret, "NewMQ did fail as expected")
-
 	// Fail the channel
 	go handleOneConnection(s.Sessions, true, true)
 	errret = CatchNewMQPanic(t, noSslConf)
 	assert.NotNil(t, errret, "NewMQ did fail as expected")
-
 	s.Close()
 
 	sslConf := tMqconf
@@ -186,10 +163,10 @@ func TestNewMQ(t *testing.T) {
 	sslConf.Port = sslPort
 	sslConf.ServerName = sslConf.Host
 
-	serverTlsConfig := tlsServerConfig()
-	serverTlsConfig.ClientAuth = tls.NoClientCert
+	serverTLSConfig := tlsServerConfig()
+	serverTLSConfig.ClientAuth = tls.NoClientCert
 
-	ss := startTLSServer(t, sslPort, serverTlsConfig)
+	ss := startTLSServer(t, sslPort, serverTLSConfig)
 
 	go handleOneConnection(ss.Sessions, false, false)
 
@@ -310,25 +287,6 @@ func TestTLSConfigBroker(t *testing.T) {
 	// Should we fail here?
 	//	assert.NotNil(t, err, "Expected failure was missing")
 
-}
-
-func TestConfirmOne(t *testing.T) {
-
-	var str bytes.Buffer
-	log.SetOutput(&str)
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	c := make(chan amqp.Confirmation)
-	go func(c <-chan amqp.Confirmation) {
-		confirmOne(c)
-		assert.NotZero(t, str.Len(), "Expected warnings were missing")
-		assert.Contains(t, str.String(), "failed delivery of delivery tag")
-		wg.Done()
-	}(c)
-	c <- amqp.Confirmation{}
-
-	wg.Wait()
 }
 
 func TestValidateJSON(t *testing.T) {

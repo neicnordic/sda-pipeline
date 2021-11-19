@@ -229,9 +229,8 @@ func handleOneConnection(s chan *commonServer, failChannel, failDeclare bool) {
 	if failChannel == true {
 		session.send(1, &channelClose{ReplyCode: 506, ReplyText: "Something", MethodID: 10, ClassID: 20})
 		return
-	} else {
-		session.send(1, &channelOpenOk{})
 	}
+	session.send(1, &channelOpenOk{})
 
 	qD := queueDeclare{}
 	session.recv(1, &qD)
@@ -239,9 +238,12 @@ func handleOneConnection(s chan *commonServer, failChannel, failDeclare bool) {
 	if failDeclare == true {
 		session.send(1, &channelClose{ReplyCode: 506,
 			ReplyText: "Something", MethodID: 10, ClassID: 50})
-	} else {
-		session.send(1, &queueDeclareOk{})
+		return
 	}
+	session.send(1, &queueDeclareOk{})
+
+	session.recv(1, &confirmSelect{})
+	session.send(1, &confirmSelectOk{})
 
 	//	session.connectionClose()
 	//	session.S.Close()

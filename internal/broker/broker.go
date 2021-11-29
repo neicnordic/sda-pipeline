@@ -59,9 +59,9 @@ type MQConf struct {
 
 // jsonError struct for sending broken messages to analysis
 type jsonError struct {
-	Error          string `json:"error"`
-	Reason         string `json:"reason"`
-	OrginalMessage []byte `json:"orginal-message"`
+	Error           string `json:"error"`
+	Reason          string `json:"reason"`
+	OriginalMessage []byte `json:"original-message"`
 }
 
 // FileError struct for sending file error messages to analysis
@@ -246,9 +246,9 @@ func (broker *AMQPBroker) ConnectionWatcher() *amqp.Error {
 func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody []byte, reason string, conf MQConf) error {
 
 	jsonErrorMessage := jsonError{
-		Error:          "Validation of JSON message failed",
-		Reason:         fmt.Sprintf("%v", reason),
-		OrginalMessage: originalBody,
+		Error:           "Validation of JSON message failed",
+		Reason:          fmt.Sprintf("%v", reason),
+		OriginalMessage: originalBody,
 	}
 
 	body, _ := json.Marshal(jsonErrorMessage)

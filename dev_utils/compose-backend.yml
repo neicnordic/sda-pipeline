@@ -15,7 +15,7 @@ services:
       interval: 5s
       timeout: 20s
       retries: 3
-    image: neicnordic/sda-db:latest
+    image: neicnordic/sda-db:v1.3.1
     ports:
       - "5432:5432"
     volumes:

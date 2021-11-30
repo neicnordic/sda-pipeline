@@ -18,7 +18,7 @@ It can be used as part of a [Federated EGA](https://ega-archive.org/federated) o
 
 Recommended provisioning method for production is:
 
-* on a , `kubernetes cluster` using the [helm chart](https://github.com/neicnordic/sda-helm/);
+* on a `kubernetes cluster` using the [helm chart](https://github.com/neicnordic/sda-helm/);
 
 For local development/testing see instructions in [dev_utils](/dev_utils) folder.
 
@@ -37,17 +37,18 @@ For local development/testing see instructions in [dev_utils](/dev_utils) folder
 
 | Component     | Role |
 |---------------|------|
-| broker        | Package containing communication with Message Broker https://github.com/neicnordic/sda-mq  |
+| broker        | Package containing communication with Message Broker [SDA-MQ](https://github.com/neicnordic/sda-mq). |
 | config        | Package for managing configuration. |
-| database      | Provides functionalities for using the database, providing high level functions  https://github.com/neicnordic/sda-db. |
-| storage       | Provides interface for storage areas such as a regular file system or as a S3 object store. |
+| database      | Provides functionalities for using the database, as well as high level functions for working with the [SDA-DB](https://github.com/neicnordic/sda-db). |
+| storage       | Provides interface for storage areas such as a regular file system (POSIX) or as a S3 object store. |
 
 
 ## Documentation
 
 `sda-pipeline` documentation can be found at: https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/
 
-NeIC Sensitive Data Archive documentation can be found at: https://neic-sda.readthedocs.io/en/latest/
+NeIC Sensitive Data Archive documentation can be found at: https://neic-sda.readthedocs.io/en/latest/ 
+along with documentation about other components for data access.
 
 ## Contributing
 

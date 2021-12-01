@@ -8,10 +8,10 @@ cd dev_utils || exit 1
 
 bash ./make_certs.sh
 
-tostart="mq db"
+tostart="mq db certfixer"
 
 if [ "$STORAGETYPE" = s3 ]; then
-   tostart="mq db s3"
+    tostart="mq db s3 certfixer"
 fi
 
 docker-compose -f compose-backend.yml up -d $tostart

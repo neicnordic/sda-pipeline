@@ -23,13 +23,13 @@ for p in $tostart; do
     fi
     until docker ps -f name=$p --format "{{.Status}}" | grep "(healthy)"
     do echo "waiting for $p to become ready"
-       RETRY_TIMES=$((RETRY_TIMES+1));
-       if [ "$RETRY_TIMES" -eq 30 ]; then
-	   # Time out
-      docker logs $p
-	   exit 1;
-       fi
-       sleep 10
+        RETRY_TIMES=$((RETRY_TIMES+1));
+        if [ "$RETRY_TIMES" -eq 30 ]; then
+        # Time out
+        docker logs $p
+            exit 1;
+            fi
+        sleep 10
     done
 done
 
@@ -39,14 +39,14 @@ RETRY_TIMES=0
 for p in ingest verify finalize mapper intercept; do
     until docker ps -f name=$p --format "{{.Status}}" | grep "Up"
     do echo "waiting for $p to become ready"
-       RETRY_TIMES=$((RETRY_TIMES+1));
-       if [ "$RETRY_TIMES" -eq 30 ]; then
-      # Time out
-      docker logs $p
-      docker logs mq
-      exit 1;
-       fi
-       sleep 10
+        RETRY_TIMES=$((RETRY_TIMES+1));
+        if [ "$RETRY_TIMES" -eq 30 ]; then
+            # Time out
+            docker logs $p
+            docker logs mq
+            exit 1;
+        fi
+        sleep 10
     done
 done
 

@@ -18,6 +18,9 @@ docker-compose -f compose-backend.yml up -d $tostart
 
 RETRY_TIMES=0
 for p in $tostart; do
+    if [ $p = "certfixer" ]; then
+        continue
+    fi
     until docker ps -f name=$p --format {{.Status}} | grep "(healthy)"
     do echo "waiting for $p to become ready"
        RETRY_TIMES=$((RETRY_TIMES+1));

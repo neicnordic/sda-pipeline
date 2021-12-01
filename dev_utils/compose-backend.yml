@@ -1,8 +1,17 @@
 version: "3.7"
 services:
+  certfixer:
+    command: sh -c "cp /origcerts/* /certs && chown -R 70.70 /certs/db* && chmod -R og-rw /certs/db*"
+    container_name: certfixer
+    image: alpine:latest
+    volumes:
+      - ./certs:/origcerts
+      - certs:/certs
   db:
     command: server /data
     container_name: db
+    depends_on: 
+      - certfixer
     environment:
       - DB_LEGA_IN_PASSWORD=lega_in
       - DB_LEGA_OUT_PASSWORD=lega_out
@@ -15,15 +24,15 @@ services:
       interval: 5s
       timeout: 20s
       retries: 3
-    image: neicnordic/sda-db:v1.3.1
+    image: ghcr.io/neicnordic/sda-db:v1.4.0
     ports:
       - "5432:5432"
     volumes:
       - /tmp/data:/data
-      - ./certs:/certs
+      - certs:/var/lib/postgresql/tls/
   mq:
     container_name: mq
-    image: neicnordic/sda-mq:latest
+    image: ghcr.io/neicnordic/sda-mq:v1.3.0
     environment:
      - MQ_SERVER_CERT=/etc/rabbitmq/ssl/mq.pem
      - MQ_SERVER_KEY=/etc/rabbitmq/ssl/mq.key
@@ -79,3 +88,6 @@ services:
       "
     volumes:
       - ./certs/ca.pem:/etc/ssl/certs/public.crt
+
+volumes:
+     certs:

@@ -8,7 +8,7 @@
 
 
 for routingkey in files archived verified completed accessionIDs; do 
-    curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
+    curl -k -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
 	 -H 'Content-Type: application/json;charset=UTF-8' \
 	 --data-binary '{
                                   "vhost":"test",
@@ -26,7 +26,7 @@ for routingkey in files archived verified completed accessionIDs; do
 done
 
 for routingkey in files archived verified completed accessionIDs; do 
-    curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
+    curl -k -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
 	 -H 'Content-Type: application/json;charset=UTF-8' \
 	 --data-binary '{
                                   "vhost":"test",

@@ -9,7 +9,7 @@ exit 0
 #
 
 
-curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
+curl -k -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary "$( echo '{
     	                       "vhost":"test",
@@ -40,7 +40,7 @@ curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
 
 # Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
 
-curl -u test:test 'localhost:15672/api/queues/test/error/get' \
+curl -k -u test:test 'https://localhost:15672/api/queues/test/error/get' \
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
 
@@ -48,7 +48,7 @@ curl -u test:test 'localhost:15672/api/queues/test/error/get' \
 
 # Submit an existing file but incorrect checksum
 
-curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
+curl -k -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary "$( echo '{
     	                       "vhost":"test",
@@ -79,7 +79,7 @@ curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
 
 # Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
 
-curl -u test:test 'localhost:15672/api/queues/test/error/get' \
+curl -k -u test:test 'https://localhost:15672/api/queues/test/error/get' \
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
 
@@ -89,7 +89,7 @@ curl -u test:test 'localhost:15672/api/queues/test/error/get' \
 md5sum=$(md5sum truncated1.c4gh | cut -d' ' -f 1)
 sha256sum=$(sha256sum truncated1.c4gh | cut -d' ' -f 1)
 	 
-curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
+curl -k -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary "$( echo '{
     	                       "vhost":"test",
@@ -119,7 +119,7 @@ curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
 
 # Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
 
-curl -u test:test 'localhost:15672/api/queues/test/error/get' \
+curl -k -u test:test 'https://localhost:15672/api/queues/test/error/get' \
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
 
@@ -129,7 +129,7 @@ curl -u test:test 'localhost:15672/api/queues/test/error/get' \
 md5sum=$(md5sum truncated2.c4gh | cut -d' ' -f 1)
 sha256sum=$(sha256sum truncated2.c4gh | cut -d' ' -f 1)
 	 
-curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
+curl -k -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary "$( echo '{
     	                       "vhost":"test",
@@ -159,11 +159,11 @@ curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
 
 # Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
 
-curl -u test:test 'localhost:15672/api/queues/test/error/get' \
+curl -k -u test:test 'https://localhost:15672/api/queues/test/error/get' \
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
 
 
 # Cleanup cueues
-curl -u test:test -X DELETE 'localhost:15672/api/queues/test/completed/contents'
-curl -u test:test -X DELETE 'localhost:15672/api/queues/test/verified/contents'
+curl -k -u test:test -X DELETE 'https://localhost:15672/api/queues/test/completed/contents'
+curl -k -u test:test -X DELETE 'https://localhost:15672/api/queues/test/verified/contents'

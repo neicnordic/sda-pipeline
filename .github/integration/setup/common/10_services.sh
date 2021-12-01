@@ -21,7 +21,7 @@ for p in $tostart; do
     if [ $p = "certfixer" ]; then
         continue
     fi
-    until docker ps -f name=$p --format {{.Status}} | grep "(healthy)"
+    until docker ps -f name=$p --format "{{.Status}}" | grep "(healthy)"
     do echo "waiting for $p to become ready"
        RETRY_TIMES=$((RETRY_TIMES+1));
        if [ "$RETRY_TIMES" -eq 30 ]; then
@@ -37,7 +37,7 @@ docker-compose -f compose-sda.yml up -d
 
 RETRY_TIMES=0
 for p in ingest verify finalize mapper intercept; do
-    until docker ps -f name=$p --format {{.Status}} | grep "Up"
+    until docker ps -f name=$p --format "{{.Status}}" | grep "Up"
     do echo "waiting for $p to become ready"
        RETRY_TIMES=$((RETRY_TIMES+1));
        if [ "$RETRY_TIMES" -eq 30 ]; then

@@ -40,7 +40,7 @@ For step-by-step tests follow instructions below.
 
 Upload the dummy datafile to the s3 inbox under the folder /test.
 
-```
+```cmd
 s3cmd -c s3cmd.conf put "dummy_data.c4gh" s3://inbox/test/dummy_data.c4gh
 ```
 
@@ -60,10 +60,10 @@ curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' -H 'Cont
 
 More examples using the API and relevant message properties can be found in the integration test script.
 
-Alternatively, to access the webui go to: 
+Alternatively, to access the webui go to:
 
 ```http
-http://localhost:15672
+https://localhost:15672
 ```
 
 ### Message to start ingestion
@@ -82,7 +82,7 @@ http://localhost:15672
 
 ### Example message to start verification
 
-This step is automatically triggered by ingestion when all needed services are running. To initiate the verification of the dummy datafile manually, a message needs to be published to the `files` routing key of the `sda` exchange. 
+This step is automatically triggered by ingestion when all needed services are running. To initiate the verification of the dummy datafile manually, a message needs to be published to the `files` routing key of the `sda` exchange.
 
 ```json
 {
@@ -101,7 +101,7 @@ The value of the archive path can be found by getting from the queue the message
 
 ### Example message to finalize ingestion
 
-To finalize ingestion of the dummy datafile a message needs to be published to the `files` routing key of the `sda` exchange. 
+To finalize ingestion of the dummy datafile a message needs to be published to the `files` routing key of the `sda` exchange.
 
 ```json
 {
@@ -120,7 +120,7 @@ The values of the decrypted datafile checksums can be found by getting from the 
 
 ### Example message to perform mapping
 
-To register the mapping of the datafile IDs to the database a message needs to be published to the `files` routing key of the `sda` exchange. 
+To register the mapping of the datafile IDs to the database a message needs to be published to the `files` routing key of the `sda` exchange.
 
 ```json
 {
@@ -130,4 +130,3 @@ To register the mapping of the datafile IDs to the database a message needs to b
     ]
 }
 ```
-

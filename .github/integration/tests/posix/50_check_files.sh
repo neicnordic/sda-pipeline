@@ -2,26 +2,32 @@
 
 cd dev_utils || exit 1
 
+chmod 600 certs/client-key.pem
+
 echo "Checking archive files in backup"
 
 # Earlier tests verify that the file is in the database correctly
 
-accessids=$(docker run --rm --name client --network dev_utils_default \
+accessids=$(docker run --rm --name client --network dev_utils_default -v ./certs:/certs \
+        -e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 	    neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
             -t -A -c "SELECT stable_id FROM local_ega.files where status='READY';")
 
 for aid in $accessids; do
     echo "Checking accesssionid $aid"
 
-    apath=$(docker run --rm --name client --network dev_utils_default \
+    apath=$(docker run --rm --name client --network dev_utils_default -v ./certs:/certs \
+        -e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 	    neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
             -t -A -c "SELECT archive_path FROM local_ega.files where stable_id='$aid';")
 
-    acheck=$(docker run --rm --name client --network dev_utils_default \
+    acheck=$(docker run --rm --name client --network dev_utils_default -v ./certs:/certs \
+        -e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 	    neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
             -t -A -c "SELECT archive_file_checksum FROM local_ega.files where stable_id='$aid';")
 
-    achecktype=$(docker run --rm --name client --network dev_utils_default \
+    achecktype=$(docker run --rm --name client --network dev_utils_default -v ./certs:/certs \
+        -e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 	    neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
             -t -A -c "SELECT archive_file_checksum_type FROM local_ega.files where stable_id='$aid';")
 

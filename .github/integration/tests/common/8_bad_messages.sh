@@ -22,7 +22,9 @@ for routingkey in files archived verified completed accessionIDs; do
     	                       "routing_key":"'"$routingkey"'",
     	                       "payload_encoding":"string",
     	                       "payload":"{
-			                   I give you bad json!'
+			                   I give you bad json!}"
+					}'
+					
 done
 
 for routingkey in files archived verified completed accessionIDs; do 
@@ -39,6 +41,7 @@ for routingkey in files archived verified completed accessionIDs; do
     	                                    },
     	                       "routing_key":"'"$routingkey"'",
     	                       "payload_encoding":"string",
-    	                       "payload":"{ \"json\":\"yes, but not sda\" }"'
+    	                       "payload":"{ \"json\":\"yes, but not sda\" }"
+					}'
 
 done

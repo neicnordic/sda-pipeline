@@ -55,7 +55,7 @@ https://localhost:9000
 In order to start the ingestion of the dummy datafile a message needs to be published to the `files` routing key of the `sda` exchange either via the API or the webui.
 
 ```command
-curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' -H 'Content-Type: application/json;charset=UTF-8' --data-binary '{"vhost":"test","name":"sda","properties":{"delivery_mode":2,"correlation_id":"1","content_encoding":"UTF-8","content_type":"application/json"},"routing_key":"files","payload":"{\"type\": \"ingest\", \"user\": \"test\", \"filepath\": \"test/dummy_data.c4gh\", \"encrypted_checksums\":[{\"type\":\"sha256\", \"value\":\"5e9c767958cc3f6e8d16512b8b8dcab855ad1e04e05798b86f50ef600e137578\", \"type\": \"md5\", \"value\": \"b60fa2486b121bed8d566bacec987e0d\"}]}","payload_encoding":"string"}'
+curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' -H 'Content-Type: application/json;charset=UTF-8' --data-binary '{"vhost":"test","name":"sda","properties":{"delivery_mode":2,"correlation_id":"1","content_encoding":"UTF-8","content_type":"application/json"},"routing_key":"files","payload":"{\"type\": \"ingest\", \"user\": \"test\", \"filepath\": \"test/dummy_data.c4gh\", \"encrypted_checksums\":[{\"type\":\"sha256\", \"value\":\"5e9c767958cc3f6e8d16512b8b8dcab855ad1e04e05798b86f50ef600e137578\", \"type\": \"md5\", \"value\": \"b60fa2486b121bed8d566bacec987e0d\"}]}","payload_encoding":"string"}'
 ```
 
 More examples using the API and relevant message properties can be found in the integration test script.

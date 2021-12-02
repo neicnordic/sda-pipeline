@@ -29,7 +29,7 @@ count=1
 
 for file in dummy_data.c4gh largefile.c4gh; do
 
-	curl -k -u test:test 'https://localhost:15672/api/queues/test/verified' | jq -r '.["messages_ready"]'
+	curl --cacert certs/ca.pem -u test:test 'https://localhost:15672/api/queues/test/verified' | jq -r '.["messages_ready"]'
 
 	# Give some time to avoid confounders in logs
 	sleep 10
@@ -50,7 +50,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 	decryptedfilesize=$(sed -ne 's/^\([0-9][0-9]*\) bytes (.*) copied, .*$/\1/p' "$dcf")
 	rm -f "$dcf"
 
-	curl -k -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		--data-binary "$(echo '{
 						"vhost":"test",
@@ -125,14 +125,14 @@ for file in dummy_data.c4gh largefile.c4gh; do
 	access=$(printf "EGAF%05d%06d" "$RANDOM" "$count")
 
 	filepath=$(
-		curl -k -u test:test 'https://localhost:15672/api/queues/test/verified/get' \
+		curl --cacert certs/ca.pem -u test:test 'https://localhost:15672/api/queues/test/verified/get' \
 			-H 'Content-Type: application/json;charset=UTF-8' \
 			-d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto","truncate":50000}' |
 			jq -r '.[0]["payload"]' | jq -r '.["filepath"]'
 	)
 
 	# Publish accession id
-	curl -k -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		--data-binary "$(echo '{
 						"vhost":"test",
@@ -167,7 +167,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 
 	# Wait for completion message
 	RETRY_TIMES=0
-	until curl -k -u test:test 'https://localhost:15672/api/queues/test/completed/get' \
+	until curl --cacert certs/ca.pem -u test:test 'https://localhost:15672/api/queues/test/completed/get' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		-d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto","truncate":50000}' |
 		jq -r '.[0]["payload"]' | jq -r '.["filepath"]' | grep -q "$file"; do
@@ -237,7 +237,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 	done
 
 	# Map dataset ids
-	curl -k -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		--data-binary "$(echo '{
 						"vhost":"test",

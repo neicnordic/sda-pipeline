@@ -40,7 +40,7 @@ For step-by-step tests follow instructions below.
 
 Upload the dummy datafile to the s3 inbox under the folder /test.
 
-```
+```cmd
 s3cmd -c s3cmd.conf put "dummy_data.c4gh" s3://inbox/test/dummy_data.c4gh
 ```
 
@@ -55,15 +55,15 @@ https://localhost:9000
 In order to start the ingestion of the dummy datafile a message needs to be published to the `files` routing key of the `sda` exchange either via the API or the webui.
 
 ```command
-curl -vvv -u test:test 'localhost:15672/api/exchanges/test/sda/publish' -H 'Content-Type: application/json;charset=UTF-8' --data-binary '{"vhost":"test","name":"sda","properties":{"delivery_mode":2,"correlation_id":"1","content_encoding":"UTF-8","content_type":"application/json"},"routing_key":"files","payload":"{\"type\": \"ingest\", \"user\": \"test\", \"filepath\": \"test/dummy_data.c4gh\", \"encrypted_checksums\":[{\"type\":\"sha256\", \"value\":\"5e9c767958cc3f6e8d16512b8b8dcab855ad1e04e05798b86f50ef600e137578\", \"type\": \"md5\", \"value\": \"b60fa2486b121bed8d566bacec987e0d\"}]}","payload_encoding":"string"}'
+curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' -H 'Content-Type: application/json;charset=UTF-8' --data-binary '{"vhost":"test","name":"sda","properties":{"delivery_mode":2,"correlation_id":"1","content_encoding":"UTF-8","content_type":"application/json"},"routing_key":"files","payload":"{\"type\": \"ingest\", \"user\": \"test\", \"filepath\": \"test/dummy_data.c4gh\", \"encrypted_checksums\":[{\"type\":\"sha256\", \"value\":\"5e9c767958cc3f6e8d16512b8b8dcab855ad1e04e05798b86f50ef600e137578\", \"type\": \"md5\", \"value\": \"b60fa2486b121bed8d566bacec987e0d\"}]}","payload_encoding":"string"}'
 ```
 
 More examples using the API and relevant message properties can be found in the integration test script.
 
-Alternatively, to access the webui go to: 
+Alternatively, to access the webui go to:
 
 ```http
-http://localhost:15672
+https://localhost:15672
 ```
 
 ### Message to start ingestion
@@ -82,7 +82,7 @@ http://localhost:15672
 
 ### Example message to start verification
 
-This step is automatically triggered by ingestion when all needed services are running. To initiate the verification of the dummy datafile manually, a message needs to be published to the `files` routing key of the `sda` exchange. 
+This step is automatically triggered by ingestion when all needed services are running. To initiate the verification of the dummy datafile manually, a message needs to be published to the `files` routing key of the `sda` exchange.
 
 ```json
 {
@@ -101,7 +101,7 @@ The value of the archive path can be found by getting from the queue the message
 
 ### Example message to finalize ingestion
 
-To finalize ingestion of the dummy datafile a message needs to be published to the `files` routing key of the `sda` exchange. 
+To finalize ingestion of the dummy datafile a message needs to be published to the `files` routing key of the `sda` exchange.
 
 ```json
 {
@@ -120,7 +120,7 @@ The values of the decrypted datafile checksums can be found by getting from the 
 
 ### Example message to perform mapping
 
-To register the mapping of the datafile IDs to the database a message needs to be published to the `files` routing key of the `sda` exchange. 
+To register the mapping of the datafile IDs to the database a message needs to be published to the `files` routing key of the `sda` exchange.
 
 ```json
 {
@@ -130,4 +130,3 @@ To register the mapping of the datafile IDs to the database a message needs to b
     ]
 }
 ```
-

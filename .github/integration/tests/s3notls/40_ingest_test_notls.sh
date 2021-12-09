@@ -1,31 +1,21 @@
 #!/bin/bash
 
-if [ "$STORAGETYPE" = s3notls ]; then
-    exit 0
-fi
-
 cd dev_utils || exit 1
 
-chmod 600 certs/client-key.pem
-
-docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-	-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+docker run --rm --name client --network dev_utils_default \
 	neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
 	-t -c "SELECT * from local_ega_ebi.file_dataset"
 
-docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-	-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+docker run --rm --name client --network dev_utils_default \
 	neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
 	-t -c "SELECT * from local_ega_ebi.filedataset ORDER BY id DESC"
 
-docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-	-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+docker run --rm --name client --network dev_utils_default \
 	neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 	-t -c "SELECT id, status, stable_id, archive_path FROM local_ega.files ORDER BY id DESC"
 
 # "Disable" old files to not confuse later tests.
-docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-	-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+docker run --rm --name client --network dev_utils_default \
 	neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 	-t -A -c "UPDATE local_ega.files SET status='DISABLED' where status='READY';"
 
@@ -33,7 +23,7 @@ count=1
 
 for file in dummy_data.c4gh largefile.c4gh; do
 
-	curl --cacert certs/ca.pem -u test:test 'https://localhost:15672/api/queues/test/verified' | jq -r '.["messages_ready"]'
+	curl -u test:test 'http://localhost:15672/api/queues/test/verified' | jq -r '.["messages_ready"]'
 
 	# Give some time to avoid confounders in logs
 	sleep 10
@@ -54,7 +44,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 	decryptedfilesize=$(sed -ne 's/^\([0-9][0-9]*\) bytes (.*) copied, .*$/\1/p' "$dcf")
 	rm -f "$dcf"
 
-	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+	curl -vvv -u test:test 'http://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		--data-binary "$(echo '{
 						"vhost":"test",
@@ -129,14 +119,14 @@ for file in dummy_data.c4gh largefile.c4gh; do
 	access=$(printf "EGAF%05d%06d" "$RANDOM" "$count")
 
 	filepath=$(
-		curl --cacert certs/ca.pem -u test:test 'https://localhost:15672/api/queues/test/verified/get' \
+		curl -u test:test 'http://localhost:15672/api/queues/test/verified/get' \
 			-H 'Content-Type: application/json;charset=UTF-8' \
 			-d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto","truncate":50000}' |
 			jq -r '.[0]["payload"]' | jq -r '.["filepath"]'
 	)
 
 	# Publish accession id
-	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+	curl -vvv -u test:test 'http://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		--data-binary "$(echo '{
 						"vhost":"test",
@@ -171,7 +161,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 
 	# Wait for completion message
 	RETRY_TIMES=0
-	until curl --cacert certs/ca.pem -u test:test 'https://localhost:15672/api/queues/test/completed/get' \
+	until curl -u test:test 'http://localhost:15672/api/queues/test/completed/get' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		-d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto","truncate":50000}' |
 		jq -r '.[0]["payload"]' | jq -r '.["filepath"]' | grep -q "$file"; do
@@ -227,8 +217,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 	statusindb=''
 
 	until [ -n "$statusindb" ]; do
-		statusindb=$(docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-			-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+		statusindb=$(docker run --rm --name client --network dev_utils_default \
 			neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 			-t -A -c "SELECT id FROM local_ega.files where stable_id='$access' AND status='READY';")
 		sleep 3
@@ -241,7 +230,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 	done
 
 	# Map dataset ids
-	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+	curl -vvv -u test:test 'http://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		--data-binary "$(echo '{
 						"vhost":"test",
@@ -265,8 +254,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 
 	until [ "${#dbcheck}" -ne 0 ]; do
 
-		dbcheck=$(docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-			-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+		dbcheck=$(docker run --rm --name client --network dev_utils_default \
 			neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
 			-t -c "SELECT * from local_ega_ebi.file_dataset where dataset_id='$dataset' and file_id='$access'")
 
@@ -278,18 +266,15 @@ for file in dummy_data.c4gh largefile.c4gh; do
 			if [ "$RETRY_TIMES" -eq 60 ]; then
 
 				echo "Mappings failed"
-				docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-					-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+				docker run --rm --name client --network dev_utils_default \
 					neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
 					-t -c "SELECT * from local_ega_ebi.file_dataset ORDER BY id DESC"
 
-				docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-					-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+				docker run --rm --name client --network dev_utils_default \
 					neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
 					-t -c "SELECT * from local_ega_ebi.filedataset ORDER BY id DESC"
 
-				docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-					-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+				docker run --rm --name client --network dev_utils_default \
 					neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 					-t -c "SELECT id, status, stable_id, archive_path FROM local_ega.files ORDER BY id DESC"
 
@@ -328,8 +313,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 	decryptedsizedb=''
 
 	until [ -n "$decryptedsizedb" ]; do
-		decryptedsizedb=$(docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-			-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+		decryptedsizedb=$(docker run --rm --name client --network dev_utils_default \
 			neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 			-t -A -c "SELECT decrypted_file_size from local_ega.files where stable_id='$access';")
 		sleep 3
@@ -353,8 +337,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 	decryptedchecksum=''
 
 	until [ -n "$decryptedchecksum" ]; do
-		decryptedchecksum=$(docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-			-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+		decryptedchecksum=$(docker run --rm --name client --network dev_utils_default \
 			neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 			-t -A -c "SELECT decrypted_file_checksum from local_ega.files where stable_id='$access';")
 		sleep 3
@@ -377,17 +360,14 @@ for file in dummy_data.c4gh largefile.c4gh; do
 	count=$((count + 1))
 done
 
-docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-	-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+docker run --rm --name client --network dev_utils_default \
 	neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
 	-t -c "SELECT * from local_ega_ebi.file_dataset"
 
-docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-	-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+docker run --rm --name client --network dev_utils_default \
 	neicnordic/pg-client:latest postgresql://lega_out:lega_out@db:5432/lega \
 	-t -c "SELECT * from local_ega_ebi.filedataset ORDER BY id DESC"
 
-docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
-	-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+docker run --rm --name client --network dev_utils_default \
 	neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 	-t -c "SELECT id, status, stable_id, archive_path FROM local_ega.files ORDER BY id DESC"

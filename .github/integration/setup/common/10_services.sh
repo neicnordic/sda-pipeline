@@ -14,7 +14,7 @@ if [ "$STORAGETYPE" = s3 ]; then
     tostart="mq db s3 certfixer"
 fi
 
-# we need to let it be split here otherwise it takes it as one
+# We need to leave the $tostart variable unquoted here since we want it to split
 # shellcheck disable=SC2086
 docker-compose -f compose-backend.yml up -d $tostart
 

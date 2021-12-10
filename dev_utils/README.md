@@ -23,7 +23,7 @@ sh make_certs.sh
 To start all the backend services using docker compose.
 
 ```command
-docker-compose -f compose-backend.yml up -d
+docker-compose -f compose-sda.yml up -d db mq s3
 ```
 
 To start all the sda services using docker compose.

@@ -1,6 +1,18 @@
 # Local testing howto
 
-## Starting the services using docker compose
+## Getting up and running fast
+
+```command
+docker-compose -f compose-no-tls.yml up -d
+```
+
+For a complete test of the pipeline
+
+```command
+sh run_integration_test_no_tls.sh
+```
+
+## Starting the services using docker compose with TLS enabled
 
 First create the necessary credentials.
 
@@ -11,7 +23,7 @@ sh make_certs.sh
 To start all the backend services using docker compose.
 
 ```command
-docker-compose -f compose-backend.yml up -d
+docker-compose -f compose-sda.yml up -d db mq s3
 ```
 
 To start all the sda services using docker compose.
@@ -34,9 +46,11 @@ For a complete test of the pipeline
 sh run_integration_test.sh
 ```
 
+## Manually run the integration test
+
 For step-by-step tests follow instructions below.
 
-## Upload file to the inbox
+### Upload file to the inbox
 
 Upload the dummy datafile to the s3 inbox under the folder /test.
 
@@ -50,7 +64,7 @@ Browse the s3 buckets at:
 https://localhost:9000
 ```
 
-## json formatted messages
+### json formatted messages
 
 In order to start the ingestion of the dummy datafile a message needs to be published to the `files` routing key of the `sda` exchange either via the API or the webui.
 
@@ -66,7 +80,7 @@ Alternatively, to access the webui go to:
 https://localhost:15672
 ```
 
-### Message to start ingestion
+#### Message to start ingestion
 
 ```json
 {
@@ -80,7 +94,7 @@ https://localhost:15672
 }
 ```
 
-### Example message to start verification
+#### Example message to start verification
 
 This step is automatically triggered by ingestion when all needed services are running. To initiate the verification of the dummy datafile manually, a message needs to be published to the `files` routing key of the `sda` exchange.
 
@@ -99,7 +113,7 @@ This step is automatically triggered by ingestion when all needed services are r
 
 The value of the archive path can be found by getting from the queue the message that was published when the header-stripped datafile is archived either by using the API or the webgui. This value corresponds to the name of the header-stripped file that is created in the archive bucket.
 
-### Example message to finalize ingestion
+#### Example message to finalize ingestion
 
 To finalize ingestion of the dummy datafile a message needs to be published to the `files` routing key of the `sda` exchange.
 
@@ -118,7 +132,7 @@ To finalize ingestion of the dummy datafile a message needs to be published to t
 
 The values of the decrypted datafile checksums can be found by getting from the queue the message that was published at verification either by using the API or the webgui. After ingestion is finalized the backup bucket is synced with the archive and contains the header-stripped datafile.
 
-### Example message to perform mapping
+#### Example message to perform mapping
 
 To register the mapping of the datafile IDs to the database a message needs to be published to the `files` routing key of the `sda` exchange.
 

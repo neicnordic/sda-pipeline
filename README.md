@@ -9,7 +9,6 @@
 
 [![DeepSource](https://static.deepsource.io/deepsource-badge-light.svg)](https://deepsource.io/gh/neicnordic/sda-pipeline/?ref=repository-badge) [![Join the chat at https://gitter.im/neicnordic/sda-pipeline](https://badges.gitter.im/neicnordic/sda-pipeline.svg)](https://gitter.im/neicnordic/sda-pipeline?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-
 `sda-pipeline` is part of [NeIC Sensitive Data Archive](https://neic-sda.readthedocs.io/en/latest/) and implements the components required for data submission.
 It can be used as part of a [Federated EGA](https://ega-archive.org/federated) or as a isolated Sensitive Data Archive. 
 `sda-pipeline` was built with support for both S3 and POSIX storage.
@@ -21,6 +20,11 @@ Recommended provisioning method for production is:
 * on a `kubernetes cluster` using the [helm chart](https://github.com/neicnordic/sda-helm/);
 
 For local development/testing see instructions in [dev_utils](/dev_utils) folder.
+There is an README file in the [dev_utils](/dev_utils) folder with sections for running the pipeline locally using Docker Compose.
+
+* [First run](./dev_utils/README.md#Getting-up-and-running-fast)
+* [Production like run](./dev_utils/README.md#Starting-the-services-using-docker-compose-with-TLS-enabled)
+* [Manual execution](./dev_utils/README.md#Manually-run-the-integration-test)
 
 ## Core Components
 
@@ -41,7 +45,6 @@ For local development/testing see instructions in [dev_utils](/dev_utils) folder
 | config        | Package for managing configuration. |
 | database      | Provides functionalities for using the database, as well as high level functions for working with the [SDA-DB](https://github.com/neicnordic/sda-db). |
 | storage       | Provides interface for storage areas such as a regular file system (POSIX) or as a S3 object store. |
-
 
 ## Documentation
 

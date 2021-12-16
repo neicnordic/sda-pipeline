@@ -11,7 +11,7 @@ exit 0
 
 curl --cacert dev_utils/certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
-     --data-binary "$( echo '{
+     --data-binary '{
     	                       "vhost":"test",
                                "name":"sda",
     	                       "properties":{
@@ -35,7 +35,7 @@ curl --cacert dev_utils/certs/ca.pem  -vvv -u test:test 'https://localhost:15672
     	                                                            }
     	                                                           ]
     	                                  }"
-    	                      }' )"
+    	                      }'
 
 
 # Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
@@ -50,7 +50,7 @@ curl --cacert dev_utils/certs/ca.pem  -u test:test 'https://localhost:15672/api/
 
 curl --cacert dev_utils/certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
-     --data-binary "$( echo '{
+     --data-binary '{
     	                       "vhost":"test",
                                "name":"sda",
     	                       "properties":{
@@ -74,7 +74,7 @@ curl --cacert dev_utils/certs/ca.pem  -vvv -u test:test 'https://localhost:15672
     	                                                            }
     	                                                           ]
     	                                  }"
-    	                      }' )"
+    	                      }'
 
 
 # Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.

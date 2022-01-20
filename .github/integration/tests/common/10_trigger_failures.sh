@@ -8,8 +8,64 @@ exit 0
 # queue and handled again and again.
 #
 
+# Submit a file encrypted with the wrong key
 
-curl --cacert dev_utils/certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+md5sum=$(md5sum wrongly_encrypted.c4gh | cut -d' ' -f 1)
+sha256sum=$(sha256sum wrongly_encrypted.c4gh | cut -d' ' -f 1)
+
+curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+     -H 'Content-Type: application/json;charset=UTF-8' \
+     --data-binary "$( echo '{
+    	                       "vhost":"test",
+                               "name":"sda",
+    	                       "properties":{
+    	                                     "delivery_mode":2,
+    	                                     "correlation_id":"1",
+    	                                     "content_encoding":"UTF-8",
+    	                                     "content_type":"application/json"
+    	                                    },
+    	                       "routing_key":"files",
+    	                       "payload_encoding":"string",
+    	                       "payload":"{
+    	                                   \"type\":\"ingest\",
+    	                                   \"user\":\"test\",
+    	                                   \"filepath\":\"/wrongly_encrypted.c4gh\",
+    	                                   \"encrypted_checksums\":[{
+    	                                                             \"type\":\"sha256\",
+    	                                                             \"value\":\"SHA256SUM\"},
+    	                                                            {
+    	                                                             \"type\":\"md5\",
+    	                                                             \"value\":\"MD5SUM\"
+    	                                                            }
+    	                                                           ]
+    	                                  }"
+    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
+
+# Verify that message is moved to the error queue
+
+now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+RETRY_TIMES=0
+until curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
+	-H 'Content-Type: application/json;charset=UTF-8' \
+	-d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}' 2>&1 | grep -q "decryption failed"; do
+	echo "waiting for msg to move to error queue..."
+	RETRY_TIMES=$((RETRY_TIMES + 1))
+	if [ $RETRY_TIMES -eq 20 ]; then
+		echo "::error::Time out while waiting for msg to move to error queue, logs:"
+		echo
+		echo ingest
+		echo
+		docker logs --since="$now" ingest
+		exit 1
+	fi
+	sleep 1
+done
+echo
+echo "Message moved to error queue"
+
+# Submit a non-existent file
+
+curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary '{
     	                       "vhost":"test",
@@ -40,15 +96,13 @@ curl --cacert dev_utils/certs/ca.pem  -vvv -u test:test 'https://localhost:15672
 
 # Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
 
-curl --cacert dev_utils/certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
+curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
 
-
-
 # Submit an existing file but incorrect checksum
 
-curl --cacert dev_utils/certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary '{
     	                       "vhost":"test",
@@ -79,7 +133,7 @@ curl --cacert dev_utils/certs/ca.pem  -vvv -u test:test 'https://localhost:15672
 
 # Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
 
-curl --cacert dev_utils/certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
+curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
 
@@ -88,8 +142,8 @@ curl --cacert dev_utils/certs/ca.pem  -u test:test 'https://localhost:15672/api/
 
 md5sum=$(md5sum truncated1.c4gh | cut -d' ' -f 1)
 sha256sum=$(sha256sum truncated1.c4gh | cut -d' ' -f 1)
-	 
-curl --cacert dev_utils/certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+
+curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary "$( echo '{
     	                       "vhost":"test",
@@ -119,7 +173,7 @@ curl --cacert dev_utils/certs/ca.pem  -vvv -u test:test 'https://localhost:15672
 
 # Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
 
-curl --cacert dev_utils/certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
+curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
 
@@ -128,8 +182,8 @@ curl --cacert dev_utils/certs/ca.pem  -u test:test 'https://localhost:15672/api/
 
 md5sum=$(md5sum truncated2.c4gh | cut -d' ' -f 1)
 sha256sum=$(sha256sum truncated2.c4gh | cut -d' ' -f 1)
-	 
-curl --cacert dev_utils/certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+
+curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary "$( echo '{
     	                       "vhost":"test",
@@ -159,11 +213,11 @@ curl --cacert dev_utils/certs/ca.pem  -vvv -u test:test 'https://localhost:15672
 
 # Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
 
-curl --cacert dev_utils/certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
+curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
 
 
 # Cleanup cueues
-curl --cacert dev_utils/certs/ca.pem  -u test:test -X DELETE 'https://localhost:15672/api/queues/test/completed/contents'
-curl --cacert dev_utils/certs/ca.pem  -u test:test -X DELETE 'https://localhost:15672/api/queues/test/verified/contents'
+curl --cacert certs/ca.pem  -u test:test -X DELETE 'https://localhost:15672/api/queues/test/completed/contents'
+curl --cacert certs/ca.pem  -u test:test -X DELETE 'https://localhost:15672/api/queues/test/verified/contents'

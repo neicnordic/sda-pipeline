@@ -17,3 +17,14 @@ touch empty.c4gh
 
 dd if=largefile.c4gh bs=1 count="$((15000+RANDOM))" of=truncated1.c4gh
 dd if=largefile.c4gh bs=1 count=10 of=truncated2.c4gh
+
+dd if=/dev/random of=wrongly_encrypted.raw count=1 bs=$(( 1024 * 1024 *  1 )) iflag=fullblock
+
+cat > wrong_key.pub <<EOF
+-----BEGIN CRYPT4GH PUBLIC KEY-----
+fGi6kvZlQN37PLmumygbNaSLf0NA+kj4KB1b70HFFCU=
+-----END CRYPT4GH PUBLIC KEY-----
+EOF
+
+crypt4gh encrypt --recipient_pk wrong_key.pub < wrongly_encrypted.raw > wrongly_encrypted.c4gh
+rm wrongly_encrypted.raw wrong_key.pub

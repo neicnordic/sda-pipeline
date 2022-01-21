@@ -72,5 +72,5 @@ else
 fi
 
 # Show running containers
-docker ps -a
+docker ps
 

@@ -145,7 +145,7 @@ func main() {
 					err)
 				// Nack message so the server gets notified that something is wrong and requeue the message
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorln("Failed to Nack message (failed get file size) "+
+					log.Errorf("Failed to Nack message (failed get file size) "+
 						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
@@ -160,7 +160,7 @@ func main() {
 				}
 				body, _ := json.Marshal(fileError)
 				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
-					log.Error("Failed to publish message (get file size error), to error queue "+
+					log.Errorf("Failed to publish message (get file size error), to error queue "+
 						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
@@ -191,7 +191,7 @@ func main() {
 					err)
 				// Nack message so the server gets notified that something is wrong and requeue the message
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorln("Failed to Nack message (archive file crate error) "+
+					log.Errorf("Failed to Nack message (archive file crate error) "+
 						"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
@@ -252,13 +252,40 @@ func main() {
 				if bytesRead <= int64(len(readBuffer)) {
 					header, err := tryDecrypt(key, readBuffer)
 					if err != nil {
-						log.Errorln("Trying to decrypt start of file failed "+
+						log.Errorf("Trying to decrypt start of file failed "+
 							"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 							delivered.CorrelationId,
 							message.User,
 							message.Filepath,
 							archivedFile,
 							err)
+
+						// Nack message so the server gets notified that something is wrong. Do not requeue the message.
+						if e := delivered.Nack(false, false); e != nil {
+							log.Errorf("Failed to Nack message (failed decrypt file) "+
+								"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
+								delivered.CorrelationId,
+								message.User,
+								message.Filepath,
+								e)
+						}
+
+						// Send the message to an error queue so it can be analyzed.
+						fileError := broker.FileError{
+							User:     message.User,
+							FilePath: message.Filepath,
+							Reason:   err.Error(),
+						}
+						body, _ := json.Marshal(fileError)
+						if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
+							log.Errorf("Failed to publish message (decrypt file error), to error queue "+
+								"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
+								delivered.CorrelationId,
+								message.User,
+								message.Filepath,
+								e)
+						}
+
 						continue mainWorkLoop
 					}
 					log.Debugln("store header")
@@ -335,7 +362,7 @@ func main() {
 			fileInfo.Size, err = archive.GetFileSize(archivedFile)
 
 			if err != nil {
-				log.Error("Couldn't get file size from archive for verification "+
+				log.Errorf("Couldn't get file size from archive for verification "+
 					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 					delivered.CorrelationId,
 					message.User,

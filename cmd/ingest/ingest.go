@@ -290,7 +290,7 @@ func main() {
 					}
 					log.Debugln("store header")
 					if err := db.StoreHeader(header, fileID); err != nil {
-						log.Error("StoreHeader failed "+
+						log.Errorf("StoreHeader failed "+
 							"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 							delivered.CorrelationId,
 							message.User,

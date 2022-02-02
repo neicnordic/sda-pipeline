@@ -274,12 +274,14 @@ func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery,
 
 		// Nack message so the server gets notified that something is wrong but don't requeue the message
 		if e := delivered.Nack(false, false); e != nil {
-			log.Errorln("Failed to Nack message "+
-				"(corr-id: %s, errror: %v) ", e)
+			log.Errorf("Failed to Nack message "+
+				"(corr-id: %s, errror: %v) ",
+				delivered.CorrelationId,
+				e)
 		}
 		// Send the message to an error queue so it can be analyzed.
 		if e := broker.SendJSONError(delivered, body, err.Error(), broker.Conf); e != nil {
-			log.Error("Failed to publish JSON decode error message "+
+			log.Errorf("Failed to publish JSON decode error message "+
 				"(corr-id: %s, error: %v)",
 				delivered.CorrelationId,
 				e)
@@ -303,14 +305,14 @@ func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery,
 		log.Error("Validation failed")
 		// Nack message so the server gets notified that something is wrong but don't requeue the message
 		if e := delivered.Nack(false, false); e != nil {
-			log.Errorln("Failed to Nack message "+
+			log.Errorf("Failed to Nack message "+
 				"(corr-id: %s, error: %v)",
 				delivered.CorrelationId,
 				e)
 		}
 		// Send the message to an error queue so it can be analyzed.
 		if e := broker.SendJSONError(delivered, body, errorString, broker.Conf); e != nil {
-			log.Error("Failed to publish JSON validity error message "+
+			log.Errorf("Failed to publish JSON validity error message "+
 				"(corr-id: %s, error: %v)",
 				delivered.CorrelationId,
 				e)

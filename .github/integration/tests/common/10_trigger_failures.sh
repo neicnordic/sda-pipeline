@@ -8,6 +8,33 @@ exit 0
 # queue and handled again and again.
 #
 
+# Helper function that checks if msg is moved to error queue
+# admits a string arg that is part of the output error msg
+
+function check_move_to_error_queue() {
+	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+	echo $now
+	RETRY_TIMES=0
+	echo
+	echo "Waiting for msg containing \""$1"\" to move to error queue."
+	until curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
+		-H 'Content-Type: application/json;charset=UTF-8' \
+		-d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}' 2>&1 | grep -q "$1"; do
+		printf '%s' "."
+		RETRY_TIMES=$((RETRY_TIMES + 1))
+		if [ $RETRY_TIMES -eq 61 ]; then
+			echo "::error::Time out while waiting for msg to move to error queue, logs:"
+			echo
+			echo ingest
+			echo
+			docker logs --since="$now" ingest
+			exit 1
+		fi
+		sleep 2
+	done
+	echo
+	echo "Message with \""$1"\" moved to error queue."
+}
 # Submit a file encrypted with the wrong key
 
 md5sum=$(md5sum wrongly_encrypted.c4gh | cut -d' ' -f 1)
@@ -43,25 +70,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
 
 # Verify that message is moved to the error queue
 
-now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-RETRY_TIMES=0
-until curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
-	-H 'Content-Type: application/json;charset=UTF-8' \
-	-d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}' 2>&1 | grep -q "decryption failed"; do
-	echo "waiting for msg to move to error queue..."
-	RETRY_TIMES=$((RETRY_TIMES + 1))
-	if [ $RETRY_TIMES -eq 20 ]; then
-		echo "::error::Time out while waiting for msg to move to error queue, logs:"
-		echo
-		echo ingest
-		echo
-		docker logs --since="$now" ingest
-		exit 1
-	fi
-	sleep 1
-done
-echo
-echo "Message moved to error queue"
+check_move_to_error_queue "decryption failed"
 
 # Submit a non-existent file
 

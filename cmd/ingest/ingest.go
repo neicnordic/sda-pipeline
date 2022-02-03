@@ -132,6 +132,31 @@ func main() {
 					message.User,
 					message.Filepath,
 					err)
+				// Nack message so the server gets notified that something is wrong. Do not requeue the message.
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorf("Failed to Nack message (failed to open file to ingest) "+
+						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
+						delivered.CorrelationId,
+						message.User,
+						message.Filepath,
+						e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				fileError := broker.FileError{
+					User:     message.User,
+					FilePath: message.Filepath,
+					Reason:   err.Error(),
+				}
+				body, _ := json.Marshal(fileError)
+				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
+					log.Errorf("Failed to publish message (open file to ingest error), to error queue "+
+						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
+						delivered.CorrelationId,
+						message.User,
+						message.Filepath,
+						e)
+				}
+				// Restart on new message
 				continue
 			}
 

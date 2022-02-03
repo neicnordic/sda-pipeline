@@ -13,10 +13,10 @@ exit 0
 
 function check_move_to_error_queue() {
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-	echo $now
+	echo "$now"
 	RETRY_TIMES=0
 	echo
-	echo "Waiting for msg containing \""$1"\" to move to error queue."
+	echo "Waiting for msg containing \"""$1""\" to move to error queue."
 	until curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		-d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto","truncate":50000}' 2>&1 | grep -q "$1"; do
@@ -33,7 +33,7 @@ function check_move_to_error_queue() {
 		sleep 2
 	done
 	echo
-	echo "Message with \""$1"\" moved to error queue."
+	echo "Message with \"""$1""\" moved to error queue."
 }
 
 # Submit a file encrypted with the wrong key

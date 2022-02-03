@@ -143,7 +143,8 @@ func main() {
 					message.User,
 					message.Filepath,
 					err)
-				// Nack message so the server gets notified that something is wrong and requeue the message
+				// Nack message so the server gets notified that something is wrong and requeue the message.
+				// Since reading the file worked, this should eventually succeed so it is ok to requeue.
 				if e := delivered.Nack(false, true); e != nil {
 					log.Errorf("Failed to Nack message (failed get file size) "+
 						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
@@ -189,9 +190,10 @@ func main() {
 					message.Filepath,
 					archivedFile,
 					err)
-				// Nack message so the server gets notified that something is wrong and requeue the message
+				// Nack message so the server gets notified that something is wrong and requeue the message.
+				// NewFileWriter returns an error when the backend itself fails so this is reasonable to requeue.
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorf("Failed to Nack message (archive file crate error) "+
+					log.Errorf("Failed to Nack message (archive file create error) "+
 						"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,

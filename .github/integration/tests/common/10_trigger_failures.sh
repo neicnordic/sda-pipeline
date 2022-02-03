@@ -35,6 +35,7 @@ function check_move_to_error_queue() {
 	echo
 	echo "Message with \""$1"\" moved to error queue."
 }
+
 # Submit a file encrypted with the wrong key
 
 md5sum=$(md5sum wrongly_encrypted.c4gh | cut -d' ' -f 1)
@@ -107,6 +108,8 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
 
 check_move_to_error_queue "NoSuchKey: The specified key does not exist."
 
+: <<'END_COMMENT'
+# (currently not implemented)
 # Submit an existing file but incorrect checksum
 
 curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
@@ -144,6 +147,7 @@ curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/tes
 		   -H 'Content-Type: application/json;charset=UTF-8' \
 		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
 
+END_COMMENT
 
 # Submit a truncated file (with correct checksum)
 

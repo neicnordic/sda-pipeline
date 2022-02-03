@@ -19,7 +19,7 @@ function check_move_to_error_queue() {
 	echo "Waiting for msg containing \""$1"\" to move to error queue."
 	until curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
-		-d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}' 2>&1 | grep -q "$1"; do
+		-d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto","truncate":50000}' 2>&1 | grep -q "$1"; do
 		printf '%s' "."
 		RETRY_TIMES=$((RETRY_TIMES + 1))
 		if [ $RETRY_TIMES -eq 61 ]; then
@@ -103,11 +103,9 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
     	                      }'
 
 
-# Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
+# Verify that message is moved to the error queue (takes a few mins).
 
-curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
-		   -H 'Content-Type: application/json;charset=UTF-8' \
-		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
+check_move_to_error_queue "NoSuchKey: The specified key does not exist."
 
 # Submit an existing file but incorrect checksum
 

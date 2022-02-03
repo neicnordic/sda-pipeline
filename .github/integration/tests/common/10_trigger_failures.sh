@@ -182,12 +182,9 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
     	                                  }"
     	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
 
-# Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
+# Verify that message is moved to the error queue.
 
-curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
-		   -H 'Content-Type: application/json;charset=UTF-8' \
-		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
-
+check_move_to_error_queue "data segment can't be decrypted with any of header keys"
 
 # Submit a smaller truncated file (with correct checksum)
 
@@ -222,11 +219,9 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
     	                                  }"
     	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
 
-# Verify message put in error here once https://github.com/neicnordic/sda-pipeline/issues/130 is resolved.
+# Verify that message is moved to the error queue.
 
-curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
-		   -H 'Content-Type: application/json;charset=UTF-8' \
-		   -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}'
+check_move_to_error_queue "unexpected EOF"
 
 
 # Cleanup cueues

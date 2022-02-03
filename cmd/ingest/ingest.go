@@ -265,10 +265,11 @@ func main() {
 						// Nack message so the server gets notified that something is wrong. Do not requeue the message.
 						if e := delivered.Nack(false, false); e != nil {
 							log.Errorf("Failed to Nack message (failed decrypt file) "+
-								"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
+								"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 								delivered.CorrelationId,
 								message.User,
 								message.Filepath,
+								archivedFile,
 								e)
 						}
 

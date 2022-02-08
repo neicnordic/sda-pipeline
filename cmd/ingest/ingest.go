@@ -132,6 +132,31 @@ func main() {
 					message.User,
 					message.Filepath,
 					err)
+				// Nack message so the server gets notified that something is wrong. Do not requeue the message.
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorf("Failed to Nack message (failed to open file to ingest) "+
+						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
+						delivered.CorrelationId,
+						message.User,
+						message.Filepath,
+						e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				fileError := broker.FileError{
+					User:     message.User,
+					FilePath: message.Filepath,
+					Reason:   err.Error(),
+				}
+				body, _ := json.Marshal(fileError)
+				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
+					log.Errorf("Failed to publish message (open file to ingest error), to error queue "+
+						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
+						delivered.CorrelationId,
+						message.User,
+						message.Filepath,
+						e)
+				}
+				// Restart on new message
 				continue
 			}
 
@@ -143,7 +168,8 @@ func main() {
 					message.User,
 					message.Filepath,
 					err)
-				// Nack message so the server gets notified that something is wrong and requeue the message
+				// Nack message so the server gets notified that something is wrong and requeue the message.
+				// Since reading the file worked, this should eventually succeed so it is ok to requeue.
 				if e := delivered.Nack(false, true); e != nil {
 					log.Errorf("Failed to Nack message (failed get file size) "+
 						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
@@ -189,9 +215,10 @@ func main() {
 					message.Filepath,
 					archivedFile,
 					err)
-				// Nack message so the server gets notified that something is wrong and requeue the message
+				// Nack message so the server gets notified that something is wrong and requeue the message.
+				// NewFileWriter returns an error when the backend itself fails so this is reasonable to requeue.
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorf("Failed to Nack message (archive file crate error) "+
+					log.Errorf("Failed to Nack message (archive file create error) "+
 						"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
@@ -263,10 +290,11 @@ func main() {
 						// Nack message so the server gets notified that something is wrong. Do not requeue the message.
 						if e := delivered.Nack(false, false); e != nil {
 							log.Errorf("Failed to Nack message (failed decrypt file) "+
-								"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
+								"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 								delivered.CorrelationId,
 								message.User,
 								message.Filepath,
+								archivedFile,
 								e)
 						}
 

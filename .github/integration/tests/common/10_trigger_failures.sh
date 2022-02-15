@@ -34,6 +34,7 @@ function check_move_to_error_queue() {
 	done
 	echo
 	echo "Message with \"""$1""\" moved to error queue."
+	echo
 }
 
 # Submit a file encrypted with the wrong key
@@ -224,6 +225,6 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
 check_move_to_error_queue "unexpected EOF"
 
 
-# Cleanup cueues
+# Cleanup queues
 curl --cacert certs/ca.pem  -u test:test -X DELETE 'https://localhost:15672/api/queues/test/completed/contents'
 curl --cacert certs/ca.pem  -u test:test -X DELETE 'https://localhost:15672/api/queues/test/verified/contents'

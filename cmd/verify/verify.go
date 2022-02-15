@@ -177,7 +177,7 @@ func main() {
 			file.Size, err = backend.GetFileSize(message.ArchivePath)
 
 			if err != nil {
-				log.Errorf("Failed to get archvied file size "+
+				log.Errorf("Failed to get archived file size "+
 					"(corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
 					delivered.CorrelationId,
 					message.User,
@@ -205,7 +205,7 @@ func main() {
 
 			f, err := backend.NewFileReader(message.ArchivePath)
 			if err != nil {
-				log.Errorf("Failed to open archvied file "+
+				log.Errorf("Failed to open archived file "+
 					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
 					delivered.CorrelationId,
 					message.User,

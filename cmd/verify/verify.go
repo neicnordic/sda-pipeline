@@ -147,8 +147,17 @@ func main() {
 						err)
 
 				}
+				// store full message info in case we want to fix the db entry and retry
+				infoErrorMessage := broker.InfoError{
+					Error:           "Getheader failed",
+					Reason:          err.Error(),
+					OriginalMessage: message,
+				}
+
+				body, _ := json.Marshal(infoErrorMessage)
+
 				// Send the message to an error queue so it can be analyzed.
-				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, delivered.Body); e != nil {
+				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
 					log.Errorf("Failed to publish getheader error message "+
 						"(corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
 						delivered.CorrelationId,

@@ -216,12 +216,13 @@ func main() {
 					err)
 
 				// Send the message to an error queue so it can be analyzed.
-				fileError := broker.FileError{
-					User:     message.User,
-					FilePath: message.FilePath,
-					Reason:   err.Error(),
+				infoErrorMessage := broker.InfoError{
+					Error:           "Failed to open archived file",
+					Reason:          err.Error(),
+					OriginalMessage: message,
 				}
-				body, _ := json.Marshal(fileError)
+
+				body, _ := json.Marshal(infoErrorMessage)
 				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
 
 					log.Errorf("Failed to publish file open error message "+

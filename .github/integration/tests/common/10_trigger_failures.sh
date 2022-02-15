@@ -224,6 +224,71 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
 
 check_move_to_error_queue "unexpected EOF"
 
+# Submit a correct file and then cause a db query failure.
+
+now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+docker pause verify &> /dev/null
+
+md5sum=$(md5sum test_db_file.c4gh | cut -d' ' -f 1)
+sha256sum=$(sha256sum test_db_file.c4gh | cut -d' ' -f 1)
+
+curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+     -H 'Content-Type: application/json;charset=UTF-8' \
+     --data-binary "$( echo '{
+    	                       "vhost":"test",
+                               "name":"sda",
+    	                       "properties":{
+    	                                     "delivery_mode":2,
+    	                                     "correlation_id":"1",
+    	                                     "content_encoding":"UTF-8",
+    	                                     "content_type":"application/json"
+    	                                    },
+    	                       "routing_key":"files",
+    	                       "payload_encoding":"string",
+    	                       "payload":"{
+    	                                   \"type\":\"ingest\",
+    	                                   \"user\":\"test\",
+    	                                   \"filepath\":\"/test_db_file.c4gh\",
+    	                                   \"encrypted_checksums\":[{
+    	                                                             \"type\":\"sha256\",
+    	                                                             \"value\":\"SHA256SUM\"},
+    	                                                            {
+    	                                                             \"type\":\"md5\",
+    	                                                             \"value\":\"MD5SUM\"
+    	                                                            }
+    	                                                           ]
+    	                                  }"
+    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
+
+RETRY_TIMES=0
+echo
+echo "Waiting for ingest to confirm delivery."
+	until docker logs --since="$now" ingest 2>&1 | grep -q "confirmed delivery"; do
+		printf '%s' "."
+		RETRY_TIMES=$((RETRY_TIMES + 1))
+		if [ $RETRY_TIMES -eq 60 ]; then
+			echo "::error::Time out while waiting for ingest to confirm delivery, logs:"
+			echo
+			echo ingest
+			echo
+			docker logs --since="$now" ingest
+			exit 1
+		fi
+		sleep 1
+	done
+
+chmod 600 certs/client-key.pem
+docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
+			-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+			neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
+			-t -A -c "update local_ega.files set id = 100 where inbox_path = '/test_db_file.c4gh';"
+
+docker unpause verify &> /dev/null
+
+# Verify that message is moved to the error queue.
+
+check_move_to_error_queue "sql: no rows in result set"
 
 # Cleanup queues
 curl --cacert certs/ca.pem  -u test:test -X DELETE 'https://localhost:15672/api/queues/test/completed/contents'

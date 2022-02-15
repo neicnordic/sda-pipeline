@@ -34,3 +34,9 @@ EOD
 
 crypt4gh encrypt --recipient_pk wrong_key.pub < wrongly_encrypted.raw > wrongly_encrypted.c4gh
 rm -f wrongly_encrypted.raw wrong_key.pub wrong_key.key
+
+touch test_db_file.raw
+shred -n 1 -s "$RANDOM" test_db_file.raw
+
+crypt4gh encrypt --recipient_pk c4gh.pub.pem < test_db_file.raw > test_db_file.c4gh
+rm test_db_file.raw

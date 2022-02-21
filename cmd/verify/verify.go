@@ -147,8 +147,17 @@ func main() {
 						err)
 
 				}
+				// store full message info in case we want to fix the db entry and retry
+				infoErrorMessage := broker.InfoError{
+					Error:           "Getheader failed",
+					Reason:          err.Error(),
+					OriginalMessage: message,
+				}
+
+				body, _ := json.Marshal(infoErrorMessage)
+
 				// Send the message to an error queue so it can be analyzed.
-				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, delivered.Body); e != nil {
+				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
 					log.Errorf("Failed to publish getheader error message "+
 						"(corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
 						delivered.CorrelationId,
@@ -168,7 +177,7 @@ func main() {
 			file.Size, err = backend.GetFileSize(message.ArchivePath)
 
 			if err != nil {
-				log.Errorf("Failed to get archvied file size "+
+				log.Errorf("Failed to get archived file size "+
 					"(corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
 					delivered.CorrelationId,
 					message.User,
@@ -196,7 +205,7 @@ func main() {
 
 			f, err := backend.NewFileReader(message.ArchivePath)
 			if err != nil {
-				log.Errorf("Failed to open archvied file "+
+				log.Errorf("Failed to open archived file "+
 					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
 					delivered.CorrelationId,
 					message.User,
@@ -207,12 +216,13 @@ func main() {
 					err)
 
 				// Send the message to an error queue so it can be analyzed.
-				fileError := broker.FileError{
-					User:     message.User,
-					FilePath: message.FilePath,
-					Reason:   err.Error(),
+				infoErrorMessage := broker.InfoError{
+					Error:           "Failed to open archived file",
+					Reason:          err.Error(),
+					OriginalMessage: message,
 				}
-				body, _ := json.Marshal(fileError)
+
+				body, _ := json.Marshal(infoErrorMessage)
 				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
 
 					log.Errorf("Failed to publish file open error message "+

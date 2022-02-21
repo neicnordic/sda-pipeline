@@ -71,6 +71,13 @@ type FileError struct {
 	Reason   string `json:"reason"`
 }
 
+// InfoError struct for sending detailed error messages to analysis.
+type InfoError struct {
+	Error           string      `json:"error"`
+	Reason          string      `json:"reason"`
+	OriginalMessage interface{} `json:"original-message"`
+}
+
 // NewMQ creates a new Broker that can communicate with a backend
 // amqp server.
 func NewMQ(config MQConf) (*AMQPBroker, error) {

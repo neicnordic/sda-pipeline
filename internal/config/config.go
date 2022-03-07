@@ -33,6 +33,11 @@ type Config struct {
 	Database database.DBConf
 }
 
+func init() {
+	// Convert logs to JSON format in all teh services
+	log.SetFormatter(&log.JSONFormatter{})
+}
+
 // NewConfig initializes and parses the config file and/or environment using
 // the viper library.
 func NewConfig(app string) (*Config, error) {

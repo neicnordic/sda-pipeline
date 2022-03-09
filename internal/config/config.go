@@ -100,6 +100,13 @@ func NewConfig(app string) (*Config, error) {
 		}
 	}
 
+	if viper.IsSet("log.format") {
+		if viper.GetString("log.format") == "json" {
+			log.SetFormatter(&log.JSONFormatter{})
+			log.Info("The logs format is set to JSON")
+		}
+	}
+
 	if viper.IsSet("log.level") {
 		stringLevel := viper.GetString("log.level")
 		intLevel, err := log.ParseLevel(stringLevel)

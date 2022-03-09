@@ -34,7 +34,7 @@ type Config struct {
 }
 
 func init() {
-	// Convert logs to JSON format in all teh services
+	// Convert logs to JSON format in all the services
 	log.SetFormatter(&log.JSONFormatter{})
 }
 

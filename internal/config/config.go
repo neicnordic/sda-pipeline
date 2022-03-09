@@ -33,11 +33,6 @@ type Config struct {
 	Database database.DBConf
 }
 
-func init() {
-	// Convert logs to JSON format in all the services
-	log.SetFormatter(&log.JSONFormatter{})
-}
-
 // NewConfig initializes and parses the config file and/or environment using
 // the viper library.
 func NewConfig(app string) (*Config, error) {
@@ -102,6 +97,13 @@ func NewConfig(app string) (*Config, error) {
 	for _, s := range requiredConfVars {
 		if !viper.IsSet(s) {
 			return nil, fmt.Errorf("%s not set", s)
+		}
+	}
+
+	if viper.IsSet("log.format") {
+		if viper.GetString("log.format") == "json" {
+			log.SetFormatter(&log.JSONFormatter{})
+			log.Info("The logs format is set to JSON")
 		}
 	}
 

@@ -60,3 +60,4 @@ inbox:
 
 log:
   level: "debug"
+  format: "json"

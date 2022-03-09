@@ -57,13 +57,6 @@ type MQConf struct {
 	SchemasPath        string
 }
 
-// jsonError struct for sending broken messages to analysis
-type jsonError struct {
-	Error           string `json:"error"`
-	Reason          string `json:"reason"`
-	OriginalMessage []byte `json:"original-message"`
-}
-
 // FileError struct for sending file error messages to analysis
 type FileError struct {
 	User     string `json:"user"`
@@ -72,6 +65,8 @@ type FileError struct {
 }
 
 // InfoError struct for sending detailed error messages to analysis.
+// The empty interface allows for sending dynamical json msgs but also broken json msgs as strings.
+// It is ok as long as we do not need to parse the msg, which we don't.
 type InfoError struct {
 	Error           string      `json:"error"`
 	Reason          string      `json:"reason"`
@@ -252,10 +247,10 @@ func (broker *AMQPBroker) ConnectionWatcher() *amqp.Error {
 // SendJSONError sends message on JSON error
 func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody []byte, reason string, conf MQConf) error {
 
-	jsonErrorMessage := jsonError{
+	jsonErrorMessage := InfoError{
 		Error:           "Validation of JSON message failed",
 		Reason:          fmt.Sprintf("%v", reason),
-		OriginalMessage: originalBody,
+		OriginalMessage: string(originalBody),
 	}
 
 	body, _ := json.Marshal(jsonErrorMessage)

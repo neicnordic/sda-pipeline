@@ -24,10 +24,12 @@ function check_move_to_error_queue() {
 		RETRY_TIMES=$((RETRY_TIMES + 1))
 		if [ $RETRY_TIMES -eq 61 ]; then
 			echo "::error::Time out while waiting for msg to move to error queue, logs:"
-			echo
-			echo ingest
-			echo
-			docker logs --since="$now" ingest
+			for k in ingest verify; do
+				echo
+				echo "$k"
+				echo
+				docker logs --since="$now" "$k"
+			done
 			exit 1
 		fi
 		sleep 2

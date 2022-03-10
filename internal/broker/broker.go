@@ -57,16 +57,9 @@ type MQConf struct {
 	SchemasPath        string
 }
 
-// FileError struct for sending file error messages to analysis
-type FileError struct {
-	User     string `json:"user"`
-	FilePath string `json:"filepath"`
-	Reason   string `json:"reason"`
-}
-
 // InfoError struct for sending detailed error messages to analysis.
-// The empty interface allows for sending dynamical json msgs but also broken json msgs as strings.
-// It is ok as long as we do not need to parse the msg, which we don't.
+// The empty interface allows for appending various json msgs but also broken json msgs as strings.
+// It is ok as long as we do not need to access fields in the msg, which we don't.
 type InfoError struct {
 	Error           string      `json:"error"`
 	Reason          string      `json:"reason"`

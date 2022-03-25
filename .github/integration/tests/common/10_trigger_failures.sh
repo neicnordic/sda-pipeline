@@ -1,7 +1,11 @@
 #!/bin/bash
 
+if [ "$STORAGETYPE" = s3notls ]; then
+    exit 0
+fi
+
 cd dev_utils || exit 1
-exit 0
+
 #
 # Submit some messages that will trigger various failures. Do this
 # before the "real" work to verify that these failures are not top of
@@ -109,7 +113,11 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
 
 # Verify that message is moved to the error queue (takes a few mins).
 
-check_move_to_error_queue "NoSuchKey: The specified key does not exist."
+if [ "$STORAGETYPE" = posix ]; then
+	check_move_to_error_queue "no such file or directory"
+else
+	check_move_to_error_queue "NoSuchKey: The specified key does not exist."
+fi
 
 : <<'END_COMMENT'
 # (currently not implemented)

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+  <title>NeIC sda-pipeline - go documentation</title>
+<link type="text/css" rel="stylesheet" href="../../../lib/godoc/style.css">
+
+<script>window.initFuncs = [];</script>
+<script src="../../../lib/godoc/jquery.js" defer></script>
+
+
+
+<script>var goVersion = "go1.17.7";</script>
+<script src="../../../lib/godoc/godocs.js" defer></script>
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">Go Documentation Server</a></div>
+<div class="top-heading" id="heading-narrow"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">GoDoc</a></div>
+<a href="database.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+
+
+</div></div>
+
+<div class="container" style="padding: 1em">
+  Please see <a href="https://github.com/neicnordic/sda-pipeline/">https://github.com/neicnordic/sda-pipeline/</a> for the code
+  repository.
+</div>
+  
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Package database
+    <span class="text-muted"></span>
+  </h1>
+
+
+
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+
+	<script>
+	document.ANALYSIS_DATA = null;
+	document.CALLGRAPH = null;
+	</script>
+
+	
+		
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "sda-pipeline/internal/database"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="database.html#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="database.html#pkg-index" class="indexLink">Index</a></dd>
+			
+			
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="pkg-overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+				<p>
+Package database provides functionalities for using the database,
+providing high level functions
+</p>
+
+				
+			</div>
+		</div>
+
+		<div id="pkg-index" class="toggleVisible">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
+		</div>
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
+
+		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
+			<div id="manual-nav">
+			<dl>
+			
+			
+			
+			
+				
+				<dd><a href="database.html#DBConf">type DBConf</a></dd>
+				
+				
+			
+				
+				<dd><a href="database.html#Database">type Database</a></dd>
+				
+				
+			
+				
+				<dd><a href="database.html#FileInfo">type FileInfo</a></dd>
+				
+				
+			
+				
+				<dd><a href="database.html#SQLdb">type SQLdb</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="database.html#NewDB">func NewDB(config DBConf) (*SQLdb, error)</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="database.html#SQLdb.Close">func (dbs *SQLdb) Close()</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="database.html#SQLdb.GetArchived">func (dbs *SQLdb) GetArchived(user, filepath, checksum string) (string, int, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="database.html#SQLdb.GetHeader">func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="database.html#SQLdb.InsertFile">func (dbs *SQLdb) InsertFile(filename, user string) (int64, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="database.html#SQLdb.MapFilesToDataset">func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="database.html#SQLdb.MarkCompleted">func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="database.html#SQLdb.MarkReady">func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="database.html#SQLdb.SetArchived">func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="database.html#SQLdb.StoreHeader">func (dbs *SQLdb) StoreHeader(header []byte, id int64) error</a></dd>
+				
+			
+			
+			</dl>
+			</div><!-- #manual-nav -->
+
+		
+
+		
+			<h3>Package files</h3>
+			<p>
+			<span style="font-size:90%">
+			
+				<a href="../../../src/sda-pipeline/internal/database/db.go.html">db.go</a>
+			
+			</span>
+			</p>
+		
+		</div><!-- .expanded -->
+		</div><!-- #pkg-index -->
+
+		
+
+		
+		
+		
+		
+			
+			
+			<h2 id="DBConf">type <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=825:1015.html#L27">DBConf</a>
+				<a class="permalink" href="database.html#DBConf">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+DBConf stores information about the database backend
+</p>
+
+			<pre>type DBConf struct {
+<span id="DBConf.Host"></span>    Host       <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="DBConf.Port"></span>    Port       <a href="http://localhost:6060/pkg/builtin/#int">int</a>
+<span id="DBConf.User"></span>    User       <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="DBConf.Password"></span>    Password   <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="DBConf.Database"></span>    Database   <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="DBConf.CACert"></span>    CACert     <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="DBConf.SslMode"></span>    SslMode    <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="DBConf.ClientCert"></span>    ClientCert <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="DBConf.ClientKey"></span>    ClientKey  <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Database">type <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=388:643.html#L12">Database</a>
+				<a class="permalink" href="database.html#Database">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+Database defines methods to be implemented by SQLdb
+</p>
+
+			<pre>type Database interface {
+    GetHeader(fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) ([]<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)
+    MarkCompleted(checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>, fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a>
+    MarkReady(accessionID, user, filepath, checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a>
+    GetArchived(user, filepath, checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (<a href="http://localhost:6060/pkg/builtin/#string">string</a>, <a href="http://localhost:6060/pkg/builtin/#int">int</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)
+    Close()
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="FileInfo">type <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=1088:1246.html#L40">FileInfo</a>
+				<a class="permalink" href="database.html#FileInfo">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+FileInfo is used by ingest for file metadata (path, size, checksum)
+</p>
+
+			<pre>type FileInfo struct {
+<span id="FileInfo.Checksum"></span>    Checksum          <a href="http://localhost:6060/pkg/hash/">hash</a>.<a href="http://localhost:6060/pkg/hash/#Hash">Hash</a>
+<span id="FileInfo.Size"></span>    Size              <a href="http://localhost:6060/pkg/builtin/#int64">int64</a>
+<span id="FileInfo.Path"></span>    Path              <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="FileInfo.DecryptedChecksum"></span>    DecryptedChecksum <a href="http://localhost:6060/pkg/hash/">hash</a>.<a href="http://localhost:6060/pkg/hash/#Hash">Hash</a>
+<span id="FileInfo.DecryptedSize"></span>    DecryptedSize     <a href="http://localhost:6060/pkg/builtin/#int64">int64</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="SQLdb">type <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=711:767.html#L21">SQLdb</a>
+				<a class="permalink" href="database.html#SQLdb">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+SQLdb struct that acts as a receiver for the DB update methods
+</p>
+
+			<pre>type SQLdb struct {
+<span id="SQLdb.DB"></span>    DB       *<a href="http://localhost:6060/pkg/database/sql/">sql</a>.<a href="http://localhost:6060/pkg/database/sql/#DB">DB</a>
+<span id="SQLdb.ConnInfo"></span>    ConnInfo <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewDB">func <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=1942:1983.html#L70">NewDB</a>
+					<a class="permalink" href="database.html#NewDB">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewDB(config <a href="database.html#DBConf">DBConf</a>) (*<a href="database.html#SQLdb">SQLdb</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<p>
+NewDB creates a new DB connection
+</p>
+
+				
+				
+			
+
+			
+				
+				<h3 id="SQLdb.Close">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=11610:11635.html#L426">Close</a>
+					<a class="permalink" href="database.html#SQLdb.Close">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) Close()</pre>
+				<p>
+Close terminates the connection to the database
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.GetArchived">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=10600:10683.html#L393">GetArchived</a>
+					<a class="permalink" href="database.html#SQLdb.GetArchived">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) GetArchived(user, filepath, checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (<a href="http://localhost:6060/pkg/builtin/#string">string</a>, <a href="http://localhost:6060/pkg/builtin/#int">int</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<p>
+GetArchived retrieves the location and size of archive
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.GetHeader">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=3543:3598.html#L130">GetHeader</a>
+					<a class="permalink" href="database.html#SQLdb.GetHeader">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) GetHeader(fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) ([]<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<p>
+GetHeader retrieves the file header
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.InsertFile">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=5507:5573.html#L209">InsertFile</a>
+					<a class="permalink" href="database.html#SQLdb.InsertFile">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) InsertFile(filename, user <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (<a href="http://localhost:6060/pkg/builtin/#int64">int64</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<p>
+InsertFile inserts a file in the database
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.MapFilesToDataset">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=9185:9267.html#L347">MapFilesToDataset</a>
+					<a class="permalink" href="database.html#SQLdb.MapFilesToDataset">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) MapFilesToDataset(datasetID <a href="http://localhost:6060/pkg/builtin/#string">string</a>, accessionIDs []<a href="http://localhost:6060/pkg/builtin/#string">string</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+MapFilesToDataset maps a set of files to a dataset in the database
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.MarkCompleted">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=4300:4364.html#L165">MarkCompleted</a>
+					<a class="permalink" href="database.html#SQLdb.MarkCompleted">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) MarkCompleted(file <a href="database.html#FileInfo">FileInfo</a>, fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+MarkCompleted marks the file as &#34;COMPLETED&#34;
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.MarkReady">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=8214:8293.html#L315">MarkReady</a>
+					<a class="permalink" href="database.html#SQLdb.MarkReady">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) MarkReady(accessionID, user, filepath, checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+MarkReady marks the file as &#34;READY&#34;
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.SetArchived">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=7233:7293.html#L275">SetArchived</a>
+					<a class="permalink" href="database.html#SQLdb.SetArchived">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) SetArchived(file <a href="database.html#FileInfo">FileInfo</a>, id <a href="http://localhost:6060/pkg/builtin/#int64">int64</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+SetArchived marks the file as &#39;ARCHIVED&#39;
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.StoreHeader">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=6459:6519.html#L245">StoreHeader</a>
+					<a class="permalink" href="database.html#SQLdb.StoreHeader">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) StoreHeader(header []<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>, id <a href="http://localhost:6060/pkg/builtin/#int64">int64</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+StoreHeader stores the file header in the database
+</p>
+
+				
+				
+				
+			
+		
+	
+
+	
+
+
+
+
+
+
+
+<div id="footer">
+Build version go1.17.7.<br>
+Except as <a href="https://developers.google.com/site-policies#restrictions">noted</a>,
+the content of this page is licensed under the
+Creative Commons Attribution 3.0 License,
+and code is licensed under a <a href="http://localhost:6060/LICENSE">BSD license</a>.<br>
+<a href="http://localhost:6060/doc/tos.html">Terms of Service</a> |
+<a href="http://www.google.com/intl/en/policies/privacy/">Privacy Policy</a>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+</body>
+</html>

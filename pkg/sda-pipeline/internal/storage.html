@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+  <title>NeIC sda-pipeline - go documentation</title>
+<link type="text/css" rel="stylesheet" href="../../../lib/godoc/style.css">
+
+<script>window.initFuncs = [];</script>
+<script src="../../../lib/godoc/jquery.js" defer></script>
+
+
+
+<script>var goVersion = "go1.17.7";</script>
+<script src="../../../lib/godoc/godocs.js" defer></script>
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">Go Documentation Server</a></div>
+<div class="top-heading" id="heading-narrow"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">GoDoc</a></div>
+<a href="storage.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+
+
+</div></div>
+
+<div class="container" style="padding: 1em">
+  Please see <a href="https://github.com/neicnordic/sda-pipeline/">https://github.com/neicnordic/sda-pipeline/</a> for the code
+  repository.
+</div>
+  
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Package storage
+    <span class="text-muted"></span>
+  </h1>
+
+
+
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+
+	<script>
+	document.ANALYSIS_DATA = null;
+	document.CALLGRAPH = null;
+	</script>
+
+	
+		
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "sda-pipeline/internal/storage"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="storage.html#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="storage.html#pkg-index" class="indexLink">Index</a></dd>
+			
+			
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="pkg-overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+				<p>
+Package storage provides interface for storage areas, e.g. s3 or POSIX file system.
+</p>
+
+				
+			</div>
+		</div>
+
+		<div id="pkg-index" class="toggleVisible">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
+		</div>
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
+
+		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
+			<div id="manual-nav">
+			<dl>
+			
+			
+			
+			
+				
+				<dd><a href="storage.html#Backend">type Backend</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="storage.html#NewBackend">func NewBackend(config Conf) (Backend, error)</a></dd>
+				
+				
+			
+				
+				<dd><a href="storage.html#Conf">type Conf</a></dd>
+				
+				
+			
+				
+				<dd><a href="storage.html#S3Conf">type S3Conf</a></dd>
+				
+				
+			
+			
+			</dl>
+			</div><!-- #manual-nav -->
+
+		
+
+		
+			<h3>Package files</h3>
+			<p>
+			<span style="font-size:90%">
+			
+				<a href="../../../src/sda-pipeline/internal/storage/storage.go.html">storage.go</a>
+			
+			</span>
+			</p>
+		
+		</div><!-- .expanded -->
+		</div><!-- #pkg-index -->
+
+		
+
+		
+		
+		
+		
+			
+			
+			<h2 id="Backend">type <a href="../../../src/sda-pipeline/internal/storage/storage.go%3Fs=596:778.html#L18">Backend</a>
+				<a class="permalink" href="storage.html#Backend">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+Backend defines methods to be implemented by PosixBackend and S3Backend
+</p>
+
+			<pre>type Backend interface {
+    GetFileSize(filePath <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (<a href="http://localhost:6060/pkg/builtin/#int64">int64</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)
+    NewFileReader(filePath <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (<a href="http://localhost:6060/pkg/io/">io</a>.<a href="http://localhost:6060/pkg/io/#ReadCloser">ReadCloser</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)
+    NewFileWriter(filePath <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (<a href="http://localhost:6060/pkg/io/">io</a>.<a href="http://localhost:6060/pkg/io/#WriteCloser">WriteCloser</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewBackend">func <a href="../../../src/sda-pipeline/internal/storage/storage.go%3Fs=1070:1115.html#L42">NewBackend</a>
+					<a class="permalink" href="storage.html#NewBackend">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewBackend(config <a href="storage.html#Conf">Conf</a>) (<a href="storage.html#Backend">Backend</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<p>
+NewBackend initiates a storage backend
+</p>
+
+				
+				
+			
+
+			
+		
+			
+			
+			<h2 id="Conf">type <a href="../../../src/sda-pipeline/internal/storage/storage.go%3Fs=824:889.html#L25">Conf</a>
+				<a class="permalink" href="storage.html#Conf">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+Conf is a wrapper for the storage config
+</p>
+
+			<pre>type Conf struct {
+<span id="Conf.Type"></span>    Type  <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="Conf.S3"></span>    S3    <a href="storage.html#S3Conf">S3Conf</a>
+<span id="Conf.Posix"></span>    Posix posixConf
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="S3Conf">type <a href="../../../src/sda-pipeline/internal/storage/storage.go%3Fs=2788:3068.html#L118">S3Conf</a>
+				<a class="permalink" href="storage.html#S3Conf">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+S3Conf stores information about the S3 storage backend
+</p>
+
+			<pre>type S3Conf struct {
+<span id="S3Conf.URL"></span>    URL               <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="S3Conf.Port"></span>    Port              <a href="http://localhost:6060/pkg/builtin/#int">int</a>
+<span id="S3Conf.AccessKey"></span>    AccessKey         <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="S3Conf.SecretKey"></span>    SecretKey         <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="S3Conf.Bucket"></span>    Bucket            <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="S3Conf.Region"></span>    Region            <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="S3Conf.UploadConcurrency"></span>    UploadConcurrency <a href="http://localhost:6060/pkg/builtin/#int">int</a>
+<span id="S3Conf.Chunksize"></span>    Chunksize         <a href="http://localhost:6060/pkg/builtin/#int">int</a>
+<span id="S3Conf.Cacert"></span>    Cacert            <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="S3Conf.NonExistRetryTime"></span>    NonExistRetryTime <a href="http://localhost:6060/pkg/time/">time</a>.<a href="http://localhost:6060/pkg/time/#Duration">Duration</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+	
+
+	
+
+
+
+
+
+
+
+<div id="footer">
+Build version go1.17.7.<br>
+Except as <a href="https://developers.google.com/site-policies#restrictions">noted</a>,
+the content of this page is licensed under the
+Creative Commons Attribution 3.0 License,
+and code is licensed under a <a href="http://localhost:6060/LICENSE">BSD license</a>.<br>
+<a href="http://localhost:6060/doc/tos.html">Terms of Service</a> |
+<a href="http://www.google.com/intl/en/policies/privacy/">Privacy Policy</a>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+</body>
+</html>

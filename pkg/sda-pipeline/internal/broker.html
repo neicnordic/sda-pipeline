@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#375EAB">
+  <title>NeIC sda-pipeline - go documentation</title>
+<link type="text/css" rel="stylesheet" href="../../../lib/godoc/style.css">
+
+<script>window.initFuncs = [];</script>
+<script src="../../../lib/godoc/jquery.js" defer></script>
+
+
+
+<script>var goVersion = "go1.17.7";</script>
+<script src="../../../lib/godoc/godocs.js" defer></script>
+</head>
+<body>
+
+<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+...
+</div><!-- #lowframe -->
+
+<div id="topbar" class="wide"><div class="container">
+<div class="top-heading" id="heading-wide"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">Go Documentation Server</a></div>
+<div class="top-heading" id="heading-narrow"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">GoDoc</a></div>
+<a href="broker.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+
+
+</div></div>
+
+<div class="container" style="padding: 1em">
+  Please see <a href="https://github.com/neicnordic/sda-pipeline/">https://github.com/neicnordic/sda-pipeline/</a> for the code
+  repository.
+</div>
+  
+<div id="page" class="wide">
+<div class="container">
+
+
+  <h1>
+    Package broker
+    <span class="text-muted"></span>
+  </h1>
+
+
+
+
+
+
+
+<div id="nav"></div>
+
+
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+
+	<script>
+	document.ANALYSIS_DATA = null;
+	document.CALLGRAPH = null;
+	</script>
+
+	
+		
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "sda-pipeline/internal/broker"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="broker.html#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="broker.html#pkg-index" class="indexLink">Index</a></dd>
+			
+			
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="pkg-overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+				<p>
+Package broker contains logic for communicating with a message broker
+</p>
+
+				
+			</div>
+		</div>
+
+		<div id="pkg-index" class="toggleVisible">
+		<div class="collapsed">
+			<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
+		</div>
+		<div class="expanded">
+			<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
+
+		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
+			<div id="manual-nav">
+			<dl>
+			
+			
+			
+				
+				<dd><a href="broker.html#TLSConfigBroker">func TLSConfigBroker(config MQConf) (*tls.Config, error)</a></dd>
+			
+			
+				
+				<dd><a href="broker.html#AMQPBroker">type AMQPBroker</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="broker.html#NewMQ">func NewMQ(config MQConf) (*AMQPBroker, error)</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="broker.html#AMQPBroker.ConnectionWatcher">func (broker *AMQPBroker) ConnectionWatcher() *amqp.Error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="broker.html#AMQPBroker.GetMessages">func (broker *AMQPBroker) GetMessages(queue string) (&lt;-chan amqp.Delivery, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="broker.html#AMQPBroker.SendJSONError">func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody []byte, reason string, conf MQConf) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="broker.html#AMQPBroker.SendMessage">func (broker *AMQPBroker) SendMessage(corrID, exchange, routingKey string, reliable bool, body []byte) error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="broker.html#AMQPBroker.ValidateJSON">func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery, messageType string, body []byte, dest interface{}) error</a></dd>
+				
+			
+				
+				<dd><a href="broker.html#AMQPChannel">type AMQPChannel</a></dd>
+				
+				
+			
+				
+				<dd><a href="broker.html#FileError">type FileError</a></dd>
+				
+				
+			
+				
+				<dd><a href="broker.html#InfoError">type InfoError</a></dd>
+				
+				
+			
+				
+				<dd><a href="broker.html#MQConf">type MQConf</a></dd>
+				
+				
+			
+			
+			</dl>
+			</div><!-- #manual-nav -->
+
+		
+
+		
+			<h3>Package files</h3>
+			<p>
+			<span style="font-size:90%">
+			
+				<a href="../../../src/sda-pipeline/internal/broker/broker.go.html">broker.go</a>
+			
+			</span>
+			</p>
+		
+		</div><!-- .expanded -->
+		</div><!-- #pkg-index -->
+
+		
+
+		
+		
+		
+			
+			
+			<h2 id="TLSConfigBroker">func <a href="../../../src/sda-pipeline/internal/broker/broker.go%3Fs=5294:5350.html#L179">TLSConfigBroker</a>
+				<a class="permalink" href="broker.html#TLSConfigBroker">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func TLSConfigBroker(config <a href="broker.html#MQConf">MQConf</a>) (*<a href="http://localhost:6060/pkg/crypto/tls/">tls</a>.<a href="http://localhost:6060/pkg/crypto/tls/#Config">Config</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+			<p>
+TLSConfigBroker is a helper method to setup TLS for the message broker
+</p>
+
+			
+			
+
+		
+		
+			
+			
+			<h2 id="AMQPBroker">type <a href="../../../src/sda-pipeline/internal/broker/broker.go%3Fs=862:1005.html#L21">AMQPBroker</a>
+				<a class="permalink" href="broker.html#AMQPBroker">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+AMQPBroker is a Broker that reads messages from an AMQP broker
+</p>
+
+			<pre>type AMQPBroker struct {
+<span id="AMQPBroker.Connection"></span>    Connection *<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/#Connection">Connection</a>
+<span id="AMQPBroker.Channel"></span>    Channel    <a href="broker.html#AMQPChannel">AMQPChannel</a>
+<span id="AMQPBroker.Conf"></span>    Conf       <a href="broker.html#MQConf">MQConf</a>
+    <span class="comment">// contains filtered or unexported fields</span>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+				
+				<h3 id="NewMQ">func <a href="../../../src/sda-pipeline/internal/broker/broker.go%3Fs=2288:2334.html#L73">NewMQ</a>
+					<a class="permalink" href="broker.html#NewMQ">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func NewMQ(config <a href="broker.html#MQConf">MQConf</a>) (*<a href="broker.html#AMQPBroker">AMQPBroker</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<p>
+NewMQ creates a new Broker that can communicate with a backend
+amqp server.
+</p>
+
+				
+				
+			
+
+			
+				
+				<h3 id="AMQPBroker.ConnectionWatcher">func (*AMQPBroker) <a href="../../../src/sda-pipeline/internal/broker/broker.go%3Fs=6780:6837.html#L237">ConnectionWatcher</a>
+					<a class="permalink" href="broker.html#AMQPBroker.ConnectionWatcher">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (broker *<a href="broker.html#AMQPBroker">AMQPBroker</a>) ConnectionWatcher() *<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/#Error">Error</a></pre>
+				<p>
+ConnectionWatcher listens to events from the server
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="AMQPBroker.GetMessages">func (*AMQPBroker) <a href="../../../src/sda-pipeline/internal/broker/broker.go%3Fs=3691:3772.html#L124">GetMessages</a>
+					<a class="permalink" href="broker.html#AMQPBroker.GetMessages">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (broker *<a href="broker.html#AMQPBroker">AMQPBroker</a>) GetMessages(queue <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (&lt;-chan <a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/#Delivery">Delivery</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<p>
+GetMessages reads messages from the queue
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="AMQPBroker.SendJSONError">func (*AMQPBroker) <a href="../../../src/sda-pipeline/internal/broker/broker.go%3Fs=6976:7096.html#L243">SendJSONError</a>
+					<a class="permalink" href="broker.html#AMQPBroker.SendJSONError">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (broker *<a href="broker.html#AMQPBroker">AMQPBroker</a>) SendJSONError(delivered *<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/#Delivery">Delivery</a>, originalBody []<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>, reason <a href="http://localhost:6060/pkg/builtin/#string">string</a>, conf <a href="broker.html#MQConf">MQConf</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+SendJSONError sends message on JSON error
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="AMQPBroker.SendMessage">func (*AMQPBroker) <a href="../../../src/sda-pipeline/internal/broker/broker.go%3Fs=4006:4114.html#L138">SendMessage</a>
+					<a class="permalink" href="broker.html#AMQPBroker.SendMessage">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (broker *<a href="broker.html#AMQPBroker">AMQPBroker</a>) SendMessage(corrID, exchange, routingKey <a href="http://localhost:6060/pkg/builtin/#string">string</a>, reliable <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>, body []<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+SendMessage sends a message to RabbitMQ
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="AMQPBroker.ValidateJSON">func (*AMQPBroker) <a href="../../../src/sda-pipeline/internal/broker/broker.go%3Fs=7661:7785.html#L259">ValidateJSON</a>
+					<a class="permalink" href="broker.html#AMQPBroker.ValidateJSON">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (broker *<a href="broker.html#AMQPBroker">AMQPBroker</a>) ValidateJSON(delivered *<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/#Delivery">Delivery</a>,
+    messageType <a href="http://localhost:6060/pkg/builtin/#string">string</a>,
+    body []<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>,
+    dest interface{}) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<p>
+ValidateJSON validates JSON in body, verifying that it&#39;s valid JSON as well
+as conforming to the schema specified by messageType. It also optionally
+verifies that the message can be decoded into the supplied data structure dest
+</p>
+
+				
+				
+				
+			
+		
+			
+			
+			<h2 id="AMQPChannel">type <a href="../../../src/sda-pipeline/internal/broker/broker.go%3Fs=444:794.html#L12">AMQPChannel</a>
+				<a class="permalink" href="broker.html#AMQPChannel">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+The AMQPChannel interface gives access to the functions provided
+</p>
+
+			<pre>type AMQPChannel interface {
+    Consume(queue, consumer <a href="http://localhost:6060/pkg/builtin/#string">string</a>, autoAck, exclusive, noLocal, noWait <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>, args <a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/#Table">Table</a>) (&lt;-chan <a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/#Delivery">Delivery</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)
+    Confirm(noWait <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a>
+    NotifyPublish(confirm chan <a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/#Confirmation">Confirmation</a>) chan <a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/#Confirmation">Confirmation</a>
+    Publish(exchange, key <a href="http://localhost:6060/pkg/builtin/#string">string</a>, mandatory, immediate <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>, msg <a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/">amqp</a>.<a href="http://localhost:6060/pkg/github.com/rabbitmq/amqp091-go/#Publishing">Publishing</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a>
+    Close() <a href="http://localhost:6060/pkg/builtin/#error">error</a>
+}</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="FileError">type <a href="../../../src/sda-pipeline/internal/broker/broker.go%3Fs=1840:1964.html#L58">FileError</a>
+				<a class="permalink" href="broker.html#FileError">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+FileError struct for sending file error messages to analysis
+</p>
+
+			<pre>type FileError struct {
+<span id="FileError.User"></span>    User     <a href="http://localhost:6060/pkg/builtin/#string">string</a> `json:&#34;user&#34;`
+<span id="FileError.FilePath"></span>    FilePath <a href="http://localhost:6060/pkg/builtin/#string">string</a> `json:&#34;filepath&#34;`
+<span id="FileError.Reason"></span>    Reason   <a href="http://localhost:6060/pkg/builtin/#string">string</a> `json:&#34;reason&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="InfoError">type <a href="../../../src/sda-pipeline/internal/broker/broker.go%3Fs=2035:2204.html#L65">InfoError</a>
+				<a class="permalink" href="broker.html#InfoError">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+InfoError struct for sending detailed error messages to analysis.
+</p>
+
+			<pre>type InfoError struct {
+<span id="InfoError.Error"></span>    Error           <a href="http://localhost:6060/pkg/builtin/#string">string</a>      `json:&#34;error&#34;`
+<span id="InfoError.Reason"></span>    Reason          <a href="http://localhost:6060/pkg/builtin/#string">string</a>      `json:&#34;reason&#34;`
+<span id="InfoError.OriginalMessage"></span>    OriginalMessage interface{} `json:&#34;original-message&#34;`
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="MQConf">type <a href="../../../src/sda-pipeline/internal/broker/broker.go%3Fs=1061:1558.html#L29">MQConf</a>
+				<a class="permalink" href="broker.html#MQConf">&#xb6;</a>
+				
+				
+			</h2>
+			<p>
+MQConf stores information about the message broker
+</p>
+
+			<pre>type MQConf struct {
+<span id="MQConf.Host"></span>    Host               <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Port"></span>    Port               <a href="http://localhost:6060/pkg/builtin/#int">int</a>
+<span id="MQConf.User"></span>    User               <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Password"></span>    Password           <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Vhost"></span>    Vhost              <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Queue"></span>    Queue              <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Exchange"></span>    Exchange           <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.RoutingKey"></span>    RoutingKey         <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.RoutingError"></span>    RoutingError       <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Ssl"></span>    Ssl                <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
+<span id="MQConf.InsecureSkipVerify"></span>    InsecureSkipVerify <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
+<span id="MQConf.VerifyPeer"></span>    VerifyPeer         <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
+<span id="MQConf.CACert"></span>    CACert             <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.ClientCert"></span>    ClientCert         <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.ClientKey"></span>    ClientKey          <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.ServerName"></span>    ServerName         <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="MQConf.Durable"></span>    Durable            <a href="http://localhost:6060/pkg/builtin/#bool">bool</a>
+<span id="MQConf.SchemasPath"></span>    SchemasPath        <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+}
+</pre>
+
+			
+
+			
+
+			
+			
+			
+
+			
+
+			
+		
+	
+
+	
+
+
+
+
+
+
+
+<div id="footer">
+Build version go1.17.7.<br>
+Except as <a href="https://developers.google.com/site-policies#restrictions">noted</a>,
+the content of this page is licensed under the
+Creative Commons Attribution 3.0 License,
+and code is licensed under a <a href="http://localhost:6060/LICENSE">BSD license</a>.<br>
+<a href="http://localhost:6060/doc/tos.html">Terms of Service</a> |
+<a href="http://www.google.com/intl/en/policies/privacy/">Privacy Policy</a>
+</div>
+
+</div><!-- .container -->
+</div><!-- #page -->
+</body>
+</html>

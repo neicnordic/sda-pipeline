@@ -12,7 +12,7 @@
 
 
 
-<script>var goVersion = "go1.15.15";</script>
+<script>var goVersion = "go1.17.7";</script>
 <script src="../../../../lib/godoc/godocs.js" defer></script>
 </head>
 <body>
@@ -24,7 +24,7 @@
 <div id="topbar" class="wide"><div class="container">
 <div class="top-heading" id="heading-wide"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">Go Documentation Server</a></div>
 <div class="top-heading" id="heading-narrow"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">GoDoc</a></div>
-<a href="index.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
+<a href="index.html%3Fm=all.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
 
 
 </div></div>
@@ -76,8 +76,8 @@
 			<dd><code>import "sda-pipeline/internal/storage"</code></dd>
 			</dl>
 			<dl>
-			<dd><a href="index.html#pkg-overview" class="overviewLink">Overview</a></dd>
-			<dd><a href="index.html#pkg-index" class="indexLink">Index</a></dd>
+			<dd><a href="index.html%3Fm=all.html#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="index.html%3Fm=all.html#pkg-index" class="indexLink">Index</a></dd>
 			
 			
 			</dl>
@@ -111,64 +111,64 @@ Package storage provides interface for storage areas, e.g. s3 or POSIX file syst
 			
 			
 				
-				<dd><a href="index.html#transportConfigS3">func transportConfigS3(config S3Conf) http.RoundTripper</a></dd>
+				<dd><a href="index.html%3Fm=all.html#transportConfigS3">func transportConfigS3(config S3Conf) http.RoundTripper</a></dd>
 			
 			
 				
-				<dd><a href="index.html#Backend">type Backend</a></dd>
+				<dd><a href="index.html%3Fm=all.html#Backend">type Backend</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="index.html#NewBackend">func NewBackend(config Conf) (Backend, error)</a></dd>
-				
-				
-			
-				
-				<dd><a href="index.html#Conf">type Conf</a></dd>
+					<dd>&nbsp; &nbsp; <a href="index.html%3Fm=all.html#NewBackend">func NewBackend(config Conf) (Backend, error)</a></dd>
 				
 				
 			
 				
-				<dd><a href="index.html#S3Conf">type S3Conf</a></dd>
+				<dd><a href="index.html%3Fm=all.html#Conf">type Conf</a></dd>
 				
 				
 			
 				
-				<dd><a href="index.html#posixBackend">type posixBackend</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="index.html#newPosixBackend">func newPosixBackend(config posixConf) (*posixBackend, error)</a></dd>
-				
-				
-					
-					<dd>&nbsp; &nbsp; <a href="index.html#posixBackend.GetFileSize">func (pb *posixBackend) GetFileSize(filePath string) (int64, error)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="index.html#posixBackend.NewFileReader">func (pb *posixBackend) NewFileReader(filePath string) (io.ReadCloser, error)</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="index.html#posixBackend.NewFileWriter">func (pb *posixBackend) NewFileWriter(filePath string) (io.WriteCloser, error)</a></dd>
-				
-			
-				
-				<dd><a href="index.html#posixConf">type posixConf</a></dd>
+				<dd><a href="index.html%3Fm=all.html#S3Conf">type S3Conf</a></dd>
 				
 				
 			
 				
-				<dd><a href="index.html#s3Backend">type s3Backend</a></dd>
+				<dd><a href="index.html%3Fm=all.html#posixBackend">type posixBackend</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="index.html#newS3Backend">func newS3Backend(config S3Conf) (*s3Backend, error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="index.html%3Fm=all.html#newPosixBackend">func newPosixBackend(config posixConf) (*posixBackend, error)</a></dd>
 				
 				
 					
-					<dd>&nbsp; &nbsp; <a href="index.html#s3Backend.GetFileSize">func (sb *s3Backend) GetFileSize(filePath string) (int64, error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="index.html%3Fm=all.html#posixBackend.GetFileSize">func (pb *posixBackend) GetFileSize(filePath string) (int64, error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="index.html#s3Backend.NewFileReader">func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="index.html%3Fm=all.html#posixBackend.NewFileReader">func (pb *posixBackend) NewFileReader(filePath string) (io.ReadCloser, error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="index.html#s3Backend.NewFileWriter">func (sb *s3Backend) NewFileWriter(filePath string) (io.WriteCloser, error)</a></dd>
+					<dd>&nbsp; &nbsp; <a href="index.html%3Fm=all.html#posixBackend.NewFileWriter">func (pb *posixBackend) NewFileWriter(filePath string) (io.WriteCloser, error)</a></dd>
+				
+			
+				
+				<dd><a href="index.html%3Fm=all.html#posixConf">type posixConf</a></dd>
+				
+				
+			
+				
+				<dd><a href="index.html%3Fm=all.html#s3Backend">type s3Backend</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html%3Fm=all.html#newS3Backend">func newS3Backend(config S3Conf) (*s3Backend, error)</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html%3Fm=all.html#s3Backend.GetFileSize">func (sb *s3Backend) GetFileSize(filePath string) (int64, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html%3Fm=all.html#s3Backend.NewFileReader">func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html%3Fm=all.html#s3Backend.NewFileWriter">func (sb *s3Backend) NewFileWriter(filePath string) (io.WriteCloser, error)</a></dd>
 				
 			
 			
@@ -182,7 +182,7 @@ Package storage provides interface for storage areas, e.g. s3 or POSIX file syst
 			<p>
 			<span style="font-size:90%">
 			
-				<a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go">storage.go</a>
+				<a href="../../../../src/sda-pipeline/internal/storage/storage.go.html">storage.go</a>
 			
 			</span>
 			</p>
@@ -197,12 +197,12 @@ Package storage provides interface for storage areas, e.g. s3 or POSIX file syst
 		
 			
 			
-			<h2 id="transportConfigS3">func <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=6698:6753#L273">transportConfigS3</a>
-				<a class="permalink" href="index.html#transportConfigS3">&#xb6;</a>
+			<h2 id="transportConfigS3">func <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=6698:6753.html#L273">transportConfigS3</a>
+				<a class="permalink" href="index.html%3Fm=all.html#transportConfigS3">&#xb6;</a>
 				
 				
 			</h2>
-			<pre>func transportConfigS3(config <a href="index.html#S3Conf">S3Conf</a>) <a href="http://localhost:6060/pkg/net/http/">http</a>.<a href="http://localhost:6060/pkg/net/http/#RoundTripper">RoundTripper</a></pre>
+			<pre>func transportConfigS3(config <a href="index.html%3Fm=all.html#S3Conf">S3Conf</a>) <a href="http://localhost:6060/pkg/net/http/">http</a>.<a href="http://localhost:6060/pkg/net/http/#RoundTripper">RoundTripper</a></pre>
 			<p>
 transportConfigS3 is a helper method to setup TLS for the S3 client.
 </p>
@@ -214,8 +214,8 @@ transportConfigS3 is a helper method to setup TLS for the S3 client.
 		
 			
 			
-			<h2 id="Backend">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=596:778#L18">Backend</a>
-				<a class="permalink" href="index.html#Backend">&#xb6;</a>
+			<h2 id="Backend">type <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=596:778.html#L18">Backend</a>
+				<a class="permalink" href="index.html%3Fm=all.html#Backend">&#xb6;</a>
 				
 				
 			</h2>
@@ -239,12 +239,12 @@ Backend defines methods to be implemented by PosixBackend and S3Backend
 
 			
 				
-				<h3 id="NewBackend">func <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=1070:1115#L42">NewBackend</a>
-					<a class="permalink" href="index.html#NewBackend">&#xb6;</a>
+				<h3 id="NewBackend">func <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=1070:1115.html#L42">NewBackend</a>
+					<a class="permalink" href="index.html%3Fm=all.html#NewBackend">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func NewBackend(config <a href="index.html#Conf">Conf</a>) (<a href="index.html%3Fm=all.html#Backend">Backend</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<pre>func NewBackend(config <a href="index.html%3Fm=all.html#Conf">Conf</a>) (<a href="index.html%3Fm=all.html#Backend">Backend</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
 				<p>
 NewBackend initiates a storage backend
 </p>
@@ -257,8 +257,8 @@ NewBackend initiates a storage backend
 		
 			
 			
-			<h2 id="Conf">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=824:889#L25">Conf</a>
-				<a class="permalink" href="index.html#Conf">&#xb6;</a>
+			<h2 id="Conf">type <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=824:889.html#L25">Conf</a>
+				<a class="permalink" href="index.html%3Fm=all.html#Conf">&#xb6;</a>
 				
 				
 			</h2>
@@ -268,7 +268,7 @@ Conf is a wrapper for the storage config
 
 			<pre>type Conf struct {
 <span id="Conf.Type"></span>    Type  <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="Conf.S3"></span>    S3    <a href="index.html#S3Conf">S3Conf</a>
+<span id="Conf.S3"></span>    S3    <a href="index.html%3Fm=all.html#S3Conf">S3Conf</a>
 <span id="Conf.Posix"></span>    Posix posixConf
 }
 </pre>
@@ -287,8 +287,8 @@ Conf is a wrapper for the storage config
 		
 			
 			
-			<h2 id="S3Conf">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=2788:3068#L118">S3Conf</a>
-				<a class="permalink" href="index.html#S3Conf">&#xb6;</a>
+			<h2 id="S3Conf">type <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=2788:3068.html#L118">S3Conf</a>
+				<a class="permalink" href="index.html%3Fm=all.html#S3Conf">&#xb6;</a>
 				
 				
 			</h2>
@@ -324,8 +324,8 @@ S3Conf stores information about the S3 storage backend
 		
 			
 			
-			<h2 id="posixBackend">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=891:982#L31">posixBackend</a>
-				<a class="permalink" href="index.html#posixBackend">&#xb6;</a>
+			<h2 id="posixBackend">type <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=891:982.html#L31">posixBackend</a>
+				<a class="permalink" href="index.html%3Fm=all.html#posixBackend">&#xb6;</a>
 				
 				
 			</h2>
@@ -347,8 +347,8 @@ S3Conf stores information about the S3 storage backend
 
 			
 				
-				<h3 id="newPosixBackend">func <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=1240:1301#L51">newPosixBackend</a>
-					<a class="permalink" href="index.html#newPosixBackend">&#xb6;</a>
+				<h3 id="newPosixBackend">func <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=1240:1301.html#L51">newPosixBackend</a>
+					<a class="permalink" href="index.html%3Fm=all.html#newPosixBackend">&#xb6;</a>
 					
 					
 				</h3>
@@ -360,8 +360,8 @@ S3Conf stores information about the S3 storage backend
 
 			
 				
-				<h3 id="posixBackend.GetFileSize">func (*posixBackend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=2326:2393#L96">GetFileSize</a>
-					<a class="permalink" href="index.html#posixBackend.GetFileSize">&#xb6;</a>
+				<h3 id="posixBackend.GetFileSize">func (*posixBackend) <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=2326:2393.html#L96">GetFileSize</a>
+					<a class="permalink" href="index.html%3Fm=all.html#posixBackend.GetFileSize">&#xb6;</a>
 					
 					
 				</h3>
@@ -375,8 +375,8 @@ GetFileSize returns the size of the file
 				
 			
 				
-				<h3 id="posixBackend.NewFileReader">func (*posixBackend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=1586:1663#L66">NewFileReader</a>
-					<a class="permalink" href="index.html#posixBackend.NewFileReader">&#xb6;</a>
+				<h3 id="posixBackend.NewFileReader">func (*posixBackend) <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=1586:1663.html#L66">NewFileReader</a>
+					<a class="permalink" href="index.html%3Fm=all.html#posixBackend.NewFileReader">&#xb6;</a>
 					
 					
 				</h3>
@@ -390,8 +390,8 @@ NewFileReader returns an io.Reader instance
 				
 			
 				
-				<h3 id="posixBackend.NewFileWriter">func (*posixBackend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=1935:2013#L81">NewFileWriter</a>
-					<a class="permalink" href="index.html#posixBackend.NewFileWriter">&#xb6;</a>
+				<h3 id="posixBackend.NewFileWriter">func (*posixBackend) <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=1935:2013.html#L81">NewFileWriter</a>
+					<a class="permalink" href="index.html%3Fm=all.html#posixBackend.NewFileWriter">&#xb6;</a>
 					
 					
 				</h3>
@@ -407,8 +407,8 @@ NewFileWriter returns an io.Writer instance
 		
 			
 			
-			<h2 id="posixConf">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=984:1026#L37">posixConf</a>
-				<a class="permalink" href="index.html#posixConf">&#xb6;</a>
+			<h2 id="posixConf">type <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=984:1026.html#L37">posixConf</a>
+				<a class="permalink" href="index.html%3Fm=all.html#posixConf">&#xb6;</a>
 				
 				
 			</h2>
@@ -432,8 +432,8 @@ NewFileWriter returns an io.Writer instance
 		
 			
 			
-			<h2 id="s3Backend">type <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=2621:2728#L110">s3Backend</a>
-				<a class="permalink" href="index.html#s3Backend">&#xb6;</a>
+			<h2 id="s3Backend">type <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=2621:2728.html#L110">s3Backend</a>
+				<a class="permalink" href="index.html%3Fm=all.html#s3Backend">&#xb6;</a>
 				
 				
 			</h2>
@@ -442,7 +442,7 @@ NewFileWriter returns an io.Writer instance
 <span id="s3Backend.Client"></span>    Client   *<a href="http://localhost:6060/pkg/github.com/aws/aws-sdk-go/service/s3/">s3</a>.<a href="http://localhost:6060/pkg/github.com/aws/aws-sdk-go/service/s3/#S3">S3</a>
 <span id="s3Backend.Uploader"></span>    Uploader *<a href="http://localhost:6060/pkg/github.com/aws/aws-sdk-go/service/s3/s3manager/">s3manager</a>.<a href="http://localhost:6060/pkg/github.com/aws/aws-sdk-go/service/s3/s3manager/#Uploader">Uploader</a>
 <span id="s3Backend.Bucket"></span>    Bucket   <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="s3Backend.Conf"></span>    Conf     *<a href="index.html#S3Conf">S3Conf</a>
+<span id="s3Backend.Conf"></span>    Conf     *<a href="index.html%3Fm=all.html#S3Conf">S3Conf</a>
 }
 </pre>
 
@@ -456,12 +456,12 @@ NewFileWriter returns an io.Writer instance
 
 			
 				
-				<h3 id="newS3Backend">func <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=3070:3122#L131">newS3Backend</a>
-					<a class="permalink" href="index.html#newS3Backend">&#xb6;</a>
+				<h3 id="newS3Backend">func <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=3070:3122.html#L131">newS3Backend</a>
+					<a class="permalink" href="index.html%3Fm=all.html#newS3Backend">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func newS3Backend(config <a href="index.html#S3Conf">S3Conf</a>) (*s3Backend, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<pre>func newS3Backend(config <a href="index.html%3Fm=all.html#S3Conf">S3Conf</a>) (*s3Backend, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
 				
 				
 				
@@ -469,8 +469,8 @@ NewFileWriter returns an io.Writer instance
 
 			
 				
-				<h3 id="s3Backend.GetFileSize">func (*s3Backend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=5865:5929#L237">GetFileSize</a>
-					<a class="permalink" href="index.html#s3Backend.GetFileSize">&#xb6;</a>
+				<h3 id="s3Backend.GetFileSize">func (*s3Backend) <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=5865:5929.html#L237">GetFileSize</a>
+					<a class="permalink" href="index.html%3Fm=all.html#s3Backend.GetFileSize">&#xb6;</a>
 					
 					
 				</h3>
@@ -484,8 +484,8 @@ GetFileSize returns the size of a specific object
 				
 			
 				
-				<h3 id="s3Backend.NewFileReader">func (*s3Backend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=4571:4645#L181">NewFileReader</a>
-					<a class="permalink" href="index.html#s3Backend.NewFileReader">&#xb6;</a>
+				<h3 id="s3Backend.NewFileReader">func (*s3Backend) <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=4571:4645.html#L181">NewFileReader</a>
+					<a class="permalink" href="index.html%3Fm=all.html#s3Backend.NewFileReader">&#xb6;</a>
 					
 					
 				</h3>
@@ -499,8 +499,8 @@ NewFileReader returns an io.Reader instance
 				
 			
 				
-				<h3 id="s3Backend.NewFileWriter">func (*s3Backend) <a href="http://localhost:6060/src/sda-pipeline/internal/storage/storage.go?s=5307:5382#L214">NewFileWriter</a>
-					<a class="permalink" href="index.html#s3Backend.NewFileWriter">&#xb6;</a>
+				<h3 id="s3Backend.NewFileWriter">func (*s3Backend) <a href="../../../../src/sda-pipeline/internal/storage/storage.go%3Fs=5307:5382.html#L214">NewFileWriter</a>
+					<a class="permalink" href="index.html%3Fm=all.html#s3Backend.NewFileWriter">&#xb6;</a>
 					
 					
 				</h3>
@@ -525,7 +525,7 @@ NewFileWriter uploads the contents of an io.Reader to a S3 bucket
 
 
 <div id="footer">
-Build version go1.15.15.<br>
+Build version go1.17.7.<br>
 Except as <a href="https://developers.google.com/site-policies#restrictions">noted</a>,
 the content of this page is licensed under the
 Creative Commons Attribution 3.0 License,

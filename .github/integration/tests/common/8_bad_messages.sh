@@ -57,9 +57,10 @@ for routingkey in ingest archived accessionIDs backup mappings; do
 						"payload":"{
 						I give you bad json!}"
 					}'
-done
 
 check_move_to_error_queue "I give you bad json"
+
+done
 
 #routingkey files requires fixing of #323 first
 for routingkey in ingest archived accessionIDs backup mappings; do
@@ -78,9 +79,10 @@ for routingkey in ingest archived accessionIDs backup mappings; do
 						"payload_encoding":"string",
 						"payload":"{ \"json\":\"yes, but not sda\" }"
 					}'
-done
 
 check_move_to_error_queue "yes, but not sda"
+
+done
 
 # Cleanup queues
 curl --cacert certs/ca.pem  -u test:test -X DELETE 'https://localhost:15672/api/queues/test/error/contents'

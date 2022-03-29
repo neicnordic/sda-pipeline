@@ -1,58 +1,67 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#375EAB">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#375EAB">
   <title>NeIC sda-pipeline - go documentation</title>
-<link type="text/css" rel="stylesheet" href="../../../lib/godoc/style.css">
+  <link type="text/css" rel="stylesheet" href="../../../lib/godoc/style.css">
+  
+  <script>window.initFuncs = [];</script>
+  <script src="../../../lib/godoc/jquery.js" defer></script>
+  
 
-<script>window.initFuncs = [];</script>
-<script src="../../../lib/godoc/jquery.js" defer></script>
-
-
-
-<script>var goVersion = "go1.17.7";</script>
-<script src="../../../lib/godoc/godocs.js" defer></script>
+  
+  
+  <script>var goVersion = "go1.17.7";</script>
+  <script src="../../../lib/godoc/godocs.js" defer></script>
 </head>
+
 <body>
 
-<div id='lowframe' style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
-...
-</div><!-- #lowframe -->
+  <div id='lowframe'
+    style="position: fixed; bottom: 0; left: 0; height: 0; width: 100%; border-top: thin solid grey; background-color: white; overflow: auto;">
+    ...
+  </div><!-- #lowframe -->
 
-<div id="topbar" class="wide"><div class="container">
-<div class="top-heading" id="heading-wide"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">Go Documentation Server</a></div>
-<div class="top-heading" id="heading-narrow"><a href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">GoDoc</a></div>
-<a href="database.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
-
-
-</div></div>
-
-<div class="container" style="padding: 1em">
-  Please see <a href="https://github.com/neicnordic/sda-pipeline/">https://github.com/neicnordic/sda-pipeline/</a> for the code
-  repository.
-</div>
-  
-<div id="page" class="wide">
-<div class="container">
+  <div id="topbar"  class="wide" >
+    <div class="container">
+      <div class="top-heading" id="heading-wide"><a
+          href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">Go Documentation Server</a></div>
+      <div class="top-heading" id="heading-narrow"><a
+          href="https://neicnordic.github.io/sda-pipeline/pkg/sda-pipeline/">GoDoc</a></div>
+      <a href="database.html#" id="menu-button"><span id="menu-button-arrow">&#9661;</span></a>
 
 
-  <h1>
-    Package database
-    <span class="text-muted"></span>
-  </h1>
+    </div>
+  </div>
 
+  <div class="container" style="padding: 1em">
+    Please see <a href="https://github.com/neicnordic/sda-pipeline/">https://github.com/neicnordic/sda-pipeline/</a> for
+    the code
+    repository.
+  </div>
 
+  <div id="page"  class="wide" >
+    <div class="container">
 
+      
+      <h1>
+        Package database
+        <span class="text-muted"></span>
+      </h1>
+      
 
+      
 
+      
 
+      
+          <div id="nav"></div>
 
-<div id="nav"></div>
-
-
-<!--
+          
+          <!--
 	Copyright 2009 The Go Authors. All rights reserved.
 	Use of this source code is governed by a BSD-style
 	license that can be found in the LICENSE file.
@@ -173,7 +182,7 @@ providing high level functions
 			<p>
 			<span style="font-size:90%">
 			
-				<a href="../../../src/sda-pipeline/internal/database/db.go.html">db.go</a>
+				<a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go.html">db.go</a>
 			
 			</span>
 			</p>
@@ -189,7 +198,7 @@ providing high level functions
 		
 			
 			
-			<h2 id="DBConf">type <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=825:1015.html#L27">DBConf</a>
+			<h2 id="DBConf">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L27">DBConf</a>
 				<a class="permalink" href="database.html#DBConf">&#xb6;</a>
 				
 				
@@ -199,15 +208,15 @@ DBConf stores information about the database backend
 </p>
 
 			<pre>type DBConf struct {
-<span id="DBConf.Host"></span>    Host       <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="DBConf.Port"></span>    Port       <a href="http://localhost:6060/pkg/builtin/#int">int</a>
-<span id="DBConf.User"></span>    User       <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="DBConf.Password"></span>    Password   <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="DBConf.Database"></span>    Database   <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="DBConf.CACert"></span>    CACert     <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="DBConf.SslMode"></span>    SslMode    <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="DBConf.ClientCert"></span>    ClientCert <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="DBConf.ClientKey"></span>    ClientKey  <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="DBConf.Host"></span>    Host       <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="DBConf.Port"></span>    Port       <a href="https://pkg.go.dev/builtin/#int">int</a>
+<span id="DBConf.User"></span>    User       <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="DBConf.Password"></span>    Password   <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="DBConf.Database"></span>    Database   <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="DBConf.CACert"></span>    CACert     <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="DBConf.SslMode"></span>    SslMode    <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="DBConf.ClientCert"></span>    ClientCert <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="DBConf.ClientKey"></span>    ClientKey  <a href="https://pkg.go.dev/builtin/#string">string</a>
 }
 </pre>
 
@@ -225,7 +234,7 @@ DBConf stores information about the database backend
 		
 			
 			
-			<h2 id="Database">type <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=388:643.html#L12">Database</a>
+			<h2 id="Database">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L12">Database</a>
 				<a class="permalink" href="database.html#Database">&#xb6;</a>
 				
 				
@@ -235,10 +244,10 @@ Database defines methods to be implemented by SQLdb
 </p>
 
 			<pre>type Database interface {
-    GetHeader(fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) ([]<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)
-    MarkCompleted(checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>, fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a>
-    MarkReady(accessionID, user, filepath, checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a>
-    GetArchived(user, filepath, checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (<a href="http://localhost:6060/pkg/builtin/#string">string</a>, <a href="http://localhost:6060/pkg/builtin/#int">int</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)
+    GetHeader(fileID <a href="https://pkg.go.dev/builtin/#int">int</a>) ([]<a href="https://pkg.go.dev/builtin/#byte">byte</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+    MarkCompleted(checksum <a href="https://pkg.go.dev/builtin/#string">string</a>, fileID <a href="https://pkg.go.dev/builtin/#int">int</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+    MarkReady(accessionID, user, filepath, checksum <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
+    GetArchived(user, filepath, checksum <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#int">int</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
     Close()
 }</pre>
 
@@ -256,7 +265,7 @@ Database defines methods to be implemented by SQLdb
 		
 			
 			
-			<h2 id="FileInfo">type <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=1088:1246.html#L40">FileInfo</a>
+			<h2 id="FileInfo">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L40">FileInfo</a>
 				<a class="permalink" href="database.html#FileInfo">&#xb6;</a>
 				
 				
@@ -266,11 +275,11 @@ FileInfo is used by ingest for file metadata (path, size, checksum)
 </p>
 
 			<pre>type FileInfo struct {
-<span id="FileInfo.Checksum"></span>    Checksum          <a href="http://localhost:6060/pkg/hash/">hash</a>.<a href="http://localhost:6060/pkg/hash/#Hash">Hash</a>
-<span id="FileInfo.Size"></span>    Size              <a href="http://localhost:6060/pkg/builtin/#int64">int64</a>
-<span id="FileInfo.Path"></span>    Path              <a href="http://localhost:6060/pkg/builtin/#string">string</a>
-<span id="FileInfo.DecryptedChecksum"></span>    DecryptedChecksum <a href="http://localhost:6060/pkg/hash/">hash</a>.<a href="http://localhost:6060/pkg/hash/#Hash">Hash</a>
-<span id="FileInfo.DecryptedSize"></span>    DecryptedSize     <a href="http://localhost:6060/pkg/builtin/#int64">int64</a>
+<span id="FileInfo.Checksum"></span>    Checksum          <a href="https://pkg.go.dev/hash/">hash</a>.<a href="https://pkg.go.dev/hash/#Hash">Hash</a>
+<span id="FileInfo.Size"></span>    Size              <a href="https://pkg.go.dev/builtin/#int64">int64</a>
+<span id="FileInfo.Path"></span>    Path              <a href="https://pkg.go.dev/builtin/#string">string</a>
+<span id="FileInfo.DecryptedChecksum"></span>    DecryptedChecksum <a href="https://pkg.go.dev/hash/">hash</a>.<a href="https://pkg.go.dev/hash/#Hash">Hash</a>
+<span id="FileInfo.DecryptedSize"></span>    DecryptedSize     <a href="https://pkg.go.dev/builtin/#int64">int64</a>
 }
 </pre>
 
@@ -288,7 +297,7 @@ FileInfo is used by ingest for file metadata (path, size, checksum)
 		
 			
 			
-			<h2 id="SQLdb">type <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=711:767.html#L21">SQLdb</a>
+			<h2 id="SQLdb">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L21">SQLdb</a>
 				<a class="permalink" href="database.html#SQLdb">&#xb6;</a>
 				
 				
@@ -298,8 +307,8 @@ SQLdb struct that acts as a receiver for the DB update methods
 </p>
 
 			<pre>type SQLdb struct {
-<span id="SQLdb.DB"></span>    DB       *<a href="http://localhost:6060/pkg/database/sql/">sql</a>.<a href="http://localhost:6060/pkg/database/sql/#DB">DB</a>
-<span id="SQLdb.ConnInfo"></span>    ConnInfo <a href="http://localhost:6060/pkg/builtin/#string">string</a>
+<span id="SQLdb.DB"></span>    DB       *<a href="https://pkg.go.dev/database/sql/">sql</a>.<a href="https://pkg.go.dev/database/sql/#DB">DB</a>
+<span id="SQLdb.ConnInfo"></span>    ConnInfo <a href="https://pkg.go.dev/builtin/#string">string</a>
 }
 </pre>
 
@@ -313,12 +322,12 @@ SQLdb struct that acts as a receiver for the DB update methods
 
 			
 				
-				<h3 id="NewDB">func <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=1942:1983.html#L70">NewDB</a>
+				<h3 id="NewDB">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L70">NewDB</a>
 					<a class="permalink" href="database.html#NewDB">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func NewDB(config <a href="database.html#DBConf">DBConf</a>) (*<a href="database.html#SQLdb">SQLdb</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<pre>func NewDB(config <a href="database.html#DBConf">DBConf</a>) (*<a href="database.html#SQLdb">SQLdb</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				<p>
 NewDB creates a new DB connection
 </p>
@@ -329,7 +338,7 @@ NewDB creates a new DB connection
 
 			
 				
-				<h3 id="SQLdb.Close">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=11610:11635.html#L426">Close</a>
+				<h3 id="SQLdb.Close">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L426">Close</a>
 					<a class="permalink" href="database.html#SQLdb.Close">&#xb6;</a>
 					
 					
@@ -344,12 +353,12 @@ Close terminates the connection to the database
 				
 			
 				
-				<h3 id="SQLdb.GetArchived">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=10600:10683.html#L393">GetArchived</a>
+				<h3 id="SQLdb.GetArchived">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L393">GetArchived</a>
 					<a class="permalink" href="database.html#SQLdb.GetArchived">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) GetArchived(user, filepath, checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (<a href="http://localhost:6060/pkg/builtin/#string">string</a>, <a href="http://localhost:6060/pkg/builtin/#int">int</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) GetArchived(user, filepath, checksum <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#int">int</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				<p>
 GetArchived retrieves the location and size of archive
 </p>
@@ -359,12 +368,12 @@ GetArchived retrieves the location and size of archive
 				
 			
 				
-				<h3 id="SQLdb.GetHeader">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=3543:3598.html#L130">GetHeader</a>
+				<h3 id="SQLdb.GetHeader">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L130">GetHeader</a>
 					<a class="permalink" href="database.html#SQLdb.GetHeader">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) GetHeader(fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) ([]<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) GetHeader(fileID <a href="https://pkg.go.dev/builtin/#int">int</a>) ([]<a href="https://pkg.go.dev/builtin/#byte">byte</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				<p>
 GetHeader retrieves the file header
 </p>
@@ -374,12 +383,12 @@ GetHeader retrieves the file header
 				
 			
 				
-				<h3 id="SQLdb.InsertFile">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=5507:5573.html#L209">InsertFile</a>
+				<h3 id="SQLdb.InsertFile">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L209">InsertFile</a>
 					<a class="permalink" href="database.html#SQLdb.InsertFile">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) InsertFile(filename, user <a href="http://localhost:6060/pkg/builtin/#string">string</a>) (<a href="http://localhost:6060/pkg/builtin/#int64">int64</a>, <a href="http://localhost:6060/pkg/builtin/#error">error</a>)</pre>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) InsertFile(filename, user <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#int64">int64</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				<p>
 InsertFile inserts a file in the database
 </p>
@@ -389,12 +398,12 @@ InsertFile inserts a file in the database
 				
 			
 				
-				<h3 id="SQLdb.MapFilesToDataset">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=9185:9267.html#L347">MapFilesToDataset</a>
+				<h3 id="SQLdb.MapFilesToDataset">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L347">MapFilesToDataset</a>
 					<a class="permalink" href="database.html#SQLdb.MapFilesToDataset">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) MapFilesToDataset(datasetID <a href="http://localhost:6060/pkg/builtin/#string">string</a>, accessionIDs []<a href="http://localhost:6060/pkg/builtin/#string">string</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) MapFilesToDataset(datasetID <a href="https://pkg.go.dev/builtin/#string">string</a>, accessionIDs []<a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				<p>
 MapFilesToDataset maps a set of files to a dataset in the database
 </p>
@@ -404,12 +413,12 @@ MapFilesToDataset maps a set of files to a dataset in the database
 				
 			
 				
-				<h3 id="SQLdb.MarkCompleted">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=4300:4364.html#L165">MarkCompleted</a>
+				<h3 id="SQLdb.MarkCompleted">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L165">MarkCompleted</a>
 					<a class="permalink" href="database.html#SQLdb.MarkCompleted">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) MarkCompleted(file <a href="database.html#FileInfo">FileInfo</a>, fileID <a href="http://localhost:6060/pkg/builtin/#int">int</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) MarkCompleted(file <a href="database.html#FileInfo">FileInfo</a>, fileID <a href="https://pkg.go.dev/builtin/#int">int</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				<p>
 MarkCompleted marks the file as &#34;COMPLETED&#34;
 </p>
@@ -419,12 +428,12 @@ MarkCompleted marks the file as &#34;COMPLETED&#34;
 				
 			
 				
-				<h3 id="SQLdb.MarkReady">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=8214:8293.html#L315">MarkReady</a>
+				<h3 id="SQLdb.MarkReady">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L315">MarkReady</a>
 					<a class="permalink" href="database.html#SQLdb.MarkReady">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) MarkReady(accessionID, user, filepath, checksum <a href="http://localhost:6060/pkg/builtin/#string">string</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) MarkReady(accessionID, user, filepath, checksum <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				<p>
 MarkReady marks the file as &#34;READY&#34;
 </p>
@@ -434,12 +443,12 @@ MarkReady marks the file as &#34;READY&#34;
 				
 			
 				
-				<h3 id="SQLdb.SetArchived">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=7233:7293.html#L275">SetArchived</a>
+				<h3 id="SQLdb.SetArchived">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L275">SetArchived</a>
 					<a class="permalink" href="database.html#SQLdb.SetArchived">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) SetArchived(file <a href="database.html#FileInfo">FileInfo</a>, id <a href="http://localhost:6060/pkg/builtin/#int64">int64</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) SetArchived(file <a href="database.html#FileInfo">FileInfo</a>, id <a href="https://pkg.go.dev/builtin/#int64">int64</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				<p>
 SetArchived marks the file as &#39;ARCHIVED&#39;
 </p>
@@ -449,12 +458,12 @@ SetArchived marks the file as &#39;ARCHIVED&#39;
 				
 			
 				
-				<h3 id="SQLdb.StoreHeader">func (*SQLdb) <a href="../../../src/sda-pipeline/internal/database/db.go%3Fs=6459:6519.html#L245">StoreHeader</a>
+				<h3 id="SQLdb.StoreHeader">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L245">StoreHeader</a>
 					<a class="permalink" href="database.html#SQLdb.StoreHeader">&#xb6;</a>
 					
 					
 				</h3>
-				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) StoreHeader(header []<a href="http://localhost:6060/pkg/builtin/#byte">byte</a>, id <a href="http://localhost:6060/pkg/builtin/#int64">int64</a>) <a href="http://localhost:6060/pkg/builtin/#error">error</a></pre>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) StoreHeader(header []<a href="https://pkg.go.dev/builtin/#byte">byte</a>, id <a href="https://pkg.go.dev/builtin/#int64">int64</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				<p>
 StoreHeader stores the file header in the database
 </p>
@@ -474,17 +483,24 @@ StoreHeader stores the file header in the database
 
 
 
-<div id="footer">
-Build version go1.17.7.<br>
-Except as <a href="https://developers.google.com/site-policies#restrictions">noted</a>,
-the content of this page is licensed under the
-Creative Commons Attribution 3.0 License,
-and code is licensed under a <a href="http://localhost:6060/LICENSE">BSD license</a>.<br>
-<a href="http://localhost:6060/doc/tos.html">Terms of Service</a> |
-<a href="http://www.google.com/intl/en/policies/privacy/">Privacy Policy</a>
-</div>
+          <div id="footer">
+            Build version go1.17.7.<br>
+            Except as <a href="https://developers.google.com/site-policies#restrictions">noted</a>,
+            the content of this page is licensed under the
+            Creative Commons Attribution 3.0 License,
+            and code is licensed under a <a
+              href="https://github.com/neicnordic/sda-pipeline/blob/master/LICENSE">AGPL-3.0
+              License</a>.<br>
+            The documentation is hosted by Github.
+            <a href="https://www.google.com/intl/en/policies/terms/">Google Terms of Service</a> |
+            <a href="http://www.google.com/intl/en/policies/privacy/">Google Privacy Policy</a> |
+            <a href="https://docs.github.com/en/github/site-policy/github-terms-of-service">Github Terms of Service</a>
+            |
+            <a href="https://docs.github.com/en/github/site-policy/github-privacy-statement">Github Privacy Policy</a>
+          </div>
 
-</div><!-- .container -->
-</div><!-- #page -->
+        </div><!-- .container -->
+      </div><!-- #page -->
 </body>
+
 </html>

@@ -171,6 +171,10 @@ func TestPosixBackend(t *testing.T) {
 	assert.Nil(t, err, "posix NewFileReader failed when it should work")
 	assert.NotNil(t, size, "Got a nil size for posix")
 
+	err = backend.RemoveFile(writable)
+	assert.Nil(t, err, "posix RemoveFile failed when it should work")
+	assert.NotNil(t, size, "Got a nil size for posix")
+
 	log.SetOutput(&buf)
 
 	reader, err = backend.NewFileReader(posixDoesNotExist)
@@ -259,6 +263,9 @@ func TestS3Fail(t *testing.T) {
 
 	_, err = dummyBackend.GetFileSize("/")
 	assert.NotNil(t, err, "GetFileSize worked when it should not")
+
+	err = dummyBackend.RemoveFile("/")
+	assert.NotNil(t, err, "RemoveFile worked when it should not")
 }
 
 func TestPOSIXFail(t *testing.T) {
@@ -290,6 +297,9 @@ func TestPOSIXFail(t *testing.T) {
 
 	_, err = dummyBackend.GetFileSize("/")
 	assert.NotNil(t, err, "GetFileSize worked when it should not")
+
+	err = dummyBackend.RemoveFile("/")
+	assert.NotNil(t, err, "RemoveFile worked when it should not")
 }
 
 func TestS3Backend(t *testing.T) {
@@ -327,6 +337,10 @@ func TestS3Backend(t *testing.T) {
 		t.Error("reader that should be usable is not, bailing out")
 		return
 	}
+
+	err = s3back.RemoveFile(s3Creatable)
+	assert.Nil(t, err, "s3 RemoveFile failed when it should work")
+	assert.NotNil(t, size, "Got a nil size for posix")
 
 	var readBackBuffer [4096]byte
 	readBack, err := reader.Read(readBackBuffer[0:4096])

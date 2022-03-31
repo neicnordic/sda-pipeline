@@ -94,7 +94,7 @@ func TestSendMessage(t *testing.T) {
 	var err error
 	b.Channel = &c
 	err = b.Channel.Confirm(false)
-	assert.Nil(t, err, "Could not Channle in confirm mode")
+	assert.Nil(t, err, "Could not Channel in confirm mode")
 	b.confirmsChan = b.Channel.NotifyPublish(make(chan amqp.Confirmation, 1))
 	msg := []byte("Message")
 
@@ -359,4 +359,29 @@ func TestValidateJSON(t *testing.T) {
 	err = b.ValidateJSON(&msg, "notfound", messageText, &decoded)
 	assert.Error(t, err, "ValidateJSON did not fail when it should")
 	assert.NotZero(t, buf.Len(), "Did not get expected logs from failed ValidateJSON")
+}
+
+func TestSendJSONError(t *testing.T) {
+	b := AMQPBroker{}
+	c := mockChannel{}
+
+	b.Channel = &c
+	b.Conf = tMqconf
+	b.confirmsChan = b.Channel.NotifyPublish(make(chan amqp.Confirmation, 1))
+
+	var err error
+	type testMsg struct {
+		Test string `json:"payload"`
+	}
+
+	msg := amqp.Delivery{CorrelationId: "1"}
+
+	message := testMsg{Test: "some json"}
+	messageText, _ := json.Marshal(message)
+	err = b.SendJSONError(&msg, messageText, "some reason", b.Conf)
+	assert.Nil(t, err, "SendJSONError failed unexpectedly (json payload)")
+
+	messageText = []byte("some string")
+	err = b.SendJSONError(&msg, messageText, "some reason", b.Conf)
+	assert.Nil(t, err, "SendJSONError failed unexpectedly (string payload)")
 }

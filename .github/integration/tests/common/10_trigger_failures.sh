@@ -1,7 +1,11 @@
 #!/bin/bash
 
+if [ "$STORAGETYPE" = s3notls ]; then
+    exit 0
+fi
+
 cd dev_utils || exit 1
-exit 0
+
 #
 # Submit some messages that will trigger various failures. Do this
 # before the "real" work to verify that these failures are not top of
@@ -24,10 +28,12 @@ function check_move_to_error_queue() {
 		RETRY_TIMES=$((RETRY_TIMES + 1))
 		if [ $RETRY_TIMES -eq 61 ]; then
 			echo "::error::Time out while waiting for msg to move to error queue, logs:"
-			echo
-			echo ingest
-			echo
-			docker logs --since="$now" ingest
+			for k in ingest verify; do
+				echo
+				echo "$k"
+				echo
+				docker logs --since="$now" "$k"
+			done
 			exit 1
 		fi
 		sleep 2
@@ -107,7 +113,11 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
 
 # Verify that message is moved to the error queue (takes a few mins).
 
-check_move_to_error_queue "NoSuchKey: The specified key does not exist."
+if [ "$STORAGETYPE" = posix ]; then
+	check_move_to_error_queue "no such file or directory"
+else
+	check_move_to_error_queue "NoSuchKey: The specified key does not exist."
+fi
 
 : <<'END_COMMENT'
 # (currently not implemented)

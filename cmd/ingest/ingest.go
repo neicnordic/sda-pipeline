@@ -142,10 +142,10 @@ func main() {
 						e)
 				}
 				// Send the message to an error queue so it can be analyzed.
-				fileError := broker.FileError{
-					User:     message.User,
-					FilePath: message.Filepath,
-					Reason:   err.Error(),
+				fileError := broker.InfoError{
+					Error:           "Failed to open file to ingest",
+					Reason:          err.Error(),
+					OriginalMessage: message,
 				}
 				body, _ := json.Marshal(fileError)
 				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
@@ -179,10 +179,10 @@ func main() {
 						e)
 				}
 				// Send the message to an error queue so it can be analyzed.
-				fileError := broker.FileError{
-					User:     message.User,
-					FilePath: message.Filepath,
-					Reason:   err.Error(),
+				fileError := broker.InfoError{
+					Error:           "Failed to get file size of file to ingest",
+					Reason:          err.Error(),
+					OriginalMessage: message,
 				}
 				body, _ := json.Marshal(fileError)
 				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
@@ -299,10 +299,10 @@ func main() {
 						}
 
 						// Send the message to an error queue so it can be analyzed.
-						fileError := broker.FileError{
-							User:     message.User,
-							FilePath: message.Filepath,
-							Reason:   err.Error(),
+						fileError := broker.InfoError{
+							Error:           "Trying to decrypt start of file failed",
+							Reason:          err.Error(),
+							OriginalMessage: message,
 						}
 						body, _ := json.Marshal(fileError)
 						if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {

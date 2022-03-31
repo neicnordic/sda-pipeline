@@ -42,7 +42,7 @@ services:
       - certs:/var/lib/postgresql/tls/
   mq:
     container_name: mq
-    image: ghcr.io/neicnordic/sda-mq:v1.3.0
+    image: ghcr.io/neicnordic/sda-mq:v1.4.0
     environment:
      - MQ_SERVER_CERT=/etc/rabbitmq/ssl/mq.pem
      - MQ_SERVER_KEY=/etc/rabbitmq/ssl/mq.key

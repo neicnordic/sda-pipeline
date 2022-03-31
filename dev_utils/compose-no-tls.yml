@@ -18,7 +18,7 @@ services:
     volumes:
       - /tmp/data:/data
   mq:
-    image: neicnordic/sda-mq:v1.3.0
+    image: neicnordic/sda-mq:v1.4.0
     container_name: mq
     environment:
      - MQ_USER=test
@@ -100,6 +100,8 @@ services:
       - BROKER_ROUTINGKEY=verified
       - BROKER_ROUTINGERROR=error
       - DB_HOST=db
+      - INBOX_TYPE=s3
+      - INBOX_URL=http://s3
     image: neicnordic/sda-pipeline:latest
     volumes:
       - ./config-notls.yaml:/config.yaml

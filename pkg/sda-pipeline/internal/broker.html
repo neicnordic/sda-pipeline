@@ -152,11 +152,6 @@ Package broker contains logic for communicating with a message broker
 				
 			
 				
-				<dd><a href="broker.html#FileError">type FileError</a></dd>
-				
-				
-			
-				
 				<dd><a href="broker.html#InfoError">type InfoError</a></dd>
 				
 				
@@ -192,7 +187,7 @@ Package broker contains logic for communicating with a message broker
 		
 			
 			
-			<h2 id="TLSConfigBroker">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L179">TLSConfigBroker</a>
+			<h2 id="TLSConfigBroker">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L167">TLSConfigBroker</a>
 				<a class="permalink" href="broker.html#TLSConfigBroker">&#xb6;</a>
 				
 				
@@ -236,7 +231,7 @@ AMQPBroker is a Broker that reads messages from an AMQP broker
 
 			
 				
-				<h3 id="NewMQ">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L73">NewMQ</a>
+				<h3 id="NewMQ">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L61">NewMQ</a>
 					<a class="permalink" href="broker.html#NewMQ">&#xb6;</a>
 					
 					
@@ -253,7 +248,7 @@ amqp server.
 
 			
 				
-				<h3 id="AMQPBroker.ConnectionWatcher">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L237">ConnectionWatcher</a>
+				<h3 id="AMQPBroker.ConnectionWatcher">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L225">ConnectionWatcher</a>
 					<a class="permalink" href="broker.html#AMQPBroker.ConnectionWatcher">&#xb6;</a>
 					
 					
@@ -268,7 +263,7 @@ ConnectionWatcher listens to events from the server
 				
 			
 				
-				<h3 id="AMQPBroker.GetMessages">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L124">GetMessages</a>
+				<h3 id="AMQPBroker.GetMessages">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L112">GetMessages</a>
 					<a class="permalink" href="broker.html#AMQPBroker.GetMessages">&#xb6;</a>
 					
 					
@@ -283,7 +278,7 @@ GetMessages reads messages from the queue
 				
 			
 				
-				<h3 id="AMQPBroker.SendJSONError">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L243">SendJSONError</a>
+				<h3 id="AMQPBroker.SendJSONError">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L231">SendJSONError</a>
 					<a class="permalink" href="broker.html#AMQPBroker.SendJSONError">&#xb6;</a>
 					
 					
@@ -298,7 +293,7 @@ SendJSONError sends message on JSON error
 				
 			
 				
-				<h3 id="AMQPBroker.SendMessage">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L138">SendMessage</a>
+				<h3 id="AMQPBroker.SendMessage">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L126">SendMessage</a>
 					<a class="permalink" href="broker.html#AMQPBroker.SendMessage">&#xb6;</a>
 					
 					
@@ -313,7 +308,7 @@ SendMessage sends a message to RabbitMQ
 				
 			
 				
-				<h3 id="AMQPBroker.ValidateJSON">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L259">ValidateJSON</a>
+				<h3 id="AMQPBroker.ValidateJSON">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L247">ValidateJSON</a>
 					<a class="permalink" href="broker.html#AMQPBroker.ValidateJSON">&#xb6;</a>
 					
 					
@@ -366,43 +361,15 @@ The AMQPChannel interface gives access to the functions provided
 		
 			
 			
-			<h2 id="FileError">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L58">FileError</a>
-				<a class="permalink" href="broker.html#FileError">&#xb6;</a>
-				
-				
-			</h2>
-			<p>
-FileError struct for sending file error messages to analysis
-</p>
-
-			<pre>type FileError struct {
-<span id="FileError.User"></span>    User     <a href="https://pkg.go.dev/builtin/#string">string</a> `json:&#34;user&#34;`
-<span id="FileError.FilePath"></span>    FilePath <a href="https://pkg.go.dev/builtin/#string">string</a> `json:&#34;filepath&#34;`
-<span id="FileError.Reason"></span>    Reason   <a href="https://pkg.go.dev/builtin/#string">string</a> `json:&#34;reason&#34;`
-}
-</pre>
-
-			
-
-			
-
-			
-			
-			
-
-			
-
-			
-		
-			
-			
-			<h2 id="InfoError">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L65">InfoError</a>
+			<h2 id="InfoError">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L53">InfoError</a>
 				<a class="permalink" href="broker.html#InfoError">&#xb6;</a>
 				
 				
 			</h2>
 			<p>
 InfoError struct for sending detailed error messages to analysis.
+The empty interface allows for appending various json msgs but also broken json msgs as strings.
+It is ok as long as we do not need to access fields in the msg, which we don&#39;t.
 </p>
 
 			<pre>type InfoError struct {

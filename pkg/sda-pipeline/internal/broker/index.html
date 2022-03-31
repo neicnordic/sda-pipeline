@@ -160,22 +160,12 @@ Package broker contains logic for communicating with a message broker
 				
 			
 				
-				<dd><a href="index.html#FileError">type FileError</a></dd>
-				
-				
-			
-				
 				<dd><a href="index.html#InfoError">type InfoError</a></dd>
 				
 				
 			
 				
 				<dd><a href="index.html#MQConf">type MQConf</a></dd>
-				
-				
-			
-				
-				<dd><a href="index.html#jsonError">type jsonError</a></dd>
 				
 				
 			
@@ -214,7 +204,7 @@ This is an internal helper variable to make testing easier
 		
 			
 			
-			<h2 id="TLSConfigBroker">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L179">TLSConfigBroker</a>
+			<h2 id="TLSConfigBroker">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L167">TLSConfigBroker</a>
 				<a class="permalink" href="index.html#TLSConfigBroker">&#xb6;</a>
 				
 				
@@ -230,7 +220,7 @@ TLSConfigBroker is a helper method to setup TLS for the message broker
 		
 			
 			
-			<h2 id="buildMQURI">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L168">buildMQURI</a>
+			<h2 id="buildMQURI">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L156">buildMQURI</a>
 				<a class="permalink" href="index.html#buildMQURI">&#xb6;</a>
 				
 				
@@ -246,7 +236,7 @@ buildMQURI builds the MQ connection URI
 		
 			
 			
-			<h2 id="validateJSON">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L345">validateJSON</a>
+			<h2 id="validateJSON">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L333">validateJSON</a>
 				<a class="permalink" href="index.html#validateJSON">&#xb6;</a>
 				
 				
@@ -290,7 +280,7 @@ AMQPBroker is a Broker that reads messages from an AMQP broker
 
 			
 				
-				<h3 id="NewMQ">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L73">NewMQ</a>
+				<h3 id="NewMQ">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L61">NewMQ</a>
 					<a class="permalink" href="index.html#NewMQ">&#xb6;</a>
 					
 					
@@ -307,7 +297,7 @@ amqp server.
 
 			
 				
-				<h3 id="AMQPBroker.ConnectionWatcher">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L237">ConnectionWatcher</a>
+				<h3 id="AMQPBroker.ConnectionWatcher">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L225">ConnectionWatcher</a>
 					<a class="permalink" href="index.html#AMQPBroker.ConnectionWatcher">&#xb6;</a>
 					
 					
@@ -322,7 +312,7 @@ ConnectionWatcher listens to events from the server
 				
 			
 				
-				<h3 id="AMQPBroker.GetMessages">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L124">GetMessages</a>
+				<h3 id="AMQPBroker.GetMessages">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L112">GetMessages</a>
 					<a class="permalink" href="index.html#AMQPBroker.GetMessages">&#xb6;</a>
 					
 					
@@ -337,7 +327,7 @@ GetMessages reads messages from the queue
 				
 			
 				
-				<h3 id="AMQPBroker.SendJSONError">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L243">SendJSONError</a>
+				<h3 id="AMQPBroker.SendJSONError">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L231">SendJSONError</a>
 					<a class="permalink" href="index.html#AMQPBroker.SendJSONError">&#xb6;</a>
 					
 					
@@ -352,7 +342,7 @@ SendJSONError sends message on JSON error
 				
 			
 				
-				<h3 id="AMQPBroker.SendMessage">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L138">SendMessage</a>
+				<h3 id="AMQPBroker.SendMessage">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L126">SendMessage</a>
 					<a class="permalink" href="index.html#AMQPBroker.SendMessage">&#xb6;</a>
 					
 					
@@ -367,7 +357,7 @@ SendMessage sends a message to RabbitMQ
 				
 			
 				
-				<h3 id="AMQPBroker.ValidateJSON">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L259">ValidateJSON</a>
+				<h3 id="AMQPBroker.ValidateJSON">func (*AMQPBroker) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L247">ValidateJSON</a>
 					<a class="permalink" href="index.html#AMQPBroker.ValidateJSON">&#xb6;</a>
 					
 					
@@ -420,43 +410,15 @@ The AMQPChannel interface gives access to the functions provided
 		
 			
 			
-			<h2 id="FileError">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L58">FileError</a>
-				<a class="permalink" href="index.html#FileError">&#xb6;</a>
-				
-				
-			</h2>
-			<p>
-FileError struct for sending file error messages to analysis
-</p>
-
-			<pre>type FileError struct {
-<span id="FileError.User"></span>    User     <a href="https://pkg.go.dev/builtin/#string">string</a> `json:&#34;user&#34;`
-<span id="FileError.FilePath"></span>    FilePath <a href="https://pkg.go.dev/builtin/#string">string</a> `json:&#34;filepath&#34;`
-<span id="FileError.Reason"></span>    Reason   <a href="https://pkg.go.dev/builtin/#string">string</a> `json:&#34;reason&#34;`
-}
-</pre>
-
-			
-
-			
-
-			
-			
-			
-
-			
-
-			
-		
-			
-			
-			<h2 id="InfoError">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L65">InfoError</a>
+			<h2 id="InfoError">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L53">InfoError</a>
 				<a class="permalink" href="index.html#InfoError">&#xb6;</a>
 				
 				
 			</h2>
 			<p>
 InfoError struct for sending detailed error messages to analysis.
+The empty interface allows for appending various json msgs but also broken json msgs as strings.
+It is ok as long as we do not need to access fields in the msg, which we don&#39;t.
 </p>
 
 			<pre>type InfoError struct {
@@ -508,36 +470,6 @@ MQConf stores information about the message broker
 <span id="MQConf.ServerName"></span>    ServerName         <a href="https://pkg.go.dev/builtin/#string">string</a>
 <span id="MQConf.Durable"></span>    Durable            <a href="https://pkg.go.dev/builtin/#bool">bool</a>
 <span id="MQConf.SchemasPath"></span>    SchemasPath        <a href="https://pkg.go.dev/builtin/#string">string</a>
-}
-</pre>
-
-			
-
-			
-
-			
-			
-			
-
-			
-
-			
-		
-			
-			
-			<h2 id="jsonError">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/broker/broker.go#L51">jsonError</a>
-				<a class="permalink" href="index.html#jsonError">&#xb6;</a>
-				
-				
-			</h2>
-			<p>
-jsonError struct for sending broken messages to analysis
-</p>
-
-			<pre>type jsonError struct {
-<span id="jsonError.Error"></span>    Error           <a href="https://pkg.go.dev/builtin/#string">string</a> `json:&#34;error&#34;`
-<span id="jsonError.Reason"></span>    Reason          <a href="https://pkg.go.dev/builtin/#string">string</a> `json:&#34;reason&#34;`
-<span id="jsonError.OriginalMessage"></span>    OriginalMessage []<a href="https://pkg.go.dev/builtin/#byte">byte</a> `json:&#34;original-message&#34;`
 }
 </pre>
 

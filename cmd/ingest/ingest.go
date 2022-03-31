@@ -59,22 +59,17 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	key, err := config.GetC4GHKey()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	archive, err := storage.NewBackend(conf.Archive)
 	if err != nil {
 		log.Fatal(err)
-
 	}
-
 	inbox, err := storage.NewBackend(conf.Inbox)
 	if err != nil {
 		log.Fatal(err)
-
 	}
 
 	defer mq.Channel.Close()

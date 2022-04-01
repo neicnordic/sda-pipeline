@@ -190,3 +190,4 @@ services:
 volumes:
      archive:
      backup:
+     inbox:

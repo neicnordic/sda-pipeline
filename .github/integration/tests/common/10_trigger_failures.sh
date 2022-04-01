@@ -202,6 +202,7 @@ check_move_to_error_queue "data segment can't be decrypted with any of header ke
 md5sum=$(md5sum truncated2.c4gh | cut -d' ' -f 1)
 sha256sum=$(sha256sum truncated2.c4gh | cut -d' ' -f 1)
 
+
 curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary "$( echo '{

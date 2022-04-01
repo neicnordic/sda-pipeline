@@ -155,9 +155,30 @@ func main() {
 					message.DecryptedChecksums,
 					err)
 
-				// nack the message but requeue until we fixed the SQL retry.
-				if e := delivered.Nack(false, true); e != nil {
+				// Nack message so the server gets notified that something is wrong. Do not requeue.
+				if e := delivered.Nack(false, false); e != nil {
 					log.Errorf("Failed to NAck because of MarkReady failed "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				infoErrorMessage := broker.InfoError{
+					Error:           "MarkReady failed",
+					Reason:          err.Error(),
+					OriginalMessage: message,
+				}
+				body, _ := json.Marshal(infoErrorMessage)
+				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
+					log.Errorf("Failed to publish MarkReady error message "+
 						"(corr-id: %s, "+
 						"filepath: %s, "+
 						"user: %s, "+

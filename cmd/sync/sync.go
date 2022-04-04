@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
+	"github.com/elixir-oslo/crypt4gh/streaming"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -280,6 +282,29 @@ func main() {
 						message.DecryptedChecksums,
 						e)
 				}
+				continue
+			}
+
+			// Add the header to the file
+			hr := bytes.NewReader(header)
+			mr := io.MultiReader(hr, file)
+			// Decrypt file
+			c4ghReader, err := streaming.NewCrypt4GHReader(mr, *key, nil)
+			if err != nil {
+				log.Errorf("Failed to open c4gh decryptor stream %s "+
+					"(corr-id: %s, "+
+					"filepath: %s, "+
+					"user: %s, "+
+					"accessionid: %s, "+
+					"decryptedChecksums: %v, error: %v)",
+					filePath,
+					delivered.CorrelationId,
+					message.Filepath,
+					message.User,
+					message.AccessionID,
+					message.DecryptedChecksums,
+					err)
+
 				continue
 			}
 

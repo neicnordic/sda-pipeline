@@ -59,6 +59,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	publicKey, err := config.GetC4GHPublicKey()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
 	defer db.Close()
@@ -342,9 +347,30 @@ func main() {
 				continue
 			}
 
-			// Copy the file and check is sizes match
-			copiedSize, err := io.Copy(dest, file)
-			if err != nil || copiedSize != int64(fileSize) {
+			// Reencrypt file
+			pubKeyList := [][32]byte{*publicKey}
+			c4ghWriter, err := streaming.NewCrypt4GHWriter(dest, *key, pubKeyList, nil)
+			if err != nil {
+				log.Errorf("Failed to reencrypt the file %s "+
+					"(corr-id: %s, "+
+					"filepath: %s, "+
+					"user: %s, "+
+					"accessionid: %s, "+
+					"decryptedChecksums: %v, error: %v)",
+					filePath,
+					delivered.CorrelationId,
+					message.Filepath,
+					message.User,
+					message.AccessionID,
+					message.DecryptedChecksums,
+					err)
+
+				continue
+			}
+
+			// Copy the file
+			_, err = io.Copy(c4ghWriter, c4ghReader)
+			if err != nil {
 				log.Errorf("Failed to copy file "+
 					"(corr-id: %s, "+
 					"filepath: %s, "+
@@ -378,6 +404,7 @@ func main() {
 
 			file.Close()
 			dest.Close()
+			c4ghWriter.Close()
 
 			log.Infof("Synced file %s (%d bytes) from archive to backup "+
 				"(corr-id: %s, "+

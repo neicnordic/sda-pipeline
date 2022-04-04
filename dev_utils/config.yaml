@@ -69,7 +69,7 @@ inbox:
   chunksize: 32
   cacert: "./dev_utils/certs/ca.pem"
   # posix backend
-  location: "dev_utils"
+  location: "/inbox"
 
 log:
   level: "debug"

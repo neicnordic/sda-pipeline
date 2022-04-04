@@ -32,7 +32,6 @@ docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs"
 count=1
 
 for file in dummy_data.c4gh largefile.c4gh; do
-
 	curl --cacert certs/ca.pem -u test:test 'https://localhost:15672/api/queues/test/verified' | jq -r '.["messages_ready"]'
 
 	# Give some time to avoid confounders in logs
@@ -121,6 +120,23 @@ for file in dummy_data.c4gh largefile.c4gh; do
 			docker logs --since="$now" verify
 			exit 1
 
+		fi
+		sleep 10
+	done
+
+	RETRY_TIMES=0
+	until docker logs verify --since="$now" 2>&1 | grep "Removed file from inbox"; do
+		echo "waiting for verify to remove file from inbox"
+		RETRY_TIMES=$((RETRY_TIMES + 1))
+		if [ "$RETRY_TIMES" -eq 10 ]; then
+			echo "::error::Time out while waiting for verify to remove file, logs:"
+
+			echo
+			echo verify
+			echo
+
+			docker logs --since="$now" verify
+			exit 1
 		fi
 		sleep 10
 	done

@@ -9,10 +9,6 @@ s3cmd -c s3cmd-notls.conf mb s3://inbox || true
 s3cmd -c s3cmd-notls.conf mb s3://archive || true
 
 # Upload test file
-s3cmd -c s3cmd-notls.conf put dummy_data.c4gh s3://inbox/dummy_data.c4gh
-s3cmd -c s3cmd-notls.conf put largefile.c4gh s3://inbox/largefile.c4gh
-s3cmd -c s3cmd-notls.conf put empty.c4gh s3://inbox/empty.c4gh
-s3cmd -c s3cmd-notls.conf put truncated1.c4gh s3://inbox/truncated1.c4gh
-s3cmd -c s3cmd-notls.conf put truncated2.c4gh s3://inbox/truncated2.c4gh
-s3cmd -c s3cmd-notls.conf put wrongly_encrypted.c4gh s3://inbox/wrongly_encrypted.c4gh
-s3cmd -c s3cmd-notls.conf put test_db_file.c4gh s3://inbox/test_db_file.c4gh
+for file in dummy_data.c4gh largefile.c4gh empty.c4gh truncated1.c4gh truncated2.c4gh wrongly_encrypted.c4gh test_db_file.c4gh; do
+    s3cmd -c s3cmd-notls.conf put $file s3://inbox/$file
+done

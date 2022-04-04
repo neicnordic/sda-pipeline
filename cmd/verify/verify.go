@@ -57,12 +57,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	backend, err := storage.NewBackend(conf.Archive)
+	archive, err := storage.NewBackend(conf.Archive)
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	inbox, err := storage.NewBackend(conf.Inbox)
+	if err != nil {
+		log.Fatal(err)
+	}
 	key, err := config.GetC4GHKey()
 	if err != nil {
 		log.Fatal(err)
@@ -174,7 +176,7 @@ func main() {
 
 			var file database.FileInfo
 
-			file.Size, err = backend.GetFileSize(message.ArchivePath)
+			file.Size, err = archive.GetFileSize(message.ArchivePath)
 
 			if err != nil {
 				log.Errorf("Failed to get archived file size "+
@@ -203,7 +205,7 @@ func main() {
 
 			archiveFileHash := sha256.New()
 
-			f, err := backend.NewFileReader(message.ArchivePath)
+			f, err := archive.NewFileReader(message.ArchivePath)
 			if err != nil {
 				log.Errorf("Failed to open archived file "+
 					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
@@ -383,7 +385,40 @@ func main() {
 						err)
 				}
 
+				// At the end we try to remove file from inbox
+				// In case of error we send a message to error queue to track it
+				// we don't need to force removing the file
+				err = inbox.RemoveFile(message.FilePath)
+				if err != nil {
+					log.Errorf("Remove file from inbox failed "+
+						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
+						delivered.CorrelationId,
+						message.User,
+						message.FilePath,
+						err)
+
+					// Send the message to an error queue so it can be analyzed.
+					fileError := broker.InfoError{
+						Error:           "RemoveFile failed",
+						Reason:          err.Error(),
+						OriginalMessage: message,
+					}
+					body, _ := json.Marshal(fileError)
+					if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
+						log.Errorf("Failed to publish message (remove file error), to error queue "+
+							"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
+							delivered.CorrelationId,
+							message.User,
+							message.FilePath,
+							e)
+					}
+
+					continue
+				}
+				log.Debugf("Removed file from inbox: %s", message.FilePath)
+
 			}
+
 		}
 	}()
 

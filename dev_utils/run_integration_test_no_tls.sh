@@ -54,6 +54,27 @@ do
     sleep 10;
 done
 
+RETRY_TIMES=0
+until docker logs --since 30s verify 2>&1 | grep "Removed file from inbox"
+do
+    echo "waiting for removal of file from inbox"
+    RETRY_TIMES=$((RETRY_TIMES+1));
+    if [ $RETRY_TIMES -eq 20 ]; then
+        echo "check file removed from inbox failed"
+        exit 1
+    fi
+    sleep 10;
+done
+
+count=$(s3cmd -c s3cmd-notls.conf ls s3://inbox/"$file" | wc -l)
+
+if [ "${count}" -gt 0 ]; then
+    echo "Actually the file has not been removed after ingest from inbox"
+    exit 1
+else
+    echo "Doublec hecked File has been removed after ingest from inbox, continuing ..."
+fi
+
 message=$(curl -u test:test 'localhost:15672/api/queues/test/verified/get' \
 -H 'Content-Type: application/json;charset=UTF-8' \
 -d '{"count":1,"ackmode":"ack_requeue_true","encoding":"auto","truncate":50000}')

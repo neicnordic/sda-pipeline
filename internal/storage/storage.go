@@ -27,6 +27,7 @@ import (
 // Backend defines methods to be implemented by PosixBackend and S3Backend
 type Backend interface {
 	GetFileSize(filePath string) (int64, error)
+	RemoveFile(filePath string) error
 	NewFileReader(filePath string) (io.ReadCloser, error)
 	NewFileWriter(filePath string) (io.WriteCloser, error)
 }
@@ -115,6 +116,21 @@ func (pb *posixBackend) GetFileSize(filePath string) (int64, error) {
 	}
 
 	return stat.Size(), nil
+}
+
+// RemoveFile removes a file from a give path
+func (pb *posixBackend) RemoveFile(filePath string) error {
+	if pb == nil {
+		return fmt.Errorf("Invalid posixBackend")
+	}
+
+	err := os.Remove(filepath.Join(filepath.Clean(pb.Location), filePath))
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	return nil
 }
 
 type s3Backend struct {
@@ -277,6 +293,30 @@ func (sb *s3Backend) GetFileSize(filePath string) (int64, error) {
 	}
 
 	return *r.ContentLength, nil
+}
+
+// RemoveFile removes an object from a bucket
+func (sb *s3Backend) RemoveFile(filePath string) error {
+	if sb == nil {
+		return fmt.Errorf("Invalid s3Backend")
+	}
+
+	_, err := sb.Client.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(sb.Bucket),
+		Key:    aws.String(filePath)})
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	err = sb.Client.WaitUntilObjectNotExists(&s3.HeadObjectInput{
+		Bucket: aws.String(sb.Bucket),
+		Key:    aws.String(filePath)})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // transportConfigS3 is a helper method to setup TLS for the S3 client.

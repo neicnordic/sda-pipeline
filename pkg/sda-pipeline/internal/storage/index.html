@@ -157,6 +157,9 @@ Package storage provides interface for storage areas, e.g. s3 or POSIX file syst
 					
 					<dd>&nbsp; &nbsp; <a href="index.html#posixBackend.NewFileWriter">func (pb *posixBackend) NewFileWriter(filePath string) (io.WriteCloser, error)</a></dd>
 				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html#posixBackend.RemoveFile">func (pb *posixBackend) RemoveFile(filePath string) error</a></dd>
+				
 			
 				
 				<dd><a href="index.html#posixConf">type posixConf</a></dd>
@@ -178,6 +181,9 @@ Package storage provides interface for storage areas, e.g. s3 or POSIX file syst
 				
 					
 					<dd>&nbsp; &nbsp; <a href="index.html#s3Backend.NewFileWriter">func (sb *s3Backend) NewFileWriter(filePath string) (io.WriteCloser, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="index.html#s3Backend.RemoveFile">func (sb *s3Backend) RemoveFile(filePath string) error</a></dd>
 				
 			
 			
@@ -206,7 +212,7 @@ Package storage provides interface for storage areas, e.g. s3 or POSIX file syst
 		
 			
 			
-			<h2 id="transportConfigS3">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L273">transportConfigS3</a>
+			<h2 id="transportConfigS3">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L313">transportConfigS3</a>
 				<a class="permalink" href="index.html#transportConfigS3">&#xb6;</a>
 				
 				
@@ -234,6 +240,7 @@ Backend defines methods to be implemented by PosixBackend and S3Backend
 
 			<pre>type Backend interface {
     GetFileSize(filePath <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#int64">int64</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+    RemoveFile(filePath <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
     NewFileReader(filePath <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/io/">io</a>.<a href="https://pkg.go.dev/io/#ReadCloser">ReadCloser</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
     NewFileWriter(filePath <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/io/">io</a>.<a href="https://pkg.go.dev/io/#WriteCloser">WriteCloser</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
 }</pre>
@@ -248,7 +255,7 @@ Backend defines methods to be implemented by PosixBackend and S3Backend
 
 			
 				
-				<h3 id="NewBackend">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L42">NewBackend</a>
+				<h3 id="NewBackend">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L43">NewBackend</a>
 					<a class="permalink" href="index.html#NewBackend">&#xb6;</a>
 					
 					
@@ -266,7 +273,7 @@ NewBackend initiates a storage backend
 		
 			
 			
-			<h2 id="Conf">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L25">Conf</a>
+			<h2 id="Conf">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L26">Conf</a>
 				<a class="permalink" href="index.html#Conf">&#xb6;</a>
 				
 				
@@ -296,7 +303,7 @@ Conf is a wrapper for the storage config
 		
 			
 			
-			<h2 id="S3Conf">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L118">S3Conf</a>
+			<h2 id="S3Conf">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L134">S3Conf</a>
 				<a class="permalink" href="index.html#S3Conf">&#xb6;</a>
 				
 				
@@ -333,7 +340,7 @@ S3Conf stores information about the S3 storage backend
 		
 			
 			
-			<h2 id="posixBackend">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L31">posixBackend</a>
+			<h2 id="posixBackend">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L32">posixBackend</a>
 				<a class="permalink" href="index.html#posixBackend">&#xb6;</a>
 				
 				
@@ -356,7 +363,7 @@ S3Conf stores information about the S3 storage backend
 
 			
 				
-				<h3 id="newPosixBackend">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L51">newPosixBackend</a>
+				<h3 id="newPosixBackend">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L52">newPosixBackend</a>
 					<a class="permalink" href="index.html#newPosixBackend">&#xb6;</a>
 					
 					
@@ -369,7 +376,7 @@ S3Conf stores information about the S3 storage backend
 
 			
 				
-				<h3 id="posixBackend.GetFileSize">func (*posixBackend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L96">GetFileSize</a>
+				<h3 id="posixBackend.GetFileSize">func (*posixBackend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L97">GetFileSize</a>
 					<a class="permalink" href="index.html#posixBackend.GetFileSize">&#xb6;</a>
 					
 					
@@ -384,7 +391,7 @@ GetFileSize returns the size of the file
 				
 			
 				
-				<h3 id="posixBackend.NewFileReader">func (*posixBackend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L66">NewFileReader</a>
+				<h3 id="posixBackend.NewFileReader">func (*posixBackend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L67">NewFileReader</a>
 					<a class="permalink" href="index.html#posixBackend.NewFileReader">&#xb6;</a>
 					
 					
@@ -399,7 +406,7 @@ NewFileReader returns an io.Reader instance
 				
 			
 				
-				<h3 id="posixBackend.NewFileWriter">func (*posixBackend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L81">NewFileWriter</a>
+				<h3 id="posixBackend.NewFileWriter">func (*posixBackend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L82">NewFileWriter</a>
 					<a class="permalink" href="index.html#posixBackend.NewFileWriter">&#xb6;</a>
 					
 					
@@ -413,10 +420,25 @@ NewFileWriter returns an io.Writer instance
 				
 				
 			
+				
+				<h3 id="posixBackend.RemoveFile">func (*posixBackend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L112">RemoveFile</a>
+					<a class="permalink" href="index.html#posixBackend.RemoveFile">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (pb *posixBackend) RemoveFile(filePath <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>
+RemoveFile removes a file from a give path
+</p>
+
+				
+				
+				
+			
 		
 			
 			
-			<h2 id="posixConf">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L37">posixConf</a>
+			<h2 id="posixConf">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L38">posixConf</a>
 				<a class="permalink" href="index.html#posixConf">&#xb6;</a>
 				
 				
@@ -441,7 +463,7 @@ NewFileWriter returns an io.Writer instance
 		
 			
 			
-			<h2 id="s3Backend">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L110">s3Backend</a>
+			<h2 id="s3Backend">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L126">s3Backend</a>
 				<a class="permalink" href="index.html#s3Backend">&#xb6;</a>
 				
 				
@@ -465,7 +487,7 @@ NewFileWriter returns an io.Writer instance
 
 			
 				
-				<h3 id="newS3Backend">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L131">newS3Backend</a>
+				<h3 id="newS3Backend">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L147">newS3Backend</a>
 					<a class="permalink" href="index.html#newS3Backend">&#xb6;</a>
 					
 					
@@ -478,7 +500,7 @@ NewFileWriter returns an io.Writer instance
 
 			
 				
-				<h3 id="s3Backend.GetFileSize">func (*s3Backend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L237">GetFileSize</a>
+				<h3 id="s3Backend.GetFileSize">func (*s3Backend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L253">GetFileSize</a>
 					<a class="permalink" href="index.html#s3Backend.GetFileSize">&#xb6;</a>
 					
 					
@@ -493,7 +515,7 @@ GetFileSize returns the size of a specific object
 				
 			
 				
-				<h3 id="s3Backend.NewFileReader">func (*s3Backend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L181">NewFileReader</a>
+				<h3 id="s3Backend.NewFileReader">func (*s3Backend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L197">NewFileReader</a>
 					<a class="permalink" href="index.html#s3Backend.NewFileReader">&#xb6;</a>
 					
 					
@@ -508,7 +530,7 @@ NewFileReader returns an io.Reader instance
 				
 			
 				
-				<h3 id="s3Backend.NewFileWriter">func (*s3Backend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L214">NewFileWriter</a>
+				<h3 id="s3Backend.NewFileWriter">func (*s3Backend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L230">NewFileWriter</a>
 					<a class="permalink" href="index.html#s3Backend.NewFileWriter">&#xb6;</a>
 					
 					
@@ -516,6 +538,21 @@ NewFileReader returns an io.Reader instance
 				<pre>func (sb *s3Backend) NewFileWriter(filePath <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/io/">io</a>.<a href="https://pkg.go.dev/io/#WriteCloser">WriteCloser</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 				<p>
 NewFileWriter uploads the contents of an io.Reader to a S3 bucket
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="s3Backend.RemoveFile">func (*s3Backend) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L289">RemoveFile</a>
+					<a class="permalink" href="index.html#s3Backend.RemoveFile">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (sb *s3Backend) RemoveFile(filePath <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<p>
+RemoveFile removes an object from a bucket
 </p>
 
 				

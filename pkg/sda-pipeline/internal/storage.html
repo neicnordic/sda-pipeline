@@ -176,6 +176,7 @@ Backend defines methods to be implemented by PosixBackend and S3Backend
 
 			<pre>type Backend interface {
     GetFileSize(filePath <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#int64">int64</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
+    RemoveFile(filePath <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a>
     NewFileReader(filePath <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/io/">io</a>.<a href="https://pkg.go.dev/io/#ReadCloser">ReadCloser</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
     NewFileWriter(filePath <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/io/">io</a>.<a href="https://pkg.go.dev/io/#WriteCloser">WriteCloser</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)
 }</pre>
@@ -190,7 +191,7 @@ Backend defines methods to be implemented by PosixBackend and S3Backend
 
 			
 				
-				<h3 id="NewBackend">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L42">NewBackend</a>
+				<h3 id="NewBackend">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L43">NewBackend</a>
 					<a class="permalink" href="storage.html#NewBackend">&#xb6;</a>
 					
 					
@@ -208,7 +209,7 @@ NewBackend initiates a storage backend
 		
 			
 			
-			<h2 id="Conf">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L25">Conf</a>
+			<h2 id="Conf">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L26">Conf</a>
 				<a class="permalink" href="storage.html#Conf">&#xb6;</a>
 				
 				
@@ -238,7 +239,7 @@ Conf is a wrapper for the storage config
 		
 			
 			
-			<h2 id="S3Conf">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L118">S3Conf</a>
+			<h2 id="S3Conf">type <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/storage/storage.go#L134">S3Conf</a>
 				<a class="permalink" href="storage.html#S3Conf">&#xb6;</a>
 				
 				

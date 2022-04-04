@@ -52,6 +52,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	key, err := config.GetC4GHKey()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
 	defer db.Close()

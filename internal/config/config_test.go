@@ -593,6 +593,22 @@ func (suite *TestSuite) TestGetC4GHKey_passError() {
 	assert.EqualError(suite.T(), err, "chacha20poly1305: message authentication failed")
 }
 
+func (suite *TestSuite) TestGetC4GHPublicKey() {
+	viper.Set("c4gh.newpublickey", "../../dev_utils/c4gh-new.pub.pem")
+	byte, err := GetC4GHPublicKey()
+	assert.NotNil(suite.T(), byte)
+	assert.NoError(suite.T(), err)
+}
+
+func (suite *TestSuite) TestGetC4GHPublicKey_keyError() {
+
+	viper.Set("c4gh.newpublickey", "/doesnotexist")
+
+	byte, err := GetC4GHPublicKey()
+	assert.Nil(suite.T(), byte)
+	assert.EqualError(suite.T(), err, "open /doesnotexist: no such file or directory")
+}
+
 func (suite *TestSuite) TestSyncConfiguration() {
 	viper.Set("archive.location", "test")
 	viper.Set("backup.location", "test")

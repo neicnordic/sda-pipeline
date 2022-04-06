@@ -238,10 +238,10 @@ func (broker *AMQPBroker) ConnectionWatcher() *amqp.Error {
 }
 
 // SendJSONError sends message on JSON error
-func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody []byte, reason string, conf MQConf) error {
+func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody []byte, conf MQConf, reason, errorMsg string) error {
 
 	jsonErrorMessage := InfoError{
-		Error:           "Validation of JSON message failed",
+		Error:           errorMsg,
 		Reason:          fmt.Sprintf("%v", reason),
 		OriginalMessage: string(originalBody),
 	}
@@ -275,7 +275,7 @@ func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery,
 				e)
 		}
 		// Send the message to an error queue so it can be analyzed.
-		if e := broker.SendJSONError(delivered, body, err.Error(), broker.Conf); e != nil {
+		if e := broker.SendJSONError(delivered, body, broker.Conf, err.Error(), "Validation of JSON message failed"); e != nil {
 			log.Errorf("Failed to publish JSON decode error message "+
 				"(corr-id: %s, error: %v)",
 				delivered.CorrelationId,
@@ -306,7 +306,7 @@ func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery,
 				e)
 		}
 		// Send the message to an error queue so it can be analyzed.
-		if e := broker.SendJSONError(delivered, body, errorString, broker.Conf); e != nil {
+		if e := broker.SendJSONError(delivered, body, broker.Conf, errorString, "Validation of JSON message failed"); e != nil {
 			log.Errorf("Failed to publish JSON validity error message "+
 				"(corr-id: %s, error: %v)",
 				delivered.CorrelationId,

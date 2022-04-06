@@ -59,6 +59,20 @@ func main() {
 					delivered.CorrelationId,
 					err,
 					delivered.Body)
+				/// Nack message so the server gets notified that something is wrong. Do not requeue the message.
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorf("Failed to Nack message (get type for message) "+
+						"(corr-id: %s, reason: %v)",
+						delivered.CorrelationId,
+						e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, delivered.Body, mq.Conf, err.Error(), "Failed to get type for message"); e != nil {
+					log.Errorf("Failed to publish message (get type for message), to error queue "+
+						"(corr-id: %s, reason: %v)",
+						delivered.CorrelationId, e)
+				}
+				// Restart on new message
 				continue
 			}
 
@@ -72,6 +86,19 @@ func main() {
 					msgType,
 					err,
 					delivered.Body)
+				/// Nack message so the server gets notified that something is wrong. Do not requeue the message.
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorf("Failed to Nack message (unknown schema) "+
+						"(corr-id: %s, msgType: %s, error: %v, message: %s)",
+						delivered.CorrelationId, msgType, err, delivered.Body)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				if e := mq.SendJSONError(&delivered, delivered.Body, mq.Conf, err.Error(), "Don't know schema for message type"); e != nil {
+					log.Errorf("Failed to publish message (unknown schema), to error queue "+
+						"(corr-id: %s, reason: %v)",
+						delivered.CorrelationId, e)
+				}
+				// Restart on new message
 				continue
 			}
 

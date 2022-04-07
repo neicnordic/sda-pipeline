@@ -109,6 +109,23 @@ func main() {
 				message.AccessionID,
 				message.DecryptedChecksums)
 
+			// Get the header from db
+			header, err := db.GetHeaderStableId(message.AccessionID)
+			if err != nil {
+				log.Errorf("GetHeaderStableId failed "+
+					"(corr-id: %s, "+
+					"filepath: %s, "+
+					"user: %s, "+
+					"accessionid: %s, "+
+					"decryptedChecksums: %v, error: %v)",
+					delivered.CorrelationId,
+					message.Filepath,
+					message.User,
+					message.AccessionID,
+					message.DecryptedChecksums,
+					err)
+			}
+
 			// Extract the sha256 from the message and use it for the database
 			var checksumSha256 string
 			for _, checksum := range message.DecryptedChecksums {

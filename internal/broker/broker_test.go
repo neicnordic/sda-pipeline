@@ -378,10 +378,10 @@ func TestSendJSONError(t *testing.T) {
 
 	message := testMsg{Test: "some json"}
 	messageText, _ := json.Marshal(message)
-	err = b.SendJSONError(&msg, messageText, "some reason", b.Conf)
+	err = b.SendJSONError(&msg, messageText, b.Conf, "some reason", "some error msg")
 	assert.Nil(t, err, "SendJSONError failed unexpectedly (json payload)")
 
 	messageText = []byte("some string")
-	err = b.SendJSONError(&msg, messageText, "some reason", b.Conf)
+	err = b.SendJSONError(&msg, messageText, b.Conf, "some reason", "some error msg")
 	assert.Nil(t, err, "SendJSONError failed unexpectedly (string payload)")
 }

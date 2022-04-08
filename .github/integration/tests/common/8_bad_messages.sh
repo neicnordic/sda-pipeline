@@ -39,8 +39,7 @@ function check_move_to_error_queue() {
 	echo
 }
 
-#routingkey files requires fixing of #323 first
-for routingkey in ingest archived accessionIDs backup mappings; do
+for routingkey in files ingest archived accessionIDs backup mappings; do
 	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		--data-binary '{
@@ -62,8 +61,7 @@ check_move_to_error_queue "I give you bad json"
 
 done
 
-#routingkey files requires fixing of #323 first
-for routingkey in ingest archived accessionIDs backup mappings; do
+for routingkey in files ingest archived accessionIDs backup mappings; do
 	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		--data-binary '{
@@ -83,6 +81,25 @@ for routingkey in ingest archived accessionIDs backup mappings; do
 check_move_to_error_queue "yes, but not sda"
 
 done
+
+# intercept: test wrong type of message
+curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+	-H 'Content-Type: application/json;charset=UTF-8' \
+	--data-binary '{
+					"vhost":"test",
+					"name":"sda",
+					"properties":{
+					"delivery_mode":2,
+						"correlation_id":"1",
+						"content_encoding":"UTF-8",
+						"content_type":"application/json"
+					},
+					"routing_key":"files",
+					"payload_encoding":"string",
+					"payload":"{ \"type\":\"not the right one\" }"
+				}'
+
+check_move_to_error_queue "Don't know what schema to use"
 
 # Cleanup queues
 curl --cacert certs/ca.pem  -u test:test -X DELETE 'https://localhost:15672/api/queues/test/error/contents'

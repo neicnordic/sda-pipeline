@@ -80,7 +80,7 @@ func main() {
 	var message sync
 	jsonSchema := "ingestion-completion"
 
-	if (conf.Broker.Queue == "accessionIDs") {
+	if conf.Broker.Queue == "accessionIDs" {
 		jsonSchema = "ingestion-accession"
 	}
 
@@ -310,6 +310,22 @@ func main() {
 					message.DecryptedChecksums,
 					err)
 
+				//FIXME: should it retry?
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorf("Failed to NAck because of NewCrypt4GHReader failed "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						e)
+				}
+
 				continue
 			}
 
@@ -365,6 +381,21 @@ func main() {
 					message.DecryptedChecksums,
 					err)
 
+				//FIXME: should it retry?
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorf("Failed to NAck because of NewCrypt4GHWriter failed "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						e)
+				}
 				continue
 			}
 

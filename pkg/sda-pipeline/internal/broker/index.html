@@ -145,7 +145,7 @@ Package broker contains logic for communicating with a message broker
 					<dd>&nbsp; &nbsp; <a href="index.html#AMQPBroker.GetMessages">func (broker *AMQPBroker) GetMessages(queue string) (&lt;-chan amqp.Delivery, error)</a></dd>
 				
 					
-					<dd>&nbsp; &nbsp; <a href="index.html#AMQPBroker.SendJSONError">func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody []byte, reason string, conf MQConf) error</a></dd>
+					<dd>&nbsp; &nbsp; <a href="index.html#AMQPBroker.SendJSONError">func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody []byte, conf MQConf, reason, errorMsg string) error</a></dd>
 				
 					
 					<dd>&nbsp; &nbsp; <a href="index.html#AMQPBroker.SendMessage">func (broker *AMQPBroker) SendMessage(corrID, exchange, routingKey string, reliable bool, body []byte) error</a></dd>
@@ -332,7 +332,7 @@ GetMessages reads messages from the queue
 					
 					
 				</h3>
-				<pre>func (broker *<a href="index.html#AMQPBroker">AMQPBroker</a>) SendJSONError(delivered *<a href="https://pkg.go.dev/github.com/rabbitmq/amqp091-go/">amqp</a>.<a href="https://pkg.go.dev/github.com/rabbitmq/amqp091-go/#Delivery">Delivery</a>, originalBody []<a href="https://pkg.go.dev/builtin/#byte">byte</a>, reason <a href="https://pkg.go.dev/builtin/#string">string</a>, conf <a href="index.html#MQConf">MQConf</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
+				<pre>func (broker *<a href="index.html#AMQPBroker">AMQPBroker</a>) SendJSONError(delivered *<a href="https://pkg.go.dev/github.com/rabbitmq/amqp091-go/">amqp</a>.<a href="https://pkg.go.dev/github.com/rabbitmq/amqp091-go/#Delivery">Delivery</a>, originalBody []<a href="https://pkg.go.dev/builtin/#byte">byte</a>, conf <a href="index.html#MQConf">MQConf</a>, reason, errorMsg <a href="https://pkg.go.dev/builtin/#string">string</a>) <a href="https://pkg.go.dev/builtin/#error">error</a></pre>
 				<p>
 SendJSONError sends message on JSON error
 </p>

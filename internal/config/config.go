@@ -359,3 +359,22 @@ func GetC4GHKey() (*[32]byte, error) {
 	keyFile.Close()
 	return &key, nil
 }
+
+// GetC4GHPublicKey reads the c4gh public key
+func GetC4GHPublicKey() (*[32]byte, error) {
+	keyPath := viper.GetString("c4gh.newpublickey")
+
+	// Make sure the key path and passphrase is valid
+	keyFile, err := os.Open(keyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := keys.ReadPublicKey(keyFile)
+	if err != nil {
+		return nil, err
+	}
+
+	keyFile.Close()
+	return &key, nil
+}

@@ -201,6 +201,21 @@ func main() {
 					message.AccessionID,
 					message.DecryptedChecksums,
 					err)
+
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorf("Failed to NAck because of decrypt header failed "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						e)
+				}
 			}
 
 			// Reencrypt header
@@ -220,6 +235,21 @@ func main() {
 					message.AccessionID,
 					message.DecryptedChecksums,
 					err)
+
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorf("Failed to NAck because of reencrypt header failed "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						e)
+				}
 			}
 
 			// Get size on disk, will also give some time for the file to

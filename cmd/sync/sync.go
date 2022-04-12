@@ -3,15 +3,19 @@
 package main
 
 import (
+	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"os"
+	"strings"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
+	"github.com/elixir-oslo/crypt4gh/model/headers"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -174,6 +178,25 @@ func main() {
 			}
 
 			log.Debug("Sync initiated")
+
+			// Decrypt header
+			log.Debug("Decrypt header")
+			DecrHeader, err := FormatHexHeader(header, *key)
+			if err != nil {
+				log.Errorf("Failed to decrypt the header %s "+
+					"(corr-id: %s, "+
+					"filepath: %s, "+
+					"user: %s, "+
+					"accessionid: %s, "+
+					"decryptedChecksums: %v, error: %v)",
+					filePath,
+					delivered.CorrelationId,
+					message.Filepath,
+					message.User,
+					message.AccessionID,
+					message.DecryptedChecksums,
+					err)
+			}
 
 			// Get size on disk, will also give some time for the file to
 			// appear if it has not already
@@ -408,3 +431,39 @@ func main() {
 
 	<-forever
 }
+
+// FormatHexHeader decrypts a hex formatted file header using the proivided secret key,
+// and returns the data as a Header struct
+func FormatHexHeader(hexData string, secKey [32]byte) (*headers.Header, error) {
+
+	// Trim whitespace that might otherwise confuse the hex parse
+	headerHexStr := strings.TrimSpace(hexData)
+
+	// Decode the hex
+	binaryHeader, err := hex.DecodeString(headerHexStr)
+	if err != nil {
+		return nil, err
+	}
+
+	// This will return the same data, but will check validity
+	headerReader := bytes.NewReader(binaryHeader)
+	_, err = headers.ReadHeader(headerReader)
+	if err != nil {
+		return nil, err
+	}
+
+	// Rewind header reader
+	_, err = headerReader.Seek(0, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the header struct
+	header, err := headers.NewHeader(headerReader, secKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return header, nil
+}
+

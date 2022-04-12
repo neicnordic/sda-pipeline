@@ -364,6 +364,12 @@ func main() {
 				continue
 			}
 
+			// write header to destination file
+			_, err = dest.Write(newHeader)
+			if err != nil {
+				log.Fatalf("Error in header writer: %v", err)
+			}
+
 			// Copy the file and check is sizes match
 			copiedSize, err := io.Copy(dest, file)
 			if err != nil || copiedSize != int64(fileSize) {

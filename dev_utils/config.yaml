@@ -23,6 +23,7 @@ backup:
   cacert: "./dev_utils/certs/ca.pem"
   # posix backend
   location: "dev_utils"
+  header: "false"
 
 broker:
   host: "localhost"

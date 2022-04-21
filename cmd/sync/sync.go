@@ -123,23 +123,6 @@ func main() {
 				message.AccessionID,
 				message.DecryptedChecksums)
 
-			// Get the header from db
-			header, err := db.GetHeaderStableId(message.AccessionID)
-			if err != nil {
-				log.Errorf("GetHeaderStableId failed "+
-					"(corr-id: %s, "+
-					"filepath: %s, "+
-					"user: %s, "+
-					"accessionid: %s, "+
-					"decryptedChecksums: %v, error: %v)",
-					delivered.CorrelationId,
-					message.Filepath,
-					message.User,
-					message.AccessionID,
-					message.DecryptedChecksums,
-					err)
-			}
-
 			// Extract the sha256 from the message and use it for the database
 			var checksumSha256 string
 			for _, checksum := range message.DecryptedChecksums {
@@ -183,74 +166,6 @@ func main() {
 			}
 
 			log.Debug("Sync initiated")
-
-			// Decrypt header
-			log.Debug("Decrypt header")
-			DecrHeader, err := FormatHexHeader(header, *key)
-			if err != nil {
-				log.Errorf("Failed to decrypt the header %s "+
-					"(corr-id: %s, "+
-					"filepath: %s, "+
-					"user: %s, "+
-					"accessionid: %s, "+
-					"decryptedChecksums: %v, error: %v)",
-					filePath,
-					delivered.CorrelationId,
-					message.Filepath,
-					message.User,
-					message.AccessionID,
-					message.DecryptedChecksums,
-					err)
-
-				if e := delivered.Nack(false, true); e != nil {
-					log.Errorf("Failed to NAck because of decrypt header failed "+
-						"(corr-id: %s, "+
-						"filepath: %s, "+
-						"user: %s, "+
-						"accessionid: %s, "+
-						"decryptedChecksums: %v, error: %v)",
-						delivered.CorrelationId,
-						message.Filepath,
-						message.User,
-						message.AccessionID,
-						message.DecryptedChecksums,
-						e)
-				}
-			}
-
-			// Reencrypt header
-			log.Debug("Reencrypt header")
-			newHeader, err := reencryptHeader(*key, *publicKey, *DecrHeader)
-			if err != nil {
-				log.Errorf("Failed to reencrypt the header %s "+
-					"(corr-id: %s, "+
-					"filepath: %s, "+
-					"user: %s, "+
-					"accessionid: %s, "+
-					"decryptedChecksums: %v, error: %v)",
-					filePath,
-					delivered.CorrelationId,
-					message.Filepath,
-					message.User,
-					message.AccessionID,
-					message.DecryptedChecksums,
-					err)
-
-				if e := delivered.Nack(false, true); e != nil {
-					log.Errorf("Failed to NAck because of reencrypt header failed "+
-						"(corr-id: %s, "+
-						"filepath: %s, "+
-						"user: %s, "+
-						"accessionid: %s, "+
-						"decryptedChecksums: %v, error: %v)",
-						delivered.CorrelationId,
-						message.Filepath,
-						message.User,
-						message.AccessionID,
-						message.DecryptedChecksums,
-						e)
-				}
-			}
 
 			// Get size on disk, will also give some time for the file to
 			// appear if it has not already
@@ -394,10 +309,100 @@ func main() {
 				continue
 			}
 
-			// write header to destination file
-			_, err = dest.Write(newHeader)
-			if err != nil {
-				log.Fatalf("Error in header writer: %v", err)
+			// Check if the header is needed
+			copyHeader := config.CheckHeader()
+			//nolint:nestif
+			if copyHeader {
+				// Get the header from db
+				header, err := db.GetHeaderStableId(message.AccessionID)
+				if err != nil {
+					log.Errorf("GetHeaderStableId failed "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						err)
+				}
+
+				// Decrypt header
+				log.Debug("Decrypt header")
+				DecrHeader, err := FormatHexHeader(header, *key)
+				if err != nil {
+					log.Errorf("Failed to decrypt the header %s "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						filePath,
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						err)
+
+					if e := delivered.Nack(false, true); e != nil {
+						log.Errorf("Failed to NAck because of decrypt header failed "+
+							"(corr-id: %s, "+
+							"filepath: %s, "+
+							"user: %s, "+
+							"accessionid: %s, "+
+							"decryptedChecksums: %v, error: %v)",
+							delivered.CorrelationId,
+							message.Filepath,
+							message.User,
+							message.AccessionID,
+							message.DecryptedChecksums,
+							e)
+					}
+				}
+
+				// Reencrypt header
+				log.Debug("Reencrypt header")
+				newHeader, err := reencryptHeader(*key, *publicKey, *DecrHeader)
+				if err != nil {
+					log.Errorf("Failed to reencrypt the header %s "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						filePath,
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						err)
+
+					if e := delivered.Nack(false, true); e != nil {
+						log.Errorf("Failed to NAck because of reencrypt header failed "+
+							"(corr-id: %s, "+
+							"filepath: %s, "+
+							"user: %s, "+
+							"accessionid: %s, "+
+							"decryptedChecksums: %v, error: %v)",
+							delivered.CorrelationId,
+							message.Filepath,
+							message.User,
+							message.AccessionID,
+							message.DecryptedChecksums,
+							e)
+					}
+				}
+
+				// write header to destination file
+				_, err = dest.Write(newHeader)
+				if err != nil {
+					log.Fatalf("Error in header writer: %v", err)
+				}
 			}
 
 			// Copy the file and check is sizes match

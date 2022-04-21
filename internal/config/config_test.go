@@ -662,3 +662,9 @@ func (suite *TestSuite) TestSyncConfiguration() {
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), config)
 }
+
+func (suite *TestSuite) TestCheckHeader() {
+	viper.Set("backup.header", "true")
+	cHeader := CheckHeader()
+	assert.Equal(suite.T(), cHeader, true, "The CheckHeader does not work")
+}

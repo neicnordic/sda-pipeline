@@ -378,3 +378,13 @@ func GetC4GHPublicKey() (*[32]byte, error) {
 	keyFile.Close()
 	return &key, nil
 }
+
+// CheckHeader reads the config and returns if the header will be copied
+func CheckHeader() bool {
+	header := viper.GetString("backup.header")
+	if header == "true" {
+		return true
+	} else {
+		return false
+	}
+}

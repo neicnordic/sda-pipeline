@@ -5,7 +5,7 @@
 # before the "real" work to verify that these failures are not top of
 # queue and handled again and again.
 #
-if [ "$STORAGETYPE" = s3notls ]; then
+if [ "$STORAGETYPE" = s3notls ] || [ "$STORAGETYPE" = s3notlsheader ]; then
     exit 0
 fi
 

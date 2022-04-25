@@ -310,9 +310,8 @@ func main() {
 			}
 
 			// Check if the header is needed
-			copyHeader := config.CheckHeader()
 			//nolint:nestif
-			if copyHeader {
+			if config.CopyHeader() {
 				// Get the header from db
 				header, err := db.GetHeaderStableId(message.AccessionID)
 				if err != nil {

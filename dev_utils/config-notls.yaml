@@ -21,7 +21,7 @@ backup:
   chunksize: 5
   # posix backend
   location: "dev_utils"
-  header: "false"
+  copyHeader: "false"
 
 broker:
   host: "localhost"

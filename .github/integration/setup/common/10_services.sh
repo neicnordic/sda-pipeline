@@ -23,7 +23,7 @@ if [ "$STORAGETYPE" = s3notls ]; then
     done
 
 elif [ "$STORAGETYPE" = s3notlsheader ]; then
-    sed -i 's/header: "false"/header: "true"/g' config-notls.yaml
+    sed -i 's/copyHeader: "false"/copyHeader: "true"/g' config-notls.yaml
 
     docker-compose -f compose-no-tls.yml up -d
 
@@ -41,7 +41,7 @@ elif [ "$STORAGETYPE" = s3notlsheader ]; then
         done
     done
 
-    sed -i 's/header: "true"/header: "false"/g' config-notls.yaml
+    sed -i 's/copyHeader: "true"/copyHeader: "false"/g' config-notls.yaml
 
 else
     bash ./make_certs.sh
@@ -52,7 +52,7 @@ else
         tostart="certfixer db mq s3"
     elif [ "$STORAGETYPE" = s3header ]; then
         tostart="certfixer db mq s3"
-        sed -i 's/header: "false"/header: "true"/g' config.yaml
+        sed -i 's/copyHeader: "false"/copyHeader: "true"/g' config.yaml
     fi
 
     # We need to leave the $tostart variable unquoted here since we want it to split
@@ -94,7 +94,7 @@ else
     done
 
     if [ "$STORAGETYPE" = s3header ]; then
-        sed -i 's/header: "true"/header: "false"/g' config.yaml
+        sed -i 's/copyHeader: "true"/copyHeader: "false"/g' config.yaml
     fi
 
 fi

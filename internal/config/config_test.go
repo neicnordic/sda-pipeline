@@ -663,8 +663,8 @@ func (suite *TestSuite) TestSyncConfiguration() {
 	assert.NotNil(suite.T(), config)
 }
 
-func (suite *TestSuite) TestCheckHeader() {
-	viper.Set("backup.header", "true")
-	cHeader := CheckHeader()
-	assert.Equal(suite.T(), cHeader, true, "The CheckHeader does not work")
+func (suite *TestSuite) TestCopyHeader() {
+	viper.Set("backup.copyHeader", "true")
+	cHeader := CopyHeader()
+	assert.Equal(suite.T(), cHeader, true, "The CopyHeader does not work")
 }

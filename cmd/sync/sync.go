@@ -400,7 +400,19 @@ func main() {
 				// write header to destination file
 				_, err = dest.Write(newHeader)
 				if err != nil {
-					log.Fatalf("Error in header writer: %v", err)
+					log.Errorf("Failed to write the header to destination %s "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						filePath,
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						err)
 				}
 			}
 

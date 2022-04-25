@@ -306,7 +306,7 @@ func TestGetHeader(t *testing.T) {
 	log.SetOutput(os.Stdout)
 }
 
-func TestGetHeaderStableId(t *testing.T) {
+func TestGetHeaderForStableId(t *testing.T) {
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
 		header := "0f40"
@@ -314,14 +314,14 @@ func TestGetHeaderStableId(t *testing.T) {
 			WithArgs("42").
 			WillReturnRows(sqlmock.NewRows([]string{"header"}).AddRow("0f40"))
 
-		x, err := testDb.GetHeaderStableId("42")
+		x, err := testDb.GetHeaderForStableId("42")
 
 		assert.Equal(t, x, header, "did not get expected header")
 
 		return err
 	})
 
-	assert.Nil(t, r, "GetHeaderStableId failed unexpectedly")
+	assert.Nil(t, r, "GetHeaderForStableId failed unexpectedly")
 
 	var buf bytes.Buffer
 	log.SetOutput(&buf)

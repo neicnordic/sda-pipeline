@@ -594,7 +594,7 @@ func (suite *TestSuite) TestGetC4GHKey_passError() {
 }
 
 func (suite *TestSuite) TestGetC4GHPublicKey() {
-	viper.Set("c4gh.newpublickey", "../../dev_utils/c4gh-new.pub.pem")
+	viper.Set("c4gh.syncPubKey", "../../dev_utils/c4gh-new.pub.pem")
 	byte, err := GetC4GHPublicKey()
 	assert.NotNil(suite.T(), byte)
 	assert.NoError(suite.T(), err)
@@ -602,7 +602,7 @@ func (suite *TestSuite) TestGetC4GHPublicKey() {
 
 func (suite *TestSuite) TestGetC4GHPublicKey_keyError() {
 
-	viper.Set("c4gh.newpublickey", "/doesnotexist")
+	viper.Set("c4gh.syncPubKey", "/doesnotexist")
 
 	byte, err := GetC4GHPublicKey()
 	assert.Nil(suite.T(), byte)

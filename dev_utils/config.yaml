@@ -47,7 +47,7 @@ broker:
 c4gh:
   passphrase: "oaagCP1YgAZeEyl2eJAkHv9lkcWXWFgm"
   filepath: "./dev_utils/c4gh.sec.pem"
-  newpublickey: "./dev_utils/c4gh-new.pub.pem"
+  syncPubKey: "./dev_utils/c4gh-new.pub.pem"
 
 db:
   host: "localhost"

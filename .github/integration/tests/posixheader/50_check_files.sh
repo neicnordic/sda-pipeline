@@ -53,7 +53,7 @@ for aid in $accessids; do
 	rm -f "tmp/$apath"
 
 	# Check checksum for backuped copy as well
-	docker cp "sync:/backup/$apath" tmp/
+	docker cp "backup:/backup/$apath" tmp/
 
 	# Decrypt the file
 	crypt4gh decrypt --sk c4gh-new.sec.pem < "tmp/$apath" > "tmp/$apath-decr"

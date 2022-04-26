@@ -47,7 +47,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	backup, err := storage.NewBackend(conf.Backup)
+	backupStorage, err := storage.NewBackend(conf.Backup)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -275,7 +275,7 @@ func main() {
 				continue
 			}
 
-			dest, err := backup.NewFileWriter(filePath)
+			dest, err := backupStorage.NewFileWriter(filePath)
 			if err != nil {
 				log.Errorf("Failed to open backup file %s for writing "+
 					"(corr-id: %s, "+

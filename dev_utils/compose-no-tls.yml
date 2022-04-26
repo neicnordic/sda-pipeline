@@ -126,10 +126,10 @@ services:
       - ./config-notls.yaml:/config.yaml
       - ./:/dev_utils/
     restart: always
-  sync:
-    command: sda-sync
-    container_name: sync
-    depends_on: 
+  backup:
+    command: sda-backup
+    container_name: backup
+    depends_on:
       - db
       - mq
       - s3

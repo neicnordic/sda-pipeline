@@ -152,7 +152,7 @@ func NewConfig(app string) (*Config, error) {
 			return nil, err
 		}
 		return c, nil
-	case "sync":
+	case "backup":
 		c.configArchive()
 		c.configBackup()
 

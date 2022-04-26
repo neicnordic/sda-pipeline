@@ -1,4 +1,4 @@
-// The sync command accepts messages with accessionIDs for
+// The backup command accepts messages with accessionIDs for
 // ingested files and copies them to the second storage.
 package main
 
@@ -19,8 +19,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Sync struct that holds the json message data
-type sync struct {
+// Backup struct that holds the json message data
+type backup struct {
 	Type               string      `json:"type,omitempty"`
 	User               string      `json:"user"`
 	Filepath           string      `json:"filepath"`
@@ -35,7 +35,7 @@ type checksums struct {
 }
 
 func main() {
-	conf, err := config.NewConfig("sync")
+	conf, err := config.NewConfig("backup")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -78,8 +78,8 @@ func main() {
 
 	forever := make(chan bool)
 
-	log.Info("Starting sync service")
-	var message sync
+	log.Info("Starting backup service")
+	var message backup
 	jsonSchema := "ingestion-completion"
 
 	if conf.Broker.Queue == "accessionIDs" {
@@ -165,7 +165,7 @@ func main() {
 				continue
 			}
 
-			log.Debug("Sync initiated")
+			log.Debug("Backup initiated")
 
 			// Get size on disk, will also give some time for the file to
 			// appear if it has not already
@@ -453,7 +453,7 @@ func main() {
 			file.Close()
 			dest.Close()
 
-			log.Infof("Synced file %s (%d bytes) from archive to backup "+
+			log.Infof("Backuped file %s (%d bytes) from archive to backup "+
 				"(corr-id: %s, "+
 				"filepath: %s, "+
 				"user: %s, "+

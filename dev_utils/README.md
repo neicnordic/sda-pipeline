@@ -130,7 +130,7 @@ To finalize ingestion of the dummy datafile a message needs to be published to t
 }
 ```
 
-The values of the decrypted datafile checksums can be found by getting from the queue the message that was published at verification either by using the API or the webgui. After ingestion is finalized the backup bucket is synced with the archive and contains the header-stripped datafile.
+The values of the decrypted datafile checksums can be found by getting from the queue the message that was published at verification either by using the API or the webgui. After ingestion is finalized the backup bucket is backuped with the archive and contains the header-stripped datafile.
 
 #### Example message to perform mapping
 

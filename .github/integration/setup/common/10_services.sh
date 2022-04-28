@@ -50,7 +50,7 @@ else
 
     if [ "$STORAGETYPE" = s3 ]; then
         tostart="certfixer db mq s3"
-    elif [ "$STORAGETYPE" = s3header ]; then
+    elif [ "$STORAGETYPE" = s3header ] || [ "$STORAGETYPE" = posixheader ]; then
         tostart="certfixer db mq s3"
         sed -i 's/copyHeader: "false"/copyHeader: "true"/g' config.yaml
     fi
@@ -93,7 +93,7 @@ else
         done
     done
 
-    if [ "$STORAGETYPE" = s3header ]; then
+    if [ "$STORAGETYPE" = s3header ] || [ "$STORAGETYPE" = posixheader ]; then
         sed -i 's/copyHeader: "true"/copyHeader: "false"/g' config.yaml
     fi
 

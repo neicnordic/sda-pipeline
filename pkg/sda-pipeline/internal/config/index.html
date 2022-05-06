@@ -124,7 +124,13 @@ Package config manages configuration
 			
 			
 				
+				<dd><a href="index.html#CopyHeader">func CopyHeader() bool</a></dd>
+			
+				
 				<dd><a href="index.html#GetC4GHKey">func GetC4GHKey() (*[32]byte, error)</a></dd>
+			
+				
+				<dd><a href="index.html#GetC4GHPublicKey">func GetC4GHPublicKey() (*[32]byte, error)</a></dd>
 			
 				
 				<dd><a href="index.html#configS3Storage">func configS3Storage(prefix string) storage.S3Conf</a></dd>
@@ -197,6 +203,22 @@ Package config manages configuration
 		
 			
 			
+			<h2 id="CopyHeader">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/config/config.go#L373">CopyHeader</a>
+				<a class="permalink" href="index.html#CopyHeader">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func CopyHeader() <a href="https://pkg.go.dev/builtin/#bool">bool</a></pre>
+			<p>
+CopyHeader reads the config and returns if the header will be copied
+</p>
+
+			
+			
+
+		
+			
+			
 			<h2 id="GetC4GHKey">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/config/config.go#L334">GetC4GHKey</a>
 				<a class="permalink" href="index.html#GetC4GHKey">&#xb6;</a>
 				
@@ -205,6 +227,22 @@ Package config manages configuration
 			<pre>func GetC4GHKey() (*[32]<a href="https://pkg.go.dev/builtin/#byte">byte</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
 			<p>
 GetC4GHKey reads and decrypts and returns the c4gh key
+</p>
+
+			
+			
+
+		
+			
+			
+			<h2 id="GetC4GHPublicKey">func <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/config/config.go#L354">GetC4GHPublicKey</a>
+				<a class="permalink" href="index.html#GetC4GHPublicKey">&#xb6;</a>
+				
+				
+			</h2>
+			<pre>func GetC4GHPublicKey() (*[32]<a href="https://pkg.go.dev/builtin/#byte">byte</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+			<p>
+GetC4GHPublicKey reads the c4gh public key
 </p>
 
 			

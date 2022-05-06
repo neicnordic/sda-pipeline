@@ -153,6 +153,9 @@ providing high level functions
 					<dd>&nbsp; &nbsp; <a href="database.html#SQLdb.GetHeader">func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error)</a></dd>
 				
 					
+					<dd>&nbsp; &nbsp; <a href="database.html#SQLdb.GetHeaderForStableId">func (dbs *SQLdb) GetHeaderForStableId(stableID string) (string, error)</a></dd>
+				
+					
 					<dd>&nbsp; &nbsp; <a href="database.html#SQLdb.InsertFile">func (dbs *SQLdb) InsertFile(filename, user string) (int64, error)</a></dd>
 				
 					
@@ -338,7 +341,7 @@ NewDB creates a new DB connection
 
 			
 				
-				<h3 id="SQLdb.Close">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L426">Close</a>
+				<h3 id="SQLdb.Close">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L441">Close</a>
 					<a class="permalink" href="database.html#SQLdb.Close">&#xb6;</a>
 					
 					
@@ -353,7 +356,7 @@ Close terminates the connection to the database
 				
 			
 				
-				<h3 id="SQLdb.GetArchived">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L393">GetArchived</a>
+				<h3 id="SQLdb.GetArchived">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L408">GetArchived</a>
 					<a class="permalink" href="database.html#SQLdb.GetArchived">&#xb6;</a>
 					
 					
@@ -383,7 +386,22 @@ GetHeader retrieves the file header
 				
 			
 				
-				<h3 id="SQLdb.InsertFile">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L209">InsertFile</a>
+				<h3 id="SQLdb.GetHeaderForStableId">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L165">GetHeaderForStableId</a>
+					<a class="permalink" href="database.html#SQLdb.GetHeaderForStableId">&#xb6;</a>
+					
+					
+				</h3>
+				<pre>func (dbs *<a href="database.html#SQLdb">SQLdb</a>) GetHeaderForStableId(stableID <a href="https://pkg.go.dev/builtin/#string">string</a>) (<a href="https://pkg.go.dev/builtin/#string">string</a>, <a href="https://pkg.go.dev/builtin/#error">error</a>)</pre>
+				<p>
+GetHeaderForStableId retrieves the file header by using stable id
+</p>
+
+				
+				
+				
+			
+				
+				<h3 id="SQLdb.InsertFile">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L224">InsertFile</a>
 					<a class="permalink" href="database.html#SQLdb.InsertFile">&#xb6;</a>
 					
 					
@@ -398,7 +416,7 @@ InsertFile inserts a file in the database
 				
 			
 				
-				<h3 id="SQLdb.MapFilesToDataset">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L347">MapFilesToDataset</a>
+				<h3 id="SQLdb.MapFilesToDataset">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L362">MapFilesToDataset</a>
 					<a class="permalink" href="database.html#SQLdb.MapFilesToDataset">&#xb6;</a>
 					
 					
@@ -413,7 +431,7 @@ MapFilesToDataset maps a set of files to a dataset in the database
 				
 			
 				
-				<h3 id="SQLdb.MarkCompleted">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L165">MarkCompleted</a>
+				<h3 id="SQLdb.MarkCompleted">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L180">MarkCompleted</a>
 					<a class="permalink" href="database.html#SQLdb.MarkCompleted">&#xb6;</a>
 					
 					
@@ -428,7 +446,7 @@ MarkCompleted marks the file as &#34;COMPLETED&#34;
 				
 			
 				
-				<h3 id="SQLdb.MarkReady">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L315">MarkReady</a>
+				<h3 id="SQLdb.MarkReady">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L330">MarkReady</a>
 					<a class="permalink" href="database.html#SQLdb.MarkReady">&#xb6;</a>
 					
 					
@@ -443,7 +461,7 @@ MarkReady marks the file as &#34;READY&#34;
 				
 			
 				
-				<h3 id="SQLdb.SetArchived">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L275">SetArchived</a>
+				<h3 id="SQLdb.SetArchived">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L290">SetArchived</a>
 					<a class="permalink" href="database.html#SQLdb.SetArchived">&#xb6;</a>
 					
 					
@@ -458,7 +476,7 @@ SetArchived marks the file as &#39;ARCHIVED&#39;
 				
 			
 				
-				<h3 id="SQLdb.StoreHeader">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L245">StoreHeader</a>
+				<h3 id="SQLdb.StoreHeader">func (*SQLdb) <a href="https://github.com/neicnordic/sda-pipeline/tree/master/internal/database/db.go#L260">StoreHeader</a>
 					<a class="permalink" href="database.html#SQLdb.StoreHeader">&#xb6;</a>
 					
 					

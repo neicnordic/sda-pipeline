@@ -171,6 +171,21 @@ func (dbs *SQLdb) getHeader(fileID int) ([]byte, error) {
 	return header, nil
 }
 
+// GetHeaderForStableId retrieves the file header by using stable id
+func (dbs *SQLdb) GetHeaderForStableId(stableID string) (string, error) {
+	dbs.checkAndReconnectIfNeeded()
+
+	db := dbs.DB
+	const query = "SELECT header from local_ega.files WHERE stable_id = $1"
+
+	var header string
+	if err := db.QueryRow(query, stableID).Scan(&header); err != nil {
+		return "", err
+	}
+
+	return header, nil
+}
+
 // MarkCompleted marks the file as "COMPLETED"
 func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
 	var (

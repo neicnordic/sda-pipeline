@@ -22,6 +22,27 @@ if [ "$STORAGETYPE" = s3notls ]; then
         done
     done
 
+elif [ "$STORAGETYPE" = s3notlsheader ]; then
+    sed -i 's/copyHeader: "false"/copyHeader: "true"/g' config-notls.yaml
+
+    docker-compose -f compose-no-tls.yml up -d
+
+    RETRY_TIMES=0
+    for p in db mq s3 ingest verify finalize mapper intercept; do
+        until docker ps -f name="$p" --format "{{.Status}}" | grep "Up"
+        do echo "waiting for $p to become ready"
+            RETRY_TIMES=$((RETRY_TIMES+1));
+            if [ "$RETRY_TIMES" -eq 30 ]; then
+                # Time out
+                docker logs "$p"
+                exit 1;
+            fi
+            sleep 10
+        done
+    done
+
+    sed -i 's/copyHeader: "true"/copyHeader: "false"/g' config-notls.yaml
+
 else
     bash ./make_certs.sh
 
@@ -29,6 +50,9 @@ else
 
     if [ "$STORAGETYPE" = s3 ]; then
         tostart="certfixer db mq s3"
+    elif [ "$STORAGETYPE" = s3header ] || [ "$STORAGETYPE" = posixheader ]; then
+        tostart="certfixer db mq s3"
+        sed -i 's/copyHeader: "false"/copyHeader: "true"/g' config.yaml
     fi
 
     # We need to leave the $tostart variable unquoted here since we want it to split
@@ -68,6 +92,10 @@ else
             sleep 10
         done
     done
+
+    if [ "$STORAGETYPE" = s3header ] || [ "$STORAGETYPE" = posixheader ]; then
+        sed -i 's/copyHeader: "true"/copyHeader: "false"/g' config.yaml
+    fi
 
 fi
 

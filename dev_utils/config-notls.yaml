@@ -21,6 +21,7 @@ backup:
   chunksize: 5
   # posix backend
   location: "dev_utils"
+  copyHeader: "false"
 
 broker:
   host: "localhost"
@@ -37,6 +38,7 @@ broker:
 c4gh:
   passphrase: "oaagCP1YgAZeEyl2eJAkHv9lkcWXWFgm"
   filepath: "./dev_utils/c4gh.sec.pem"
+  syncPubKey: "./dev_utils/c4gh-new.pub.pem"
 
 db:
   host: "localhost"

@@ -306,6 +306,31 @@ func TestGetHeader(t *testing.T) {
 	log.SetOutput(os.Stdout)
 }
 
+func TestGetHeaderForStableId(t *testing.T) {
+	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+
+		header := "0f40"
+		mock.ExpectQuery("SELECT header from local_ega.files WHERE stable_id = \\$1").
+			WithArgs("42").
+			WillReturnRows(sqlmock.NewRows([]string{"header"}).AddRow("0f40"))
+
+		x, err := testDb.GetHeaderForStableId("42")
+
+		assert.Equal(t, x, header, "did not get expected header")
+
+		return err
+	})
+
+	assert.Nil(t, r, "GetHeaderForStableId failed unexpectedly")
+
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+
+	buf.Reset()
+
+	log.SetOutput(os.Stdout)
+}
+
 func TestStoreHeader(t *testing.T) {
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 		header := []byte{15, 45, 20, 40, 48}

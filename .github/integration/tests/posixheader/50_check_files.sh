@@ -8,30 +8,35 @@ echo "Checking archive files in backup"
 
 # Earlier tests verify that the file is in the database correctly
 
-accessids=$(docker run --rm --name client --network dev_utils_default -v ./certs:/certs \
+accessids=$(docker run --rm --name client --network dev_utils_default -v /home/runner/work/sda-pipeline/sda-pipeline/dev_utils/certs:/certs \
 	-e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 	neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 	-t -A -c "SELECT stable_id FROM local_ega.files where status='READY';")
 
+if $accessids; then
+	echo "Failed to get accession ids"
+	exit 1
+fi
+
 for aid in $accessids; do
 	echo "Checking accesssionid $aid"
 
-	apath=$(docker run --rm --name client --network dev_utils_default -v ./certs:/certs \
+	apath=$(docker run --rm --name client --network dev_utils_default -v /home/runner/work/sda-pipeline/sda-pipeline/dev_utils/certs:/certs \
 		-e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 		neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 		-t -A -c "SELECT archive_path FROM local_ega.files where stable_id='$aid';")
 
-	acheck=$(docker run --rm --name client --network dev_utils_default -v ./certs:/certs \
+	acheck=$(docker run --rm --name client --network dev_utils_default -v /home/runner/work/sda-pipeline/sda-pipeline/dev_utils/certs:/certs \
 		-e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 		neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 		-t -A -c "SELECT archive_file_checksum FROM local_ega.files where stable_id='$aid';")
 
-	achecktype=$(docker run --rm --name client --network dev_utils_default -v ./certs:/certs \
+	achecktype=$(docker run --rm --name client --network dev_utils_default -v /home/runner/work/sda-pipeline/sda-pipeline/dev_utils/certs:/certs \
 		-e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 		neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 		-t -A -c "SELECT archive_file_checksum_type FROM local_ega.files where stable_id='$aid';")
 
-	decrcheck=$(docker run --rm --name client --network dev_utils_default -v ./certs:/certs \
+	decrcheck=$(docker run --rm --name client --network dev_utils_default -v /home/runner/work/sda-pipeline/sda-pipeline/dev_utils/certs:/certs \
 		-e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 		neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 		-t -A -c "SELECT decrypted_file_checksum FROM local_ega.files where stable_id='$aid';")

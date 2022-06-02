@@ -39,7 +39,7 @@ for aid in $accessids; do
 	decrcheck=$(docker run --rm --name client --network dev_utils_default -v /home/runner/work/sda-pipeline/sda-pipeline/dev_utils/certs:/certs \
 		-e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 		neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
-		-t -A -c "SELECT archive_file_checksum FROM local_ega.files where stable_id='$aid';")
+		-t -A -c "SELECT decrypted_file_checksum FROM local_ega.files where stable_id='$aid';")
 
 	s3cmd -c s3cmd.conf get "s3://archive/$apath" "tmp/$apath"
 

@@ -223,7 +223,7 @@ func (suite *TestSuite) TestConfigS3Storage() {
 	assert.Equal(suite.T(), "test", config.Archive.S3.Cacert)
 }
 
-func (suite *TestSuite) TestConfigSyncS3Storage() {
+func (suite *TestSuite) TestConfigBackupS3Storage() {
 	viper.Set("archive.type", S3)
 	viper.Set("archive.url", "test")
 	viper.Set("archive.accesskey", "test")
@@ -242,7 +242,7 @@ func (suite *TestSuite) TestConfigSyncS3Storage() {
 	viper.Set("backup.region", "test")
 	viper.Set("backup.chunksize", 123)
 	viper.Set("backup.cacert", "test")
-	config, err := NewConfig("sync")
+	config, err := NewConfig("backup")
 	assert.NotNil(suite.T(), config)
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), config.Archive)
@@ -594,7 +594,7 @@ func (suite *TestSuite) TestGetC4GHKey_passError() {
 }
 
 func (suite *TestSuite) TestGetC4GHPublicKey() {
-	viper.Set("c4gh.syncPubKey", "../../dev_utils/c4gh-new.pub.pem")
+	viper.Set("c4gh.backupPubKey", "../../dev_utils/c4gh-new.pub.pem")
 	byte, err := GetC4GHPublicKey()
 	assert.NotNil(suite.T(), byte)
 	assert.NoError(suite.T(), err)
@@ -602,17 +602,17 @@ func (suite *TestSuite) TestGetC4GHPublicKey() {
 
 func (suite *TestSuite) TestGetC4GHPublicKey_keyError() {
 
-	viper.Set("c4gh.syncPubKey", "/doesnotexist")
+	viper.Set("c4gh.backupPubKey", "/doesnotexist")
 
 	byte, err := GetC4GHPublicKey()
 	assert.Nil(suite.T(), byte)
 	assert.EqualError(suite.T(), err, "open /doesnotexist: no such file or directory")
 }
 
-func (suite *TestSuite) TestSyncConfiguration() {
+func (suite *TestSuite) TestBackupConfiguration() {
 	viper.Set("archive.location", "test")
 	viper.Set("backup.location", "test")
-	config, err := NewConfig("sync")
+	config, err := NewConfig("backup")
 	assert.NotNil(suite.T(), config)
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), config.Broker)
@@ -640,7 +640,7 @@ func (suite *TestSuite) TestSyncConfiguration() {
 	requiredConfVars = defaultRequiredConfVars
 
 	// At this point we should fail because we lack configuration
-	config, err = NewConfig("sync")
+	config, err = NewConfig("backup")
 	assert.Error(suite.T(), err)
 	assert.Nil(suite.T(), config)
 
@@ -652,13 +652,13 @@ func (suite *TestSuite) TestSyncConfiguration() {
 	viper.Set("broker.routingkey", "test")
 
 	// We should still fail here
-	config, err = NewConfig("sync")
+	config, err = NewConfig("backup")
 	assert.Error(suite.T(), err)
 	assert.Nil(suite.T(), config)
 
 	suite.SetupTest()
 	// Now we should have enough
-	config, err = NewConfig("sync")
+	config, err = NewConfig("backup")
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), config)
 }

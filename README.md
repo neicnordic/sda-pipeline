@@ -35,7 +35,7 @@ There is an README file in the [dev_utils](/dev_utils) folder with sections for 
 | verify        | The verify service reads and decrypts ingested files from the archive storage and sends accession requests. |
 | finalize      | The finalize command accepts messages with _accessionIDs_ for ingested files and registers them in the database. |
 | mapper        | The mapper service registers the mapping of _accessionIDs_ (IDs for files) to _datasetIDs_. |
-| sync          | The sync service accepts messages with _accessionIDs_ for ingested files and copies them to the second/backup storage. |
+| backup          | The backup service accepts messages with _accessionIDs_ for ingested files and copies them to the second/backup storage. |
 
 ## Internal Components
 

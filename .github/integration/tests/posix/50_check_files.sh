@@ -54,7 +54,7 @@ for aid in $accessids; do
 	rm -f "tmp/$apath"
 
 	# Check checksum for backuped copy as well
-	docker cp "sync:/backup/$apath" tmp/
+	docker cp "backup:/backup/$apath" tmp/
 
 	if [ "${achecktype,,*}" = 'md5sum' ]; then
 		filecheck=$(md5sum "tmp/$apath" | cut -d' ' -f1)

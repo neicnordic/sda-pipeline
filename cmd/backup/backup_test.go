@@ -11,7 +11,7 @@ type TestSuite struct {
 	suite.Suite
 }
 
-func TestSyncTestSuite(t *testing.T) {
+func TestBackupTestSuite(t *testing.T) {
 	suite.Run(t, new(TestSuite))
 }
 

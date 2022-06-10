@@ -24,7 +24,7 @@ function check_move_to_error_queue() {
 		RETRY_TIMES=$((RETRY_TIMES + 1))
 		if [ $RETRY_TIMES -eq 30 ]; then
 			echo "::error::Time out while waiting for msg to move to error queue, logs:"
-			for k in intercept ingest verify sync finalize mapper; do
+			for k in intercept ingest verify backup finalize mapper; do
 				echo
 				echo "$k"
 				echo

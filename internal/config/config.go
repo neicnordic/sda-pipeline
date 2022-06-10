@@ -152,7 +152,7 @@ func NewConfig(app string) (*Config, error) {
 			return nil, err
 		}
 		return c, nil
-	case "sync":
+	case "backup":
 		c.configArchive()
 		c.configBackup()
 
@@ -362,7 +362,7 @@ func GetC4GHKey() (*[32]byte, error) {
 
 // GetC4GHPublicKey reads the c4gh public key
 func GetC4GHPublicKey() (*[32]byte, error) {
-	keyPath := viper.GetString("c4gh.syncPubKey")
+	keyPath := viper.GetString("c4gh.backupPubKey")
 
 	// Make sure the key path and passphrase is valid
 	keyFile, err := os.Open(keyPath)

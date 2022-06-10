@@ -147,14 +147,14 @@ services:
       - certs:/dev_utils/certs
     mem_limit: 64m
     restart: always
-  sync:
-    command: sda-sync
-    container_name: sync
-    depends_on: 
+  backup:
+    command: sda-backup
+    container_name: backup
+    depends_on:
       - certfixer
       - mq
       - db
-    env_file: ./env.sync
+    env_file: ./env.backup
     image: neicnordic/sda-pipeline:latest
     volumes:
       - ./config.yaml:/config.yaml

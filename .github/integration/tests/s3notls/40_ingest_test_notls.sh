@@ -174,7 +174,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 						}"
 						}' | sed -e "s/FILENAME/$filepath/" -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/${access}/" -e "s/CORRID/$count/")"
 
-	echo "Waiting for finalize/sync to complete"
+	echo "Waiting for finalize/backup to complete"
 
 	# Wait for completion message
 	RETRY_TIMES=0
@@ -184,7 +184,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 		jq -r '.[0]["payload"]' | jq -r '.["filepath"]' | grep -q "$file"; do
 		RETRY_TIMES=$((RETRY_TIMES + 1))
 		if [ $RETRY_TIMES -eq 60 ]; then
-			echo "::error::Time out while waiting for finalize/sync to complete, logs:"
+			echo "::error::Time out while waiting for finalize/backup to complete, logs:"
 
 			echo
 			echo ingest
@@ -205,10 +205,10 @@ for file in dummy_data.c4gh largefile.c4gh; do
 			docker logs --since="$now" finalize
 
 			echo
-			echo sync
+			echo backup
 			echo
 
-			docker logs --since="$now" sync
+			docker logs --since="$now" backup
 			exit 1
 		fi
 		sleep 10
@@ -221,10 +221,10 @@ for file in dummy_data.c4gh largefile.c4gh; do
 	docker logs finalize --since="$now" 2>&1
 
 	echo
-	echo sync
+	echo backup
 	echo
 
-	docker logs sync --since="$now" 2>&1
+	docker logs backup --since="$now" 2>&1
 
 	dataset=$(printf "EGAD%011d" "$count")
 

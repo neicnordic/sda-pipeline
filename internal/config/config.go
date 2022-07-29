@@ -31,6 +31,14 @@ type Config struct {
 	Inbox    storage.Conf
 	Backup   storage.Conf
 	Database database.DBConf
+	Notify   SMTPConf
+}
+
+type SMTPConf struct {
+	Password string
+	FromAddr string
+	Host     string
+	Port     int
 }
 
 // NewConfig initializes and parses the config file and/or environment using
@@ -69,6 +77,11 @@ func NewConfig(app string) (*Config, error) {
 		// Mapper does not require broker.routingkey thus we remove it
 		requiredConfVars = []string{
 			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "db.host", "db.port", "db.user", "db.password", "db.database",
+		}
+	case "notify":
+		// Intercept does not require these extra settings
+		requiredConfVars = []string{
+			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "smtp.host", "smtp.port", "smtp.password", "smtp.from",
 		}
 	default:
 		requiredConfVars = []string{
@@ -166,6 +179,11 @@ func NewConfig(app string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		return c, nil
+	case "notify":
+		c.configSMTP()
+
 		return c, nil
 	}
 
@@ -338,6 +356,15 @@ func (c *Config) configDatabase() error {
 
 	c.Database = db
 	return nil
+}
+
+// configNotify provides configuration for the backup storage
+func (c *Config) configSMTP() {
+	c.Notify = SMTPConf{}
+	c.Notify.Host = viper.GetString("smtp.host")
+	c.Notify.Port = viper.GetInt("smtp.port")
+	c.Notify.Password = viper.GetString("smtp.password")
+	c.Notify.FromAddr = viper.GetString("smtp.from")
 }
 
 // GetC4GHKey reads and decrypts and returns the c4gh key

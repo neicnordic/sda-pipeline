@@ -668,3 +668,27 @@ func (suite *TestSuite) TestCopyHeader() {
 	cHeader := CopyHeader()
 	assert.Equal(suite.T(), cHeader, true, "The CopyHeader does not work")
 }
+
+func (suite *TestSuite) TestNotifyConfiguration() {
+	// At this point we should fail because we lack configuration
+	config, err := NewConfig("notify")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	viper.Set("broker.host", "test")
+	viper.Set("broker.port", 123)
+	viper.Set("broker.user", "test")
+	viper.Set("broker.password", "test")
+	viper.Set("broker.queue", "test")
+	viper.Set("broker.routingkey", "test")
+
+	viper.Set("smtp.host", "test")
+	viper.Set("smtp.port", 456)
+	viper.Set("smtp.password", "test")
+	viper.Set("smtp.from", "noreply")
+
+	config, err = NewConfig("notify")
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config)
+
+}

@@ -215,6 +215,7 @@ func (dbs *SQLdb) markCompleted(file FileInfo, fileID int64) error {
 		"decrypted_file_checksum = $6, " +
 		"decrypted_file_checksum_type = $7 " +
 		"WHERE id = $1;"
+
 	result, err := db.Exec(completed,
 		fileID,
 		file.Size,
@@ -256,12 +257,9 @@ func (dbs *SQLdb) insertFile(filename, user string) (int64, error) {
 	// Not really idempotent, but close enough for us
 
 	db := dbs.DB
-	const query = "INSERT INTO local_ega.main(submission_file_path, " +
-		"submission_file_extension, " +
-		"submission_user, " +
-		"status, " +
-		"encryption_method) " +
-		"VALUES($1, $2, $3,'INIT', 'CRYPT4GH') RETURNING id;"
+	const query = "INSERT INTO local_ega.main(submission_file_path, submission_file_extension, submission_user, status, encryption_method) " +
+		"VALUES($1, $2, $3,'INIT', 'CRYPT4GH') " +
+		"RETURNING id;"
 	var fileID int64
 	err := db.QueryRow(query, filename, strings.ReplaceAll(filepath.Ext(filename), ".", ""), user).Scan(&fileID)
 	if err != nil {
@@ -329,6 +327,7 @@ func (dbs *SQLdb) setArchived(file FileInfo, id int64) error {
 		"inbox_file_checksum = $3, " +
 		"inbox_file_checksum_type = $4 " +
 		"WHERE id = $5;"
+
 	result, err := db.Exec(query,
 		file.Path,
 		file.Size,
@@ -366,8 +365,13 @@ func (dbs *SQLdb) markReady(accessionID, user, filepath, checksum string) error 
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB
-	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE " +
-		"elixir_id = $2 and inbox_path = $3 and decrypted_file_checksum = $4 and status = 'COMPLETED';"
+	const ready = "UPDATE local_ega.files SET status = 'READY', " +
+		"stable_id = $1 " +
+		"WHERE elixir_id = $2 " +
+		"and inbox_path = $3 and " +
+		"decrypted_file_checksum = $4 " +
+		"and status = 'COMPLETED';"
+
 	result, err := db.Exec(ready, accessionID, user, filepath, checksum)
 	if err != nil {
 		return err
@@ -399,9 +403,7 @@ func (dbs *SQLdb) mapFilesToDataset(datasetID string, accessionIDs []string) err
 	dbs.checkAndReconnectIfNeeded()
 
 	const getID = "SELECT file_id FROM local_ega.archive_files WHERE stable_id = $1"
-	const mapping = "INSERT INTO local_ega_ebi.filedataset (file_id, dataset_stable_id) " +
-		"VALUES ($1, $2) ON CONFLICT " +
-		"DO NOTHING;"
+	const mapping = "INSERT INTO local_ega_ebi.filedataset (file_id, dataset_stable_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;"
 	db := dbs.DB
 	var fileID int64
 	transaction, _ := db.Begin()
@@ -452,7 +454,10 @@ func (dbs *SQLdb) getArchived(user, filepath, checksum string) (string, int, err
 
 	db := dbs.DB
 	const query = "SELECT archive_path, archive_filesize from local_ega.files WHERE " +
-		"elixir_id = $1 and inbox_path = $2 and decrypted_file_checksum = $3 and status in ('COMPLETED', 'READY');"
+		"elixir_id = $1 " +
+		"and inbox_path = $2 " +
+		"and decrypted_file_checksum = $3 " +
+		"and status in ('COMPLETED', 'READY');"
 
 	var filePath string
 	var fileSize int

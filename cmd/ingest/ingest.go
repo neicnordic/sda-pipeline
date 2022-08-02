@@ -236,7 +236,7 @@ func main() {
 					readBuffer = readBuffer[:i]
 				}
 
-				bytesRead = bytesRead + int64(i)
+				bytesRead += int64(i)
 
 				h := bytes.NewReader(readBuffer)
 				if _, err = io.Copy(hash, h); err != nil {

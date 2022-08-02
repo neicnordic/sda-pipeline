@@ -1089,43 +1089,43 @@ func (f *headerFrame) write(w io.Writer) (err error) {
 	// each of the fields that appear in the mask.
 	var mask uint16
 	if len(f.Properties.ContentType) > 0 {
-		mask = mask | flagContentType
+		mask |= flagContentType
 	}
 	if len(f.Properties.ContentEncoding) > 0 {
-		mask = mask | flagContentEncoding
+		mask |= flagContentEncoding
 	}
 	if f.Properties.Headers != nil && len(f.Properties.Headers) > 0 {
-		mask = mask | flagHeaders
+		mask |= flagHeaders
 	}
 	if f.Properties.DeliveryMode > 0 {
-		mask = mask | flagDeliveryMode
+		mask |= flagDeliveryMode
 	}
 	if f.Properties.Priority > 0 {
-		mask = mask | flagPriority
+		mask |= flagPriority
 	}
 	if len(f.Properties.CorrelationID) > 0 {
-		mask = mask | flagCorrelationID
+		mask |= flagCorrelationID
 	}
 	if len(f.Properties.ReplyTo) > 0 {
-		mask = mask | flagReplyTo
+		mask |= flagReplyTo
 	}
 	if len(f.Properties.Expiration) > 0 {
-		mask = mask | flagExpiration
+		mask |= flagExpiration
 	}
 	if len(f.Properties.MessageID) > 0 {
-		mask = mask | flagMessageID
+		mask |= flagMessageID
 	}
 	if f.Properties.Timestamp != zeroTime {
-		mask = mask | flagTimestamp
+		mask |= flagTimestamp
 	}
 	if len(f.Properties.Type) > 0 {
-		mask = mask | flagType
+		mask |= flagType
 	}
 	if len(f.Properties.UserID) > 0 {
-		mask = mask | flagUserID
+		mask |= flagUserID
 	}
 	if len(f.Properties.AppID) > 0 {
-		mask = mask | flagAppID
+		mask |= flagAppID
 	}
 	if err = binary.Write(&payload, binary.BigEndian, mask); err != nil {
 		return

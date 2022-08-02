@@ -149,6 +149,7 @@ func main() {
 						message.ReVerify,
 						e)
 				}
+
 				continue
 			}
 
@@ -348,6 +349,7 @@ func main() {
 						message.EncryptedChecksums,
 						message.ReVerify,
 						err)
+
 					continue
 				}
 

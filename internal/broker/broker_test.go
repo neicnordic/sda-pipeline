@@ -54,6 +54,7 @@ func (c *mockChannel) Confirm(noWait bool) error {
 func (c *mockChannel) NotifyPublish(confirm chan amqp.Confirmation) chan amqp.Confirmation {
 
 	c.confirmChannel = confirm
+
 	return confirm
 }
 

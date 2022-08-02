@@ -82,6 +82,7 @@ func (pb *posixBackend) NewFileReader(filePath string) (io.ReadCloser, error) {
 	file, err := os.Open(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 
@@ -97,6 +98,7 @@ func (pb *posixBackend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 	file, err := os.OpenFile(filepath.Join(filepath.Clean(pb.Location), filePath), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0640)
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 
@@ -112,6 +114,7 @@ func (pb *posixBackend) GetFileSize(filePath string) (int64, error) {
 	stat, err := os.Stat(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
+
 		return 0, err
 	}
 
@@ -127,6 +130,7 @@ func (pb *posixBackend) RemoveFile(filePath string) error {
 	err := os.Remove(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
+
 		return err
 	}
 
@@ -230,6 +234,7 @@ func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 
@@ -256,6 +261,7 @@ func (sb *s3Backend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 			_ = reader.CloseWithError(err)
 		}
 	}()
+
 	return writer, nil
 }
 
@@ -289,6 +295,7 @@ func (sb *s3Backend) GetFileSize(filePath string) (int64, error) {
 
 	if err != nil {
 		log.Errorln(err)
+
 		return 0, err
 	}
 
@@ -306,6 +313,7 @@ func (sb *s3Backend) RemoveFile(filePath string) error {
 		Key:    aws.String(filePath)})
 	if err != nil {
 		log.Error(err)
+
 		return err
 	}
 

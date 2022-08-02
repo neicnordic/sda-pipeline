@@ -268,6 +268,7 @@ func TestInsertFile(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(5))
 
 		_, err := testDb.InsertFile("/tmp/file.c4gh", "nobody")
+
 		return err
 	})
 
@@ -528,6 +529,7 @@ func TestClose(t *testing.T) {
 
 		mock.ExpectClose()
 		testDb.Close()
+
 		return nil
 	})
 

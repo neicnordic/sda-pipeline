@@ -147,6 +147,7 @@ func NewConfig(app string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		return c, nil
 	case "intercept":
 		return c, nil
@@ -158,12 +159,14 @@ func NewConfig(app string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		return c, nil
 	case "finalize":
 		err = c.configDatabase()
 		if err != nil {
 			return nil, err
 		}
+
 		return c, nil
 	case "backup":
 		c.configArchive()
@@ -173,6 +176,7 @@ func NewConfig(app string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		return c, nil
 	case "mapper":
 		err = c.configDatabase()
@@ -355,6 +359,7 @@ func (c *Config) configDatabase() error {
 	}
 
 	c.Database = db
+
 	return nil
 }
 
@@ -384,6 +389,7 @@ func GetC4GHKey() (*[32]byte, error) {
 	}
 
 	keyFile.Close()
+
 	return &key, nil
 }
 
@@ -403,6 +409,7 @@ func GetC4GHPublicKey() (*[32]byte, error) {
 	}
 
 	keyFile.Close()
+
 	return &key, nil
 }
 

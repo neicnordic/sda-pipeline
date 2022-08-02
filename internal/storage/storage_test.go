@@ -69,6 +69,7 @@ func writeName() (name string, err error) {
 
 	// Add to cleanup
 	cleanupFiles = append(cleanupFiles, name)
+
 	return name, err
 }
 
@@ -128,6 +129,7 @@ func TestPosixBackend(t *testing.T) {
 	writable, err := writeName()
 	if err != nil {
 		t.Error("could not find a writable name, bailing out from test")
+
 		return
 	}
 
@@ -157,6 +159,7 @@ func TestPosixBackend(t *testing.T) {
 
 	if reader == nil {
 		t.Error("reader that should be usable is not, bailing out")
+
 		return
 	}
 
@@ -212,6 +215,7 @@ func setupFakeS3() (err error) {
 
 	if err != nil {
 		log.Error("Unexpected error while setting up fake s3")
+
 		return err
 	}
 
@@ -335,6 +339,7 @@ func TestS3Backend(t *testing.T) {
 
 	if reader == nil {
 		t.Error("reader that should be usable is not, bailing out")
+
 		return
 	}
 

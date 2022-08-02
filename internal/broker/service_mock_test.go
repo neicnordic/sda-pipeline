@@ -56,6 +56,7 @@ func confirm(confirms <-chan amqp.Confirmation, tag uint64) error {
 	if !confirmed.Ack || confirmed.DeliveryTag != tag {
 		return fmt.Errorf("failed delivery of delivery tag: %d", confirmed.DeliveryTag)
 	}
+
 	return nil
 }
 
@@ -99,6 +100,7 @@ func (p pipe) Write(b []byte) (int, error) {
 func (p pipe) Close() error {
 	p.r.Close()
 	p.w.Close()
+
 	return nil
 }
 
@@ -119,6 +121,7 @@ func (log *logIO) Read(p []byte) (n int, err error) {
 		log.t.Logf("%s read:\n%s\n", log.prefix, hex.Dump(p[0:n]))
 		//fmt.Printf("%s read:\n%s\n", log.prefix, hex.Dump(p[0:n]))
 	}
+
 	return
 }
 
@@ -132,6 +135,7 @@ func (log *logIO) Write(p []byte) (n int, err error) {
 		log.t.Logf("%s write %d:\n%s", log.prefix, len(p), hex.Dump(p[0:n]))
 		//fmt.Printf("%s write %d:\n%s", log.prefix, len(p), hex.Dump(p[0:n]))
 	}
+
 	return
 }
 
@@ -143,6 +147,7 @@ func (log *logIO) Close() (err error) {
 	} else {
 		log.t.Logf("%s close\n", log.prefix)
 	}
+
 	return
 }
 
@@ -174,6 +179,7 @@ func tlsServerConfig() *tls.Config {
 		fmt.Printf("certLoad: %v", err)
 	}
 	cfg.ClientAuth = tls.RequireAndVerifyClientCert
+
 	return cfg
 }
 
@@ -199,6 +205,7 @@ func startTLSServer(t *testing.T, port int, cfg *tls.Config) tlsServer {
 		Sessions: make(chan *commonServer),
 	}
 	go s.Serve(t)
+
 	return s
 }
 
@@ -228,6 +235,7 @@ func handleOneConnection(s chan *commonServer, failChannel, failDeclare bool) {
 
 	if failChannel == true {
 		session.send(1, &channelClose{ReplyCode: 506, ReplyText: "Something", MethodID: 10, ClassID: 20})
+
 		return
 	}
 	session.send(1, &channelOpenOk{})
@@ -238,6 +246,7 @@ func handleOneConnection(s chan *commonServer, failChannel, failDeclare bool) {
 	if failDeclare == true {
 		session.send(1, &channelClose{ReplyCode: 506,
 			ReplyText: "Something", MethodID: 10, ClassID: 50})
+
 		return
 	}
 	session.send(1, &queueDeclareOk{})
@@ -260,6 +269,7 @@ func startServer(t *testing.T, port int) server {
 		Sessions: make(chan *commonServer),
 	}
 	go s.Serve(t)
+
 	return s
 }
 
@@ -320,6 +330,7 @@ func (msg *connectionOpen) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -335,6 +346,7 @@ func (msg *connectionOpen) read(r io.Reader) (err error) {
 		return
 	}
 	msg.reserved2 = (bits&(1<<0) > 0)
+
 	return
 }
 
@@ -363,6 +375,7 @@ func readShortstr(r io.Reader) (v string, err error) {
 	if _, err = io.ReadFull(r, bytes); err != nil {
 		return
 	}
+
 	return string(bytes), nil
 }
 
@@ -375,6 +388,7 @@ func writeShortstr(w io.Writer, s string) (err error) {
 	if _, err = w.Write(b[:length]); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -394,6 +408,7 @@ func (msg *connectionOpenOk) write(w io.Writer) (err error) {
 	if err = writeShortstr(w, msg.reserved1); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -401,6 +416,7 @@ func (msg *connectionOpenOk) read(r io.Reader) (err error) {
 	if msg.reserved1, err = readShortstr(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -446,6 +462,7 @@ func (msg *connectionStart) write(w io.Writer) (err error) {
 	if err = writeLongstr(w, msg.Locales); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -465,6 +482,7 @@ func (msg *connectionStart) read(r io.Reader) (err error) {
 	if msg.Locales, err = readLongstr(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -526,6 +544,7 @@ func (t *commonServer) recv(channel int, m message) message {
 			remaining = int(header.Size)
 			if remaining == 0 {
 				m.(messageWithContent).setContent(header.Properties, nil)
+
 				return m
 			}
 		case *bodyFrame:
@@ -534,6 +553,7 @@ func (t *commonServer) recv(channel int, m message) message {
 			remaining -= len(f.Body)
 			if remaining <= 0 {
 				m.(messageWithContent).setContent(header.Properties, body)
+
 				return m
 			}
 		case *methodFrame:
@@ -593,6 +613,7 @@ func (w *writer) WriteFrame(frame frame) (err error) {
 	if buf, ok := w.w.(*bufio.Writer); ok {
 		err = buf.Flush()
 	}
+
 	return
 }
 
@@ -633,10 +654,12 @@ func readArray(r io.Reader) ([]interface{}, error) {
 			if err == io.EOF {
 				break
 			}
+
 			return nil, err
 		}
 		arr = append(arr, field)
 	}
+
 	return arr, nil
 }
 
@@ -645,6 +668,7 @@ func readTimestamp(r io.Reader) (v time.Time, err error) {
 	if err = binary.Read(r, binary.BigEndian, &sec); err != nil {
 		return
 	}
+
 	return time.Unix(sec, 0), nil
 }
 
@@ -712,6 +736,7 @@ func writeField(w io.Writer, value interface{}) (err error) {
 		if _, err = w.Write(sec.Bytes()); err != nil {
 			return
 		}
+
 		return
 	case time.Time:
 		buf[0] = 'T'
@@ -721,6 +746,7 @@ func writeField(w io.Writer, value interface{}) (err error) {
 		if _, err = w.Write([]byte{'F'}); err != nil {
 			return
 		}
+
 		return writeTable(w, v)
 	case []byte:
 		buf[0] = 'x'
@@ -731,6 +757,7 @@ func writeField(w io.Writer, value interface{}) (err error) {
 		if _, err = w.Write(v); err != nil {
 			return
 		}
+
 		return
 	case nil:
 		buf[0] = 'V'
@@ -739,6 +766,7 @@ func writeField(w io.Writer, value interface{}) (err error) {
 		return ErrFieldType
 	}
 	_, err = w.Write(enc)
+
 	return
 }
 
@@ -825,6 +853,7 @@ func (msg *connectionClose) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, msg.MethodID); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -841,6 +870,7 @@ func (msg *connectionClose) read(r io.Reader) (err error) {
 	if err = binary.Read(r, binary.BigEndian, &msg.MethodID); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -916,6 +946,7 @@ func (r *reader) ReadFrame() (frame frame, err error) {
 	if scratch[0] != frameEnd {
 		return nil, ErrFrame
 	}
+
 	return
 }
 
@@ -1011,6 +1042,7 @@ func (r *reader) parseHeaderFrame(channel uint16, size uint32) (frame frame, err
 			return
 		}
 	}
+
 	return hf, nil
 }
 
@@ -1037,6 +1069,7 @@ func (f *methodFrame) write(w io.Writer) (err error) {
 	if err = f.Method.write(&payload); err != nil {
 		return
 	}
+
 	return writeFrame(w, frameMethod, f.ChannelID, payload.Bytes())
 }
 
@@ -1162,6 +1195,7 @@ func (f *headerFrame) write(w io.Writer) (err error) {
 			return
 		}
 	}
+
 	return writeFrame(w, frameHeader, f.ChannelID, payload.Bytes())
 }
 
@@ -1272,6 +1306,7 @@ func (r *reader) parseMethodFrame(channel uint16, size uint32) (f frame, err err
 			method := &channelOpen{}
 			if err = method.read(r.r); err != nil {
 				fmt.Println("NextMethod: class:20 method:10 fail")
+
 				return
 			}
 			// fmt.Println("NextMethod: class:20 method:10 done")
@@ -1651,6 +1686,7 @@ func (r *reader) parseMethodFrame(channel uint16, size uint32) (f frame, err err
 	default:
 		return nil, fmt.Errorf("Bad method frame, unknown class %d", mf.ClassID)
 	}
+
 	return mf, nil
 }
 
@@ -1662,6 +1698,7 @@ func (r *reader) parseBodyFrame(channel uint16, size uint32) (frame frame, err e
 	if _, err = io.ReadFull(r.r, bf.Body); err != nil {
 		return nil, err
 	}
+
 	return bf, nil
 }
 
@@ -1672,6 +1709,7 @@ func (r *reader) parseHeartbeatFrame(channel uint16, size uint32) (frame frame, 
 	if size > 0 {
 		return nil, errHeartbeatPayload
 	}
+
 	return hf, nil
 }
 
@@ -1713,6 +1751,7 @@ func (msg *connectionTune) read(r io.Reader) (err error) {
 	if err = binary.Read(r, binary.BigEndian, &msg.Heartbeat); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1726,6 +1765,7 @@ func (msg *connectionTune) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, msg.Heartbeat); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1753,6 +1793,7 @@ func (msg *connectionTuneOk) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, msg.Heartbeat); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1766,6 +1807,7 @@ func (msg *connectionTuneOk) read(r io.Reader) (err error) {
 	if err = binary.Read(r, binary.BigEndian, &msg.Heartbeat); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1785,6 +1827,7 @@ func (msg *connectionSecure) write(w io.Writer) (err error) {
 	if err = writeLongstr(w, msg.Challenge); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1792,6 +1835,7 @@ func (msg *connectionSecure) read(r io.Reader) (err error) {
 	if msg.Challenge, err = readLongstr(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1811,6 +1855,7 @@ func (msg *connectionSecureOk) write(w io.Writer) (err error) {
 	if err = writeLongstr(w, msg.Response); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1818,6 +1863,7 @@ func (msg *connectionSecureOk) read(r io.Reader) (err error) {
 	if msg.Response, err = readLongstr(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1837,6 +1883,7 @@ func (msg *connectionBlocked) write(w io.Writer) (err error) {
 	if err = writeShortstr(w, msg.Reason); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1844,6 +1891,7 @@ func (msg *connectionBlocked) read(r io.Reader) (err error) {
 	if msg.Reason, err = readShortstr(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1882,6 +1930,7 @@ func (msg *channelOpen) write(w io.Writer) (err error) {
 	if err = writeShortstr(w, msg.reserved1); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1889,6 +1938,7 @@ func (msg *channelOpen) read(r io.Reader) (err error) {
 	if msg.reserved1, err = readShortstr(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1908,6 +1958,7 @@ func (msg *channelOpenOk) write(w io.Writer) (err error) {
 	if err = writeLongstr(w, msg.reserved1); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1915,6 +1966,7 @@ func (msg *channelOpenOk) read(r io.Reader) (err error) {
 	if msg.reserved1, err = readLongstr(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1938,6 +1990,7 @@ func (msg *channelFlow) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1947,6 +2000,7 @@ func (msg *channelFlow) read(r io.Reader) (err error) {
 		return
 	}
 	msg.Active = (bits&(1<<0) > 0)
+
 	return
 }
 
@@ -1970,6 +2024,7 @@ func (msg *channelFlowOk) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -1979,6 +2034,7 @@ func (msg *channelFlowOk) read(r io.Reader) (err error) {
 		return
 	}
 	msg.Active = (bits&(1<<0) > 0)
+
 	return
 }
 
@@ -2010,6 +2066,7 @@ func (msg *channelClose) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, msg.MethodID); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2026,6 +2083,7 @@ func (msg *channelClose) read(r io.Reader) (err error) {
 	if err = binary.Read(r, binary.BigEndian, &msg.MethodID); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2099,6 +2157,7 @@ func (msg *exchangeDeclare) write(w io.Writer) (err error) {
 	if err = writeTable(w, msg.Arguments); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2124,6 +2183,7 @@ func (msg *exchangeDeclare) read(r io.Reader) (err error) {
 	if msg.Arguments, err = readTable(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2177,6 +2237,7 @@ func (msg *exchangeDelete) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2193,6 +2254,7 @@ func (msg *exchangeDelete) read(r io.Reader) (err error) {
 	}
 	msg.IfUnused = (bits&(1<<0) > 0)
 	msg.NoWait = (bits&(1<<1) > 0)
+
 	return
 }
 
@@ -2254,6 +2316,7 @@ func (msg *exchangeBind) write(w io.Writer) (err error) {
 	if err = writeTable(w, msg.Arguments); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2278,6 +2341,7 @@ func (msg *exchangeBind) read(r io.Reader) (err error) {
 	if msg.Arguments, err = readTable(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2339,6 +2403,7 @@ func (msg *exchangeUnbind) write(w io.Writer) (err error) {
 	if err = writeTable(w, msg.Arguments); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2363,6 +2428,7 @@ func (msg *exchangeUnbind) read(r io.Reader) (err error) {
 	if msg.Arguments, err = readTable(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2432,6 +2498,7 @@ func (msg *queueDeclare) write(w io.Writer) (err error) {
 	if err = writeTable(w, msg.Arguments); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2454,6 +2521,7 @@ func (msg *queueDeclare) read(r io.Reader) (err error) {
 	if msg.Arguments, err = readTable(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2481,6 +2549,7 @@ func (msg *queueDeclareOk) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, msg.ConsumerCount); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2494,6 +2563,7 @@ func (msg *queueDeclareOk) read(r io.Reader) (err error) {
 	if err = binary.Read(r, binary.BigEndian, &msg.ConsumerCount); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2537,6 +2607,7 @@ func (msg *queueBind) write(w io.Writer) (err error) {
 	if err = writeTable(w, msg.Arguments); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2561,6 +2632,7 @@ func (msg *queueBind) read(r io.Reader) (err error) {
 	if msg.Arguments, err = readTable(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2614,6 +2686,7 @@ func (msg *queueUnbind) write(w io.Writer) (err error) {
 	if err = writeTable(w, msg.Arguments); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2633,6 +2706,7 @@ func (msg *queueUnbind) read(r io.Reader) (err error) {
 	if msg.Arguments, err = readTable(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2682,6 +2756,7 @@ func (msg *queuePurge) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2697,6 +2772,7 @@ func (msg *queuePurge) read(r io.Reader) (err error) {
 		return
 	}
 	msg.NoWait = (bits&(1<<0) > 0)
+
 	return
 }
 
@@ -2716,6 +2792,7 @@ func (msg *queuePurgeOk) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, msg.MessageCount); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2723,6 +2800,7 @@ func (msg *queuePurgeOk) read(r io.Reader) (err error) {
 	if err = binary.Read(r, binary.BigEndian, &msg.MessageCount); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2762,6 +2840,7 @@ func (msg *queueDelete) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2779,6 +2858,7 @@ func (msg *queueDelete) read(r io.Reader) (err error) {
 	msg.IfUnused = (bits&(1<<0) > 0)
 	msg.IfEmpty = (bits&(1<<1) > 0)
 	msg.NoWait = (bits&(1<<2) > 0)
+
 	return
 }
 
@@ -2798,6 +2878,7 @@ func (msg *queueDeleteOk) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, msg.MessageCount); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2805,6 +2886,7 @@ func (msg *queueDeleteOk) read(r io.Reader) (err error) {
 	if err = binary.Read(r, binary.BigEndian, &msg.MessageCount); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2836,6 +2918,7 @@ func (msg *basicQos) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2851,6 +2934,7 @@ func (msg *basicQos) read(r io.Reader) (err error) {
 		return
 	}
 	msg.Global = (bits&(1<<0) > 0)
+
 	return
 }
 
@@ -2920,6 +3004,7 @@ func (msg *basicConsume) write(w io.Writer) (err error) {
 	if err = writeTable(w, msg.Arguments); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2944,6 +3029,7 @@ func (msg *basicConsume) read(r io.Reader) (err error) {
 	if msg.Arguments, err = readTable(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2963,6 +3049,7 @@ func (msg *basicConsumeOk) write(w io.Writer) (err error) {
 	if err = writeShortstr(w, msg.ConsumerTag); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2970,6 +3057,7 @@ func (msg *basicConsumeOk) read(r io.Reader) (err error) {
 	if msg.ConsumerTag, err = readShortstr(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -2997,6 +3085,7 @@ func (msg *basicCancel) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3009,6 +3098,7 @@ func (msg *basicCancel) read(r io.Reader) (err error) {
 		return
 	}
 	msg.NoWait = (bits&(1<<0) > 0)
+
 	return
 }
 
@@ -3028,6 +3118,7 @@ func (msg *basicCancelOk) write(w io.Writer) (err error) {
 	if err = writeShortstr(w, msg.ConsumerTag); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3035,6 +3126,7 @@ func (msg *basicCancelOk) read(r io.Reader) (err error) {
 	if msg.ConsumerTag, err = readShortstr(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3084,6 +3176,7 @@ func (msg *basicPublish) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3103,6 +3196,7 @@ func (msg *basicPublish) read(r io.Reader) (err error) {
 	}
 	msg.Mandatory = (bits&(1<<0) > 0)
 	msg.Immediate = (bits&(1<<1) > 0)
+
 	return
 }
 
@@ -3144,6 +3238,7 @@ func (msg *basicReturn) write(w io.Writer) (err error) {
 	if err = writeShortstr(w, msg.RoutingKey); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3160,6 +3255,7 @@ func (msg *basicReturn) read(r io.Reader) (err error) {
 	if msg.RoutingKey, err = readShortstr(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3209,6 +3305,7 @@ func (msg *basicDeliver) write(w io.Writer) (err error) {
 	if err = writeShortstr(w, msg.RoutingKey); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3230,6 +3327,7 @@ func (msg *basicDeliver) read(r io.Reader) (err error) {
 	if msg.RoutingKey, err = readShortstr(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3261,6 +3359,7 @@ func (msg *basicGet) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3276,6 +3375,7 @@ func (msg *basicGet) read(r io.Reader) (err error) {
 		return
 	}
 	msg.NoAck = (bits&(1<<0) > 0)
+
 	return
 }
 
@@ -3325,6 +3425,7 @@ func (msg *basicGetOk) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, msg.MessageCount); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3346,6 +3447,7 @@ func (msg *basicGetOk) read(r io.Reader) (err error) {
 	if err = binary.Read(r, binary.BigEndian, &msg.MessageCount); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3365,6 +3467,7 @@ func (msg *basicGetEmpty) write(w io.Writer) (err error) {
 	if err = writeShortstr(w, msg.reserved1); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3372,6 +3475,7 @@ func (msg *basicGetEmpty) read(r io.Reader) (err error) {
 	if msg.reserved1, err = readShortstr(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3399,6 +3503,7 @@ func (msg *basicAck) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3411,6 +3516,7 @@ func (msg *basicAck) read(r io.Reader) (err error) {
 		return
 	}
 	msg.Multiple = (bits&(1<<0) > 0)
+
 	return
 }
 
@@ -3438,6 +3544,7 @@ func (msg *basicReject) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3450,6 +3557,7 @@ func (msg *basicReject) read(r io.Reader) (err error) {
 		return
 	}
 	msg.Requeue = (bits&(1<<0) > 0)
+
 	return
 }
 
@@ -3473,6 +3581,7 @@ func (msg *basicRecoverAsync) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3482,6 +3591,7 @@ func (msg *basicRecoverAsync) read(r io.Reader) (err error) {
 		return
 	}
 	msg.Requeue = (bits&(1<<0) > 0)
+
 	return
 }
 
@@ -3505,6 +3615,7 @@ func (msg *basicRecover) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3514,6 +3625,7 @@ func (msg *basicRecover) read(r io.Reader) (err error) {
 		return
 	}
 	msg.Requeue = (bits&(1<<0) > 0)
+
 	return
 }
 
@@ -3563,6 +3675,7 @@ func (msg *basicNack) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3576,6 +3689,7 @@ func (msg *basicNack) read(r io.Reader) (err error) {
 	}
 	msg.Multiple = (bits&(1<<0) > 0)
 	msg.Requeue = (bits&(1<<1) > 0)
+
 	return
 }
 
@@ -3708,6 +3822,7 @@ func (msg *confirmSelect) write(w io.Writer) (err error) {
 	if err = binary.Write(w, binary.BigEndian, bits); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3717,6 +3832,7 @@ func (msg *confirmSelect) read(r io.Reader) (err error) {
 		return
 	}
 	msg.Nowait = (bits&(1<<0) > 0)
+
 	return
 }
 
@@ -3772,6 +3888,7 @@ func (msg *connectionStartOk) read(r io.Reader) (err error) {
 	if msg.Locale, err = readShortstr(r); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3792,6 +3909,7 @@ func (msg *connectionStartOk) write(w io.Writer) (err error) {
 	if err = writeShortstr(w, msg.Locale); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3814,6 +3932,7 @@ func readTable(r io.Reader) (table Table, err error) {
 		}
 		table[key] = value
 	}
+
 	return
 }
 
@@ -3830,6 +3949,7 @@ func readLongstr(r io.Reader) (v string, err error) {
 	if _, err = io.ReadFull(r, bytes); err != nil {
 		return
 	}
+
 	return string(bytes), nil
 }
 
@@ -3844,42 +3964,49 @@ func readField(r io.Reader) (v interface{}, err error) {
 		if err = binary.Read(r, binary.BigEndian, &value); err != nil {
 			return
 		}
+
 		return (value != 0), nil
 	case 'b':
 		var value [1]byte
 		if _, err = io.ReadFull(r, value[0:1]); err != nil {
 			return
 		}
+
 		return value[0], nil
 	case 's':
 		var value int16
 		if err = binary.Read(r, binary.BigEndian, &value); err != nil {
 			return
 		}
+
 		return value, nil
 	case 'I':
 		var value int32
 		if err = binary.Read(r, binary.BigEndian, &value); err != nil {
 			return
 		}
+
 		return value, nil
 	case 'l':
 		var value int64
 		if err = binary.Read(r, binary.BigEndian, &value); err != nil {
 			return
 		}
+
 		return value, nil
 	case 'f':
 		var value float32
 		if err = binary.Read(r, binary.BigEndian, &value); err != nil {
 			return
 		}
+
 		return value, nil
 	case 'd':
 		var value float64
 		if err = binary.Read(r, binary.BigEndian, &value); err != nil {
 			return
 		}
+
 		return value, nil
 	case 'D':
 		return readDecimal(r)
@@ -3900,10 +4027,12 @@ func readField(r io.Reader) (v interface{}, err error) {
 		if _, err = io.ReadFull(r, value); err != nil {
 			return nil, err
 		}
+
 		return value, err
 	case 'V':
 		return nil, nil
 	}
+
 	return nil, ErrSyntax
 }
 
@@ -3914,6 +4043,7 @@ func readDecimal(r io.Reader) (v Decimal, err error) {
 	if err = binary.Read(r, binary.BigEndian, &v.Value); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3927,6 +4057,7 @@ func writeTable(w io.Writer, table Table) (err error) {
 			return
 		}
 	}
+
 	return writeLongstr(w, buf.String())
 }
 
@@ -3939,6 +4070,7 @@ func writeLongstr(w io.Writer, s string) (err error) {
 	if _, err = w.Write(b[:length]); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -3963,5 +4095,6 @@ func writeFrame(w io.Writer, typ uint8, channel uint16, payload []byte) (err err
 	if _, err = w.Write(end); err != nil {
 		return
 	}
+
 	return
 }

@@ -63,6 +63,7 @@ func main() {
 					"(corr-id: %s, error: %v)",
 					delivered.CorrelationId,
 					err)
+
 				continue
 			}
 
@@ -169,6 +170,7 @@ func main() {
 						message.DecryptedChecksums,
 						e)
 				}
+
 				continue
 			}
 

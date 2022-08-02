@@ -148,6 +148,7 @@ func (dbs *SQLdb) GetHeader(fileID int64) ([]byte, error) {
 		r, err = dbs.getHeader(fileID)
 		count++
 	}
+
 	return r, err
 }
 
@@ -197,6 +198,7 @@ func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int64) error {
 		err = dbs.markCompleted(file, fileID)
 		count++
 	}
+
 	return err
 }
 
@@ -227,6 +229,7 @@ func (dbs *SQLdb) markCompleted(file FileInfo, fileID int64) error {
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
 		return errors.New("something went wrong with the query zero rows were changed")
 	}
+
 	return nil
 }
 
@@ -242,6 +245,7 @@ func (dbs *SQLdb) InsertFile(filename, user string) (int64, error) {
 		r, err = dbs.insertFile(filename, user)
 		count++
 	}
+
 	return r, err
 }
 
@@ -263,6 +267,7 @@ func (dbs *SQLdb) insertFile(filename, user string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	return fileID, nil
 }
 
@@ -277,6 +282,7 @@ func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
 		err = dbs.storeHeader(header, id)
 		count++
 	}
+
 	return err
 }
 
@@ -293,6 +299,7 @@ func (dbs *SQLdb) storeHeader(header []byte, id int64) error {
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
 		return errors.New("something went wrong with the query zero rows were changed")
 	}
+
 	return nil
 }
 
@@ -307,6 +314,7 @@ func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
 		err = dbs.setArchived(file, id)
 		count++
 	}
+
 	return err
 }
 
@@ -333,6 +341,7 @@ func (dbs *SQLdb) setArchived(file FileInfo, id int64) error {
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
 		return errors.New("something went wrong with the query zero rows were changed")
 	}
+
 	return nil
 }
 
@@ -348,6 +357,7 @@ func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error 
 		err = dbs.markReady(accessionID, user, filepath, checksum)
 		count++
 	}
+
 	return err
 }
 
@@ -365,6 +375,7 @@ func (dbs *SQLdb) markReady(accessionID, user, filepath, checksum string) error 
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
 		return errors.New("something went wrong with the query zero rows were changed")
 	}
+
 	return nil
 }
 
@@ -379,6 +390,7 @@ func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) err
 		err = dbs.mapFilesToDataset(datasetID, accessionIDs)
 		count++
 	}
+
 	return err
 }
 
@@ -400,6 +412,7 @@ func (dbs *SQLdb) mapFilesToDataset(datasetID string, accessionIDs []string) err
 			if e := transaction.Rollback(); e != nil {
 				log.Errorf("failed to rollback the transaction: %s", e)
 			}
+
 			return err
 		}
 		_, err = transaction.Exec(mapping, fileID, datasetID)
@@ -408,9 +421,11 @@ func (dbs *SQLdb) mapFilesToDataset(datasetID string, accessionIDs []string) err
 			if e := transaction.Rollback(); e != nil {
 				log.Errorf("failed to rollback the transaction: %s", e)
 			}
+
 			return err
 		}
 	}
+
 	return transaction.Commit()
 }
 
@@ -427,6 +442,7 @@ func (dbs *SQLdb) GetArchived(user, filepath, checksum string) (string, int, err
 		filePath, fileSize, err = dbs.getArchived(user, filepath, checksum)
 		count++
 	}
+
 	return filePath, fileSize, err
 }
 

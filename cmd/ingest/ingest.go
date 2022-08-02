@@ -84,6 +84,7 @@ func main() {
 					"(corr-id: %s, error: %v)",
 					delivered.CorrelationId,
 					err)
+
 				continue
 			}
 
@@ -199,6 +200,7 @@ func main() {
 						archivedFile,
 						e)
 				}
+
 				continue
 			}
 
@@ -245,6 +247,7 @@ func main() {
 						message.FilePath,
 						archivedFile,
 						err)
+
 					continue mainWorkLoop
 				}
 
@@ -298,6 +301,7 @@ func main() {
 							message.FilePath,
 							archivedFile,
 							err)
+
 						continue mainWorkLoop
 					}
 
@@ -309,6 +313,7 @@ func main() {
 							message.FilePath,
 							archivedFile,
 							err)
+
 						continue mainWorkLoop
 					}
 
@@ -322,6 +327,7 @@ func main() {
 							message.FilePath,
 							archivedFile,
 							err)
+
 						continue mainWorkLoop
 					}
 
@@ -337,6 +343,7 @@ func main() {
 							message.FilePath,
 							archivedFile,
 							err)
+
 						continue mainWorkLoop
 					}
 				}
@@ -350,6 +357,7 @@ func main() {
 						message.FilePath,
 						archivedFile,
 						err)
+
 					continue mainWorkLoop
 				}
 			}
@@ -370,6 +378,7 @@ func main() {
 					message.FilePath,
 					archivedFile,
 					err)
+
 				continue
 			}
 
@@ -425,6 +434,7 @@ func main() {
 					message.FilePath,
 					archivedFile,
 					err)
+
 				continue
 			}
 
@@ -464,12 +474,13 @@ func tryDecrypt(key *[32]byte, buf []byte) ([]byte, error) {
 	b, err := streaming.NewCrypt4GHReader(a, *key, nil)
 	if err != nil {
 		log.Error(err)
-		return nil, err
 
+		return nil, err
 	}
 	_, err = b.ReadByte()
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 
@@ -477,6 +488,7 @@ func tryDecrypt(key *[32]byte, buf []byte) ([]byte, error) {
 	header, err := headers.ReadHeader(f)
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 

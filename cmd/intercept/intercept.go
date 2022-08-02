@@ -54,22 +54,16 @@ func main() {
 
 			msgType, err := typeFromMessage(delivered.Body)
 			if err != nil {
-				log.Errorf("Failed to get type for message "+
-					"(corr-id: %s, error: %v, message: %s)",
-					delivered.CorrelationId,
-					err,
-					delivered.Body)
+				log.Errorf("Failed to get type for message (corr-id: %s, error: %v, message: %s)",
+					delivered.CorrelationId, err, delivered.Body)
 				/// Nack message so the server gets notified that something is wrong. Do not requeue the message.
 				if e := delivered.Nack(false, false); e != nil {
-					log.Errorf("Failed to Nack message (get type for message) "+
-						"(corr-id: %s, reason: %v)",
-						delivered.CorrelationId,
-						e)
+					log.Errorf("Failed to Nack message (get type for message) (corr-id: %s, reason: %v)",
+						delivered.CorrelationId, e)
 				}
 				// Send the message to an error queue so it can be analyzed.
 				if e := mq.SendJSONError(&delivered, delivered.Body, mq.Conf, err.Error(), "Failed to get type for message"); e != nil {
-					log.Errorf("Failed to publish message (get type for message), to error queue "+
-						"(corr-id: %s, reason: %v)",
+					log.Errorf("Failed to publish message (get type for message), to error queue (corr-id: %s, reason: %v)",
 						delivered.CorrelationId, e)
 				}
 				// Restart on new message
@@ -80,22 +74,16 @@ func main() {
 
 			if err != nil {
 
-				log.Errorf("Don't know schema for message type "+
-					"(corr-id: %s, msgType: %s, error: %v, message: %s)",
-					delivered.CorrelationId,
-					msgType,
-					err,
-					delivered.Body)
+				log.Errorf("Don't know schema for message type (corr-id: %s, msgType: %s, error: %v, message: %s)",
+					delivered.CorrelationId, msgType, err, delivered.Body)
 				/// Nack message so the server gets notified that something is wrong. Do not requeue the message.
 				if e := delivered.Nack(false, false); e != nil {
-					log.Errorf("Failed to Nack message (unknown schema) "+
-						"(corr-id: %s, msgType: %s, error: %v, message: %s)",
+					log.Errorf("Failed to Nack message (unknown schema) (corr-id: %s, msgType: %s, error: %v, message: %s)",
 						delivered.CorrelationId, msgType, err, delivered.Body)
 				}
 				// Send the message to an error queue so it can be analyzed.
 				if e := mq.SendJSONError(&delivered, delivered.Body, mq.Conf, err.Error(), "Don't know schema for message type"); e != nil {
-					log.Errorf("Failed to publish message (unknown schema), to error queue "+
-						"(corr-id: %s, reason: %v)",
+					log.Errorf("Failed to publish message (unknown schema), to error queue (corr-id: %s, reason: %v)",
 						delivered.CorrelationId, e)
 				}
 				// Restart on new message
@@ -105,12 +93,8 @@ func main() {
 			err = mq.ValidateJSON(&delivered, schema, delivered.Body, nil)
 
 			if err != nil {
-				log.Errorf("Validation failed for message "+
-					"(corr-id: %s, error: %v, schema: %s, message: %s)",
-					delivered.CorrelationId,
-					err,
-					schema,
-					delivered.Body)
+				log.Errorf("Validation failed for message (corr-id: %s, error: %v, schema: %s, message: %s)",
+					delivered.CorrelationId, err, schema, delivered.Body)
 
 				continue
 			}
@@ -127,10 +111,8 @@ func main() {
 				continue
 			}
 
-			log.Infof("Routing message "+
-				"(corr-id: %s, routingkey: %s)",
-				delivered.CorrelationId,
-				routingKey)
+			log.Infof("Routing message (corr-id: %s, routingkey: %s)",
+				delivered.CorrelationId, routingKey)
 
 			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, routingKey, conf.Broker.Durable, delivered.Body); err != nil {
 				// TODO fix resend mechanism

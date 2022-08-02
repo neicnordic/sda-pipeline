@@ -85,7 +85,7 @@ func main() {
 func getUser(queue string, orgMsg []byte) string {
 	switch queue {
 	case err:
-		var notify broker.InfoError
+		var notify common.InfoError
 		_ = json.Unmarshal(orgMsg, &notify)
 		orgMsg, _ := base64.StdEncoding.DecodeString(notify.OriginalMessage.(string))
 
@@ -94,7 +94,7 @@ func getUser(queue string, orgMsg []byte) string {
 
 		return fmt.Sprint(message["user"])
 	case ready:
-		var notify common.Completed
+		var notify common.IngestionCompletion
 		_ = json.Unmarshal(orgMsg, &notify)
 
 		return notify.User

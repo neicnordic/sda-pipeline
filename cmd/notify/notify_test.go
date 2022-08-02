@@ -30,7 +30,7 @@ func (suite *TestSuite) SetupTest() {
 
 func TestGetUser(t *testing.T) {
 
-	archivedMsg := common.Archived{
+	archivedMsg := common.IngestionVerification{
 		User:        "JohnDoe",
 		FilePath:    "path/to file",
 		FileID:      123456789,
@@ -68,7 +68,7 @@ func TestSetSubject(t *testing.T) {
 func TestValidator(t *testing.T) {
 	d := amqp091.Delivery{}
 
-	archivedMsg := common.Archived{
+	archivedMsg := common.IngestionVerification{
 		User:        "JohnDoe",
 		FilePath:    "path/to file",
 		FileID:      123456789,
@@ -108,9 +108,9 @@ func TestValidator(t *testing.T) {
 	assert.Error(t, err, "validator did not fail when it should")
 	assert.True(t, strings.Contains(err.Error(), "user is required"))
 
-	finalizedMsg := common.Finalize{
+	finalizedMsg := common.IngestionAccession{
 		User:        "JohnDoe",
-		Filepath:    "path/to file",
+		FilePath:    "path/to file",
 		AccessionID: "EGAF00123456789",
 		DecryptedChecksums: []common.Checksums{
 			{Type: "sha256", Value: "da886a89637d125ef9f15f6d676357f3a9e5e10306929f0bad246375af89c2e2"},

@@ -11,6 +11,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
+	"sda-pipeline/internal/common"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -57,15 +58,6 @@ type MQConf struct {
 	SchemasPath        string
 }
 
-// InfoError struct for sending detailed error messages to analysis.
-// The empty interface allows for appending various json msgs but also broken json msgs as strings.
-// It is ok as long as we do not need to access fields in the msg, which we don't.
-type InfoError struct {
-	Error           string      `json:"error"`
-	Reason          string      `json:"reason"`
-	OriginalMessage interface{} `json:"original-message"`
-}
-
 // NewMQ creates a new Broker that can communicate with a backend
 // amqp server.
 func NewMQ(config MQConf) (*AMQPBroker, error) {
@@ -80,6 +72,7 @@ func NewMQ(config MQConf) (*AMQPBroker, error) {
 		var tlsConfig *tls.Config
 		tlsConfig, err = TLSConfigBroker(config)
 		if err != nil {
+
 			return nil, err
 		}
 		Connection, err = amqp.DialTLS(brokerURI, tlsConfig)
@@ -240,7 +233,7 @@ func (broker *AMQPBroker) ConnectionWatcher() *amqp.Error {
 // SendJSONError sends message on JSON error
 func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody []byte, conf MQConf, reason, errorMsg string) error {
 
-	jsonErrorMessage := InfoError{
+	jsonErrorMessage := common.InfoError{
 		Error:           errorMsg,
 		Reason:          fmt.Sprintf("%v", reason),
 		OriginalMessage: string(originalBody),

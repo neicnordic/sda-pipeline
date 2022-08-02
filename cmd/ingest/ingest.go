@@ -12,6 +12,7 @@ import (
 	"os"
 
 	"sda-pipeline/internal/broker"
+	"sda-pipeline/internal/common"
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
@@ -22,29 +23,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 )
-
-type trigger struct {
-	Type               string      `json:"type"`
-	User               string      `json:"user"`
-	Filepath           string      `json:"filepath"`
-	EncryptedChecksums []checksums `json:"encrypted_checksums"`
-}
-
-// archived holds what should go in an message to inform about
-// archival of files
-type archived struct {
-	User               string      `json:"user"`
-	FilePath           string      `json:"filepath"`
-	FileID             int64       `json:"file_id"`
-	ArchivePath        string      `json:"archive_path"`
-	EncryptedChecksums []checksums `json:"encrypted_checksums"`
-	ReVerify           bool        `json:"re_verify"`
-}
-
-type checksums struct {
-	Type  string `json:"type"`
-	Value string `json:"value"`
-}
 
 func main() {
 	conf, err := config.NewConfig("ingest")
@@ -85,7 +63,7 @@ func main() {
 	forever := make(chan bool)
 
 	log.Info("starting ingest service")
-	var message trigger
+	var message common.IngestionTrigger
 
 	go func() {
 		messages, err := mq.GetMessages(conf.Broker.Queue)
@@ -116,16 +94,16 @@ func main() {
 				"filepath: %s, "+
 				"user: %s)",
 				delivered.CorrelationId,
-				message.Filepath,
+				message.FilePath,
 				message.User)
 
-			file, err := inbox.NewFileReader(message.Filepath)
+			file, err := inbox.NewFileReader(message.FilePath)
 			if err != nil {
 				log.Errorf("Failed to open file to ingest "+
 					"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
 					delivered.CorrelationId,
 					message.User,
-					message.Filepath,
+					message.FilePath,
 					err)
 				// Nack message so the server gets notified that something is wrong. Do not requeue the message.
 				if e := delivered.Nack(false, false); e != nil {
@@ -133,11 +111,11 @@ func main() {
 						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
-						message.Filepath,
+						message.FilePath,
 						e)
 				}
 				// Send the message to an error queue so it can be analyzed.
-				fileError := broker.InfoError{
+				fileError := common.InfoError{
 					Error:           "Failed to open file to ingest",
 					Reason:          err.Error(),
 					OriginalMessage: message,
@@ -148,20 +126,20 @@ func main() {
 						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
-						message.Filepath,
+						message.FilePath,
 						e)
 				}
 				// Restart on new message
 				continue
 			}
 
-			fileSize, err := inbox.GetFileSize(message.Filepath)
+			fileSize, err := inbox.GetFileSize(message.FilePath)
 			if err != nil {
 				log.Errorf("Failed to get file size of file to ingest "+
 					"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
 					delivered.CorrelationId,
 					message.User,
-					message.Filepath,
+					message.FilePath,
 					err)
 				// Nack message so the server gets notified that something is wrong and requeue the message.
 				// Since reading the file worked, this should eventually succeed so it is ok to requeue.
@@ -170,11 +148,11 @@ func main() {
 						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
-						message.Filepath,
+						message.FilePath,
 						e)
 				}
 				// Send the message to an error queue so it can be analyzed.
-				fileError := broker.InfoError{
+				fileError := common.InfoError{
 					Error:           "Failed to get file size of file to ingest",
 					Reason:          err.Error(),
 					OriginalMessage: message,
@@ -185,7 +163,7 @@ func main() {
 						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
-						message.Filepath,
+						message.FilePath,
 						e)
 				}
 				// Restart on new message
@@ -196,7 +174,7 @@ func main() {
 				"(corr-id: %s, user: %s, filepath: %s, filesize: %d)",
 				delivered.CorrelationId,
 				message.User,
-				message.Filepath,
+				message.FilePath,
 				fileSize)
 
 			// Create a random uuid as file name
@@ -207,7 +185,7 @@ func main() {
 					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 					delivered.CorrelationId,
 					message.User,
-					message.Filepath,
+					message.FilePath,
 					archivedFile,
 					err)
 				// Nack message so the server gets notified that something is wrong and requeue the message.
@@ -217,20 +195,20 @@ func main() {
 						"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
-						message.Filepath,
+						message.FilePath,
 						archivedFile,
 						e)
 				}
 				continue
 			}
 
-			fileID, err := db.InsertFile(message.Filepath, message.User)
+			fileID, err := db.InsertFile(message.FilePath, message.User)
 			if err != nil {
 				log.Errorf("InsertFile failed "+
 					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 					delivered.CorrelationId,
 					message.User,
-					message.Filepath,
+					message.FilePath,
 					archivedFile,
 					err)
 			}
@@ -264,7 +242,7 @@ func main() {
 						"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
-						message.Filepath,
+						message.FilePath,
 						archivedFile,
 						err)
 					continue mainWorkLoop
@@ -278,7 +256,7 @@ func main() {
 							"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 							delivered.CorrelationId,
 							message.User,
-							message.Filepath,
+							message.FilePath,
 							archivedFile,
 							err)
 
@@ -288,13 +266,13 @@ func main() {
 								"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 								delivered.CorrelationId,
 								message.User,
-								message.Filepath,
+								message.FilePath,
 								archivedFile,
 								e)
 						}
 
 						// Send the message to an error queue so it can be analyzed.
-						fileError := broker.InfoError{
+						fileError := common.InfoError{
 							Error:           "Trying to decrypt start of file failed",
 							Reason:          err.Error(),
 							OriginalMessage: message,
@@ -305,7 +283,7 @@ func main() {
 								"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
 								delivered.CorrelationId,
 								message.User,
-								message.Filepath,
+								message.FilePath,
 								e)
 						}
 
@@ -317,7 +295,7 @@ func main() {
 							"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 							delivered.CorrelationId,
 							message.User,
-							message.Filepath,
+							message.FilePath,
 							archivedFile,
 							err)
 						continue mainWorkLoop
@@ -328,7 +306,7 @@ func main() {
 							"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 							delivered.CorrelationId,
 							message.User,
-							message.Filepath,
+							message.FilePath,
 							archivedFile,
 							err)
 						continue mainWorkLoop
@@ -341,7 +319,7 @@ func main() {
 							"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 							delivered.CorrelationId,
 							message.User,
-							message.Filepath,
+							message.FilePath,
 							archivedFile,
 							err)
 						continue mainWorkLoop
@@ -356,7 +334,7 @@ func main() {
 							"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 							delivered.CorrelationId,
 							message.User,
-							message.Filepath,
+							message.FilePath,
 							archivedFile,
 							err)
 						continue mainWorkLoop
@@ -369,7 +347,7 @@ func main() {
 						"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
-						message.Filepath,
+						message.FilePath,
 						archivedFile,
 						err)
 					continue mainWorkLoop
@@ -389,7 +367,7 @@ func main() {
 					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 					delivered.CorrelationId,
 					message.User,
-					message.Filepath,
+					message.FilePath,
 					archivedFile,
 					err)
 				continue
@@ -399,7 +377,7 @@ func main() {
 				"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, archivedsize: %d)",
 				delivered.CorrelationId,
 				message.User,
-				message.Filepath,
+				message.FilePath,
 				archivedFile,
 				fileInfo.Size)
 
@@ -409,7 +387,7 @@ func main() {
 					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 					delivered.CorrelationId,
 					message.User,
-					message.Filepath,
+					message.FilePath,
 					archivedFile,
 					err)
 			}
@@ -418,17 +396,17 @@ func main() {
 				"(corr-id: %s, user: %s, filepath: %s, archivepath: %s)",
 				delivered.CorrelationId,
 				message.User,
-				message.Filepath,
+				message.FilePath,
 				archivedFile)
 
 			// Send message to archived
-			msg := archived{
+			msg := common.IngestionVerification{
 				User:        message.User,
-				FilePath:    message.Filepath,
+				FilePath:    message.FilePath,
 				FileID:      fileID,
 				ArchivePath: archivedFile,
-				EncryptedChecksums: []checksums{
-					{"sha256", fmt.Sprintf("%x", hash.Sum(nil))},
+				EncryptedChecksums: []common.Checksums{
+					{Type: "sha256", Value: fmt.Sprintf("%x", hash.Sum(nil))},
 				},
 			}
 
@@ -437,14 +415,14 @@ func main() {
 			err = mq.ValidateJSON(&delivered,
 				"ingestion-verification",
 				archivedMsg,
-				new(archived))
+				new(common.IngestionVerification))
 
 			if err != nil {
 				log.Errorf("Validation of outgoing (archived) message failed "+
 					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 					delivered.CorrelationId,
 					message.User,
-					message.Filepath,
+					message.FilePath,
 					archivedFile,
 					err)
 				continue
@@ -456,7 +434,7 @@ func main() {
 					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 					delivered.CorrelationId,
 					message.User,
-					message.Filepath,
+					message.FilePath,
 					archivedFile,
 					err)
 
@@ -468,7 +446,7 @@ func main() {
 					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 					delivered.CorrelationId,
 					message.User,
-					message.Filepath,
+					message.FilePath,
 					archivedFile,
 					err)
 			}

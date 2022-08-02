@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"sda-pipeline/internal/common"
 )
 
 type TestSuite struct {
@@ -21,44 +22,19 @@ func (suite *TestSuite) SetupTest() {
 	viper.Set("log.level", "debug")
 }
 
-type accession struct {
-	Type               string      `json:"type"`
-	User               string      `json:"user"`
-	FilePath           string      `json:"filepath"`
-	AccessionID        string      `json:"accession_id"`
-	DecryptedChecksums []Checksums `json:"decrypted_checksums"`
-}
-
-type Checksums struct {
-	Type  string `json:"type"`
-	Value string `json:"value"`
-}
-
-type ingest struct {
-	Type     string `json:"type"`
-	User     string `json:"user"`
-	FilePath string `json:"filepath"`
-}
-
-type mapping struct {
-	Type        string   `json:"type"`
-	DatasetID   string   `json:"dataset_id"`
-	AcessionIDs []string `json:"accession_ids"`
-}
-
 type missing struct {
 	User     string `json:"user"`
 	FilePath string `json:"filepath"`
 }
 
 func (suite *TestSuite) TestMessageSelection_Accession() {
-	msg := accession{
+	msg := common.IngestionAccession{
 		Type:        "accession",
 		User:        "foo",
 		FilePath:    "/tmp/foo",
 		AccessionID: "EGAF12345678901",
-		DecryptedChecksums: []Checksums{
-			{"md5", "7Ac236b1a8dce2dac89e7cf45d2b48BD"},
+		DecryptedChecksums: []common.Checksums{
+			{Type: "md5", Value: "7Ac236b1a8dce2dac89e7cf45d2b48BD"},
 		},
 	}
 	message, _ := json.Marshal(&msg)
@@ -74,7 +50,7 @@ func (suite *TestSuite) TestMessageSelection_Accession() {
 }
 
 func (suite *TestSuite) TestMessageSelection_Cancel() {
-	msg := ingest{
+	msg := common.IngestionTrigger{
 		Type:     "cancel",
 		User:     "foo",
 		FilePath: "/tmp/foo",
@@ -92,7 +68,7 @@ func (suite *TestSuite) TestMessageSelection_Cancel() {
 }
 
 func (suite *TestSuite) TestMessageSelection_Ingest() {
-	msg := ingest{
+	msg := common.IngestionTrigger{
 		Type:     "ingest",
 		User:     "foo",
 		FilePath: "/tmp/foo",
@@ -111,10 +87,10 @@ func (suite *TestSuite) TestMessageSelection_Ingest() {
 }
 
 func (suite *TestSuite) TestMessageSelection_Mapping() {
-	msg := mapping{
+	msg := common.DatasetMapping{
 		Type:      "mapping",
 		DatasetID: "EGAD12345678900",
-		AcessionIDs: []string{
+		AccessionIDs: []string{
 			"EGAF12345678901",
 		},
 	}

@@ -12,6 +12,7 @@ import (
 	"os"
 
 	"sda-pipeline/internal/broker"
+	"sda-pipeline/internal/common"
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
@@ -20,29 +21,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 )
-
-// Message struct that holds the json message data
-type message struct {
-	FilePath           string      `json:"filepath"`
-	User               string      `json:"user"`
-	FileID             int         `json:"file_id"`
-	ArchivePath        string      `json:"archive_path"`
-	EncryptedChecksums []checksums `json:"encrypted_checksums"`
-	ReVerify           bool        `json:"re_verify"`
-}
-
-// Verified is struct holding the full message data
-type verified struct {
-	User               string      `json:"user"`
-	FilePath           string      `json:"filepath"`
-	DecryptedChecksums []checksums `json:"decrypted_checksums"`
-}
-
-// Checksums is struct for the checksum type and value
-type checksums struct {
-	Type  string `json:"type"`
-	Value string `json:"value"`
-}
 
 func main() {
 	conf, err := config.NewConfig("verify")
@@ -91,7 +69,7 @@ func main() {
 				err)
 		}
 		for delivered := range messages {
-			var message message
+			var message common.IngestionVerification
 			log.Debugf("Received a message (corr-id: %s, message: %s)",
 				delivered.CorrelationId,
 				delivered.Body)
@@ -150,7 +128,7 @@ func main() {
 
 				}
 				// store full message info in case we want to fix the db entry and retry
-				infoErrorMessage := broker.InfoError{
+				infoErrorMessage := common.InfoError{
 					Error:           "Getheader failed",
 					Reason:          err.Error(),
 					OriginalMessage: message,
@@ -218,7 +196,7 @@ func main() {
 					err)
 
 				// Send the message to an error queue so it can be analyzed.
-				infoErrorMessage := broker.InfoError{
+				infoErrorMessage := common.InfoError{
 					Error:           "Failed to open archived file",
 					Reason:          err.Error(),
 					OriginalMessage: message,
@@ -299,12 +277,12 @@ func main() {
 			//nolint:nestif
 			if !message.ReVerify {
 
-				c := verified{
+				c := common.IngestionAccessionRequest{
 					User:     message.User,
 					FilePath: message.FilePath,
-					DecryptedChecksums: []checksums{
-						{"sha256", fmt.Sprintf("%x", sha256hash.Sum(nil))},
-						{"md5", fmt.Sprintf("%x", md5hash.Sum(nil))},
+					DecryptedChecksums: []common.Checksums{
+						{Type: "sha256", Value: fmt.Sprintf("%x", sha256hash.Sum(nil))},
+						{Type: "md5", Value: fmt.Sprintf("%x", md5hash.Sum(nil))},
 					},
 				}
 
@@ -313,7 +291,7 @@ func main() {
 				err = mq.ValidateJSON(&delivered,
 					"ingestion-accession-request",
 					verifiedMessage,
-					new(verified))
+					new(common.IngestionAccessionRequest))
 
 				if err != nil {
 					log.Errorf("Validation (ingestion-accession-request) of outgoing message failed "+
@@ -398,7 +376,7 @@ func main() {
 						err)
 
 					// Send the message to an error queue so it can be analyzed.
-					fileError := broker.InfoError{
+					fileError := common.InfoError{
 						Error:           "RemoveFile failed",
 						Reason:          err.Error(),
 						OriginalMessage: message,

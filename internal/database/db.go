@@ -137,7 +137,7 @@ func (dbs *SQLdb) checkAndReconnectIfNeeded() {
 }
 
 // GetHeader retrieves the file header
-func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
+func (dbs *SQLdb) GetHeader(fileID int64) ([]byte, error) {
 	var (
 		r     []byte = nil
 		err   error  = nil
@@ -152,7 +152,7 @@ func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 }
 
 // getHeader is the actual function performing work for GetHeader
-func (dbs *SQLdb) getHeader(fileID int) ([]byte, error) {
+func (dbs *SQLdb) getHeader(fileID int64) ([]byte, error) {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB
@@ -187,7 +187,7 @@ func (dbs *SQLdb) GetHeaderForStableId(stableID string) (string, error) {
 }
 
 // MarkCompleted marks the file as "COMPLETED"
-func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
+func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int64) error {
 	var (
 		err   error = nil
 		count int   = 0
@@ -201,7 +201,7 @@ func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
 }
 
 // markCompleted performs actual work for MarkCompleted
-func (dbs *SQLdb) markCompleted(file FileInfo, fileID int) error {
+func (dbs *SQLdb) markCompleted(file FileInfo, fileID int64) error {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB

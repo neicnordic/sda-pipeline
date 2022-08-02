@@ -7,34 +7,12 @@ import (
 	"os"
 
 	"sda-pipeline/internal/broker"
+	"sda-pipeline/internal/common"
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/database"
 
 	log "github.com/sirupsen/logrus"
 )
-
-// finalize struct that holds the json message data
-type finalize struct {
-	Type               string      `json:"type"`
-	User               string      `json:"user"`
-	Filepath           string      `json:"filepath"`
-	AccessionID        string      `json:"accession_id"`
-	DecryptedChecksums []checksums `json:"decrypted_checksums"`
-}
-
-// Checksums is struct for the checksum type and value
-type checksums struct {
-	Type  string `json:"type"`
-	Value string `json:"value"`
-}
-
-// Completed is struct holding the full message data
-type completed struct {
-	User               string      `json:"user"`
-	Filepath           string      `json:"filepath"`
-	AccessionID        string      `json:"accession_id"`
-	DecryptedChecksums []checksums `json:"decrypted_checksums"`
-}
 
 func main() {
 	conf, err := config.NewConfig("finalize")
@@ -63,7 +41,7 @@ func main() {
 	forever := make(chan bool)
 
 	log.Info("Starting finalize service")
-	var message finalize
+	var message common.IngestionAccession
 
 	go func() {
 		messages, err := mq.GetMessages(conf.Broker.Queue)
@@ -97,7 +75,7 @@ func main() {
 				"accessionid: %s, "+
 				"decryptedChecksums: %v)",
 				delivered.CorrelationId,
-				message.Filepath,
+				message.FilePath,
 				message.User,
 				message.AccessionID,
 				message.DecryptedChecksums)
@@ -110,9 +88,9 @@ func main() {
 				}
 			}
 
-			c := completed{
+			c := common.IngestionCompletion{
 				User:               message.User,
-				Filepath:           message.Filepath,
+				FilePath:           message.FilePath,
 				AccessionID:        message.AccessionID,
 				DecryptedChecksums: message.DecryptedChecksums,
 			}
@@ -122,7 +100,7 @@ func main() {
 			err = mq.ValidateJSON(&delivered,
 				"ingestion-completion",
 				completeMsg,
-				new(completed))
+				new(common.IngestionCompletion))
 
 			if err != nil {
 				log.Errorf("Validation of outgoing message failed "+
@@ -132,7 +110,7 @@ func main() {
 					"accessionid: %s, "+
 					"decryptedChecksums: %v, error: %v)",
 					delivered.CorrelationId,
-					message.Filepath,
+					message.FilePath,
 					message.User,
 					message.AccessionID,
 					message.DecryptedChecksums,
@@ -141,7 +119,7 @@ func main() {
 				continue
 			}
 
-			if err := db.MarkReady(message.AccessionID, message.User, message.Filepath, checksumSha256); err != nil {
+			if err := db.MarkReady(message.AccessionID, message.User, message.FilePath, checksumSha256); err != nil {
 				log.Errorf("MarkReady failed "+
 					"(corr-id: %s, "+
 					"filepath: %s, "+
@@ -149,7 +127,7 @@ func main() {
 					"accessionid: %s, "+
 					"decryptedChecksums: %v, error: %v)",
 					delivered.CorrelationId,
-					message.Filepath,
+					message.FilePath,
 					message.User,
 					message.AccessionID,
 					message.DecryptedChecksums,
@@ -164,14 +142,14 @@ func main() {
 						"accessionid: %s, "+
 						"decryptedChecksums: %v, error: %v)",
 						delivered.CorrelationId,
-						message.Filepath,
+						message.FilePath,
 						message.User,
 						message.AccessionID,
 						message.DecryptedChecksums,
 						e)
 				}
 				// Send the message to an error queue so it can be analyzed.
-				infoErrorMessage := broker.InfoError{
+				infoErrorMessage := common.InfoError{
 					Error:           "MarkReady failed",
 					Reason:          err.Error(),
 					OriginalMessage: message,
@@ -185,7 +163,7 @@ func main() {
 						"accessionid: %s, "+
 						"decryptedChecksums: %v, error: %v)",
 						delivered.CorrelationId,
-						message.Filepath,
+						message.FilePath,
 						message.User,
 						message.AccessionID,
 						message.DecryptedChecksums,
@@ -201,7 +179,7 @@ func main() {
 				"accessionid: %s, "+
 				"decryptedChecksums: %v)",
 				delivered.CorrelationId,
-				message.Filepath,
+				message.FilePath,
 				message.User,
 				message.AccessionID,
 				message.DecryptedChecksums)
@@ -217,7 +195,7 @@ func main() {
 					"accessionid: %s, "+
 					"decryptedChecksums: %v, error: %v)",
 					delivered.CorrelationId,
-					message.Filepath,
+					message.FilePath,
 					message.User,
 					message.AccessionID,
 					message.DecryptedChecksums,
@@ -236,7 +214,7 @@ func main() {
 					"accessionid: %s, "+
 					"decryptedChecksums: %v, error: %v)",
 					delivered.CorrelationId,
-					message.Filepath,
+					message.FilePath,
 					message.User,
 					message.AccessionID,
 					message.DecryptedChecksums,

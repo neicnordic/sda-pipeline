@@ -7,17 +7,12 @@ import (
 	"os"
 
 	"sda-pipeline/internal/broker"
+	"sda-pipeline/internal/common"
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/database"
 
 	log "github.com/sirupsen/logrus"
 )
-
-type message struct {
-	Type         string   `json:"type"`
-	DatasetID    string   `json:"dataset_id"`
-	AccessionIDs []string `json:"accession_ids"`
-}
 
 func main() {
 	conf, err := config.NewConfig("mapper")
@@ -46,7 +41,7 @@ func main() {
 	forever := make(chan bool)
 
 	log.Info("Starting mapper service")
-	var mappings message
+	var mappings common.DatasetMapping
 
 	go func() {
 		messages, err := mq.GetMessages(conf.Broker.Queue)

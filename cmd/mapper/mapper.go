@@ -52,61 +52,32 @@ func main() {
 			log.Debugf("received a message: %s", d.Body)
 			err := mq.ValidateJSON(&d, "dataset-mapping", d.Body, &mappings)
 			if err != nil {
-				log.Errorf("Failed to validate message for work "+
-					"(corr-id: %s, "+
-					"message: %s, "+
-					"error: %v)",
-					d.CorrelationId,
-					d.Body,
-					err)
+				log.Errorf("Failed to validate message for work (corr-id: %s, message: %s, error: %v)",
+					d.CorrelationId, d.Body, err)
 
 				continue
 			}
 
 			if err := json.Unmarshal(d.Body, &mappings); err != nil {
-				log.Errorf("Failed to unmarshal message for work "+
-					"(corr-id: %s, "+
-					"message: %s, "+
-					"error: %v)",
-					d.CorrelationId,
-					d.Body,
-					err)
+				log.Errorf("Failed to unmarshal message for work (corr-id: %s, message: %s, error: %v)",
+					d.CorrelationId, d.Body, err)
 
 				continue
 			}
 
 			if err := db.MapFilesToDataset(mappings.DatasetID, mappings.AccessionIDs); err != nil {
-				log.Errorf("MapFilesToDataset failed  "+
-					"(corr-id: %s, "+
-					"datasetid: %s, "+
-					"accessionids: %v, "+
-					"error: %v)",
-					d.CorrelationId,
-					mappings.DatasetID,
-					mappings.AccessionIDs,
-					err)
+				log.Errorf("MapFilesToDataset failed  (corr-id: %s, datasetid: %s, accessionids: %v, error: %v)",
+					d.CorrelationId, mappings.DatasetID, mappings.AccessionIDs, err)
 			}
 
 			for _, aID := range mappings.AccessionIDs {
-				log.Infof("Mapped file to dataset "+
-					"(corr-id: %s, "+
-					"datasetid: %s, "+
-					"accessionid: %s)",
-					d.CorrelationId,
-					mappings.DatasetID,
-					aID)
+				log.Infof("Mapped file to dataset (corr-id: %s, datasetid: %s, accessionid: %s)",
+					d.CorrelationId, mappings.DatasetID, aID)
 			}
 
 			if err := d.Ack(false); err != nil {
-				log.Errorf("Failed to ack message for work "+
-					"(corr-id: %s, "+
-					"datasetid: %s, "+
-					"accessionids: %v, "+
-					"error: %v)",
-					d.CorrelationId,
-					mappings.DatasetID,
-					mappings.AccessionIDs,
-					err)
+				log.Errorf("Failed to ack message for work (corr-id: %s, datasetid: %s, accessionids: %v, error: %v)",
+					d.CorrelationId, mappings.DatasetID, mappings.AccessionIDs, err)
 
 			}
 		}

@@ -78,20 +78,12 @@ func main() {
 			log.Fatal(err)
 		}
 		for delivered := range messages {
-			log.Debugf("Received a message (corr-id: %s, message: %s)",
-				delivered.CorrelationId,
-				delivered.Body)
+			log.Debugf("Received a message (corr-id: %s, message: %s)", delivered.CorrelationId, delivered.Body)
 
-			err := mq.ValidateJSON(&delivered,
-				jsonSchema,
-				delivered.Body,
-				&message)
+			err := mq.ValidateJSON(&delivered, jsonSchema, delivered.Body, &message)
 
 			if err != nil {
-				log.Errorf("Validation of incoming message failed "+
-					"(corr-id: %s, error: %v)",
-					delivered.CorrelationId,
-					err)
+				log.Errorf("Validation of incoming message failed (corr-id: %s, error: %v)", delivered.CorrelationId, err)
 
 				continue
 			}
@@ -99,16 +91,8 @@ func main() {
 			// we unmarshal the message in the validation step so this is safe to do
 			_ = json.Unmarshal(delivered.Body, &message)
 
-			log.Infof("Received work (corr-id: %s, "+
-				"filepath: %s, "+
-				"user: %s, "+
-				"accessionid: %s, "+
-				"decryptedChecksums: %v)",
-				delivered.CorrelationId,
-				message.FilePath,
-				message.User,
-				message.AccessionID,
-				message.DecryptedChecksums)
+			log.Infof("Received work (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v)",
+				delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums)
 
 			// Extract the sha256 from the message and use it for the database
 			var checksumSha256 string
@@ -121,33 +105,13 @@ func main() {
 			var filePath string
 			var fileSize int
 			if filePath, fileSize, err = db.GetArchived(message.User, message.FilePath, checksumSha256); err != nil {
-				log.Errorf("GetArchived failed "+
-					"(corr-id: %s, "+
-					"filepath: %s, "+
-					"user: %s, "+
-					"accessionid: %s, "+
-					"decryptedChecksums: %v, error: %v)",
-					delivered.CorrelationId,
-					message.FilePath,
-					message.User,
-					message.AccessionID,
-					message.DecryptedChecksums,
-					err)
+				log.Errorf("GetArchived failed (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+					delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, err)
 
 				// nack the message but requeue until we fixed the SQL retry.
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorf("Failed to NAck because of GetArchived failed "+
-						"(corr-id: %s, "+
-						"filepath: %s, "+
-						"user: %s, "+
-						"accessionid: %s, "+
-						"decryptedChecksums: %v, error: %v)",
-						delivered.CorrelationId,
-						message.FilePath,
-						message.User,
-						message.AccessionID,
-						message.DecryptedChecksums,
-						e)
+					log.Errorf("Failed to NAck because of GetArchived failed (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, e)
 				}
 
 				continue
@@ -161,69 +125,24 @@ func main() {
 			diskFileSize, err := archive.GetFileSize(filePath)
 
 			if err != nil {
-				log.Errorf("Failed to get size info for archived file %s "+
-					"(corr-id: %s, "+
-					"filepath: %s, "+
-					"user: %s, "+
-					"accessionid: %s, "+
-					"decryptedChecksums: %v, error: %v)",
-					filePath,
-					delivered.CorrelationId,
-					message.FilePath,
-					message.User,
-					message.AccessionID,
-					message.DecryptedChecksums,
-					err)
+				log.Errorf("Failed to get size info for archived file %s (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+					filePath, delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, err)
 
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorf("Failed to NAck because of GetFileSize failed "+
-						"(corr-id: %s, "+
-						"filepath: %s, "+
-						"user: %s, "+
-						"accessionid: %s, "+
-						"decryptedChecksums: %v, error: %v)",
-						delivered.CorrelationId,
-						message.FilePath,
-						message.User,
-						message.AccessionID,
-						message.DecryptedChecksums,
-						e)
+					log.Errorf("Failed to NAck because of GetFileSize failed (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, e)
 				}
 
 				continue
 			}
 
 			if diskFileSize != int64(fileSize) {
-				log.Errorf("File size in archive does not match database for archive file %s "+
-					"- archive size is %d, database has %d "+
-					"(corr-id: %s, "+
-					"filepath: %s, "+
-					"user: %s, "+
-					"accessionid: %s, "+
-					"decryptedChecksums: %v, error: %v)",
-					filePath,
-					diskFileSize,
-					fileSize,
-					delivered.CorrelationId,
-					message.FilePath,
-					message.User,
-					message.AccessionID,
-					message.DecryptedChecksums,
-					err)
+				log.Errorf("File size in archive does not match database for archive file %s - archive size is %d, database has %d (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+					filePath, diskFileSize, fileSize, delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, err)
 
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorf("Failed to NAck because of file size differences failed "+
-						"(corr-id: %s, "+
-						"filepath: %s, "+
-						"user: %s, "+
-						"accessionid: %s, "+
-						"decryptedChecksums: %v, error: %v)",
-						delivered.CorrelationId,
-						message.FilePath,
-						message.User,
-						message.AccessionID,
-						message.DecryptedChecksums,
-						e)
+					log.Errorf("Failed to NAck because of file size differences failed (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, e)
 				}
 
 				continue
@@ -232,34 +151,13 @@ func main() {
 
 			file, err := archive.NewFileReader(filePath)
 			if err != nil {
-				log.Errorf("Failed to open archived file %s "+
-					"(corr-id: %s, "+
-					"filepath: %s, "+
-					"user: %s, "+
-					"accessionid: %s, "+
-					"decryptedChecksums: %v, error: %v)",
-					filePath,
-					delivered.CorrelationId,
-					message.FilePath,
-					message.User,
-					message.AccessionID,
-					message.DecryptedChecksums,
-					err)
+				log.Errorf("Failed to open archived file %s (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+					filePath, delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, err)
 
 				//FIXME: should it retry?
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorf("Failed to NAck because of NewFileReader failed "+
-						"(corr-id: %s, "+
-						"filepath: %s, "+
-						"user: %s, "+
-						"accessionid: %s, "+
-						"decryptedChecksums: %v, error: %v)",
-						delivered.CorrelationId,
-						message.FilePath,
-						message.User,
-						message.AccessionID,
-						message.DecryptedChecksums,
-						e)
+					log.Errorf("Failed to NAck because of NewFileReader failed (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, e)
 				}
 
 				continue
@@ -267,34 +165,13 @@ func main() {
 
 			dest, err := backupStorage.NewFileWriter(filePath)
 			if err != nil {
-				log.Errorf("Failed to open backup file %s for writing "+
-					"(corr-id: %s, "+
-					"filepath: %s, "+
-					"user: %s, "+
-					"accessionid: %s, "+
-					"decryptedChecksums: %v, error: %v)",
-					filePath,
-					delivered.CorrelationId,
-					message.FilePath,
-					message.User,
-					message.AccessionID,
-					message.DecryptedChecksums,
-					err)
+				log.Errorf("Failed to open backup file %s for writing (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+					filePath, delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, err)
 
 				//FIXME: should it retry?
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorf("Failed to NAck because of NewFileWriter failed "+
-						"(corr-id: %s, "+
-						"filepath: %s, "+
-						"user: %s, "+
-						"accessionid: %s, "+
-						"decryptedChecksums: %v, error: %v)",
-						delivered.CorrelationId,
-						message.FilePath,
-						message.User,
-						message.AccessionID,
-						message.DecryptedChecksums,
-						e)
+					log.Errorf("Failed to NAck because of NewFileWriter failed (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, e)
 				}
 
 				continue
@@ -306,51 +183,20 @@ func main() {
 				// Get the header from db
 				header, err := db.GetHeaderForStableID(message.AccessionID)
 				if err != nil {
-					log.Errorf("GetHeaderForStableIB failed "+
-						"(corr-id: %s, "+
-						"filepath: %s, "+
-						"user: %s, "+
-						"accessionid: %s, "+
-						"decryptedChecksums: %v, error: %v)",
-						delivered.CorrelationId,
-						message.FilePath,
-						message.User,
-						message.AccessionID,
-						message.DecryptedChecksums,
-						err)
+					log.Errorf("GetHeaderForStableIB failed (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, err)
 				}
 
 				// Decrypt header
 				log.Debug("Decrypt header")
 				DecrHeader, err := FormatHexHeader(header, *key)
 				if err != nil {
-					log.Errorf("Failed to decrypt the header %s "+
-						"(corr-id: %s, "+
-						"filepath: %s, "+
-						"user: %s, "+
-						"accessionid: %s, "+
-						"decryptedChecksums: %v, error: %v)",
-						filePath,
-						delivered.CorrelationId,
-						message.FilePath,
-						message.User,
-						message.AccessionID,
-						message.DecryptedChecksums,
-						err)
+					log.Errorf("Failed to decrypt the header %s (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+						filePath, delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, err)
 
 					if e := delivered.Nack(false, true); e != nil {
-						log.Errorf("Failed to NAck because of decrypt header failed "+
-							"(corr-id: %s, "+
-							"filepath: %s, "+
-							"user: %s, "+
-							"accessionid: %s, "+
-							"decryptedChecksums: %v, error: %v)",
-							delivered.CorrelationId,
-							message.FilePath,
-							message.User,
-							message.AccessionID,
-							message.DecryptedChecksums,
-							e)
+						log.Errorf("Failed to NAck because of decrypt header failed (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+							delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, e)
 					}
 				}
 
@@ -358,85 +204,33 @@ func main() {
 				log.Debug("Reencrypt header")
 				newHeader, err := reencryptHeader(*key, *publicKey, *DecrHeader)
 				if err != nil {
-					log.Errorf("Failed to reencrypt the header %s "+
-						"(corr-id: %s, "+
-						"filepath: %s, "+
-						"user: %s, "+
-						"accessionid: %s, "+
-						"decryptedChecksums: %v, error: %v)",
-						filePath,
-						delivered.CorrelationId,
-						message.FilePath,
-						message.User,
-						message.AccessionID,
-						message.DecryptedChecksums,
-						err)
+					log.Errorf("Failed to reencrypt the header %s (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+						filePath, delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, err)
 
 					if e := delivered.Nack(false, true); e != nil {
-						log.Errorf("Failed to NAck because of reencrypt header failed "+
-							"(corr-id: %s, "+
-							"filepath: %s, "+
-							"user: %s, "+
-							"accessionid: %s, "+
-							"decryptedChecksums: %v, error: %v)",
-							delivered.CorrelationId,
-							message.FilePath,
-							message.User,
-							message.AccessionID,
-							message.DecryptedChecksums,
-							e)
+						log.Errorf("Failed to NAck because of reencrypt header failed (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+							delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, e)
 					}
 				}
 
 				// write header to destination file
 				_, err = dest.Write(newHeader)
 				if err != nil {
-					log.Errorf("Failed to write the header to destination %s "+
-						"(corr-id: %s, "+
-						"filepath: %s, "+
-						"user: %s, "+
-						"accessionid: %s, "+
-						"decryptedChecksums: %v, error: %v)",
-						filePath,
-						delivered.CorrelationId,
-						message.FilePath,
-						message.User,
-						message.AccessionID,
-						message.DecryptedChecksums,
-						err)
+					log.Errorf("Failed to write the header to destination %s (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+						filePath, delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, err)
 				}
 			}
 
 			// Copy the file and check is sizes match
 			copiedSize, err := io.Copy(dest, file)
 			if err != nil || copiedSize != int64(fileSize) {
-				log.Errorf("Failed to copy file "+
-					"(corr-id: %s, "+
-					"filepath: %s, "+
-					"user: %s, "+
-					"accessionid: %s, "+
-					"decryptedChecksums: %v, error: %v)",
-					delivered.CorrelationId,
-					message.FilePath,
-					message.User,
-					message.AccessionID,
-					message.DecryptedChecksums,
-					err)
+				log.Errorf("Failed to copy file (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+					delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, err)
 
 				//FIXME: should it retry?
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorf("Failed to NAck because of Copy failed "+
-						"(corr-id: %s, "+
-						"filepath: %s, "+
-						"user: %s, "+
-						"accessionid: %s, "+
-						"decryptedChecksums: %v, error: %v)",
-						delivered.CorrelationId,
-						message.FilePath,
-						message.User,
-						message.AccessionID,
-						message.DecryptedChecksums,
-						e)
+					log.Errorf("Failed to NAck because of Copy failed (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, e)
 				}
 
 				continue
@@ -445,34 +239,13 @@ func main() {
 			file.Close()
 			dest.Close()
 
-			log.Infof("Backuped file %s (%d bytes) from archive to backup "+
-				"(corr-id: %s, "+
-				"filepath: %s, "+
-				"user: %s, "+
-				"accessionid: %s, "+
-				"decryptedChecksums: %v)",
-				filePath,
-				fileSize,
-				delivered.CorrelationId,
-				message.FilePath,
-				message.User,
-				message.AccessionID,
-				message.DecryptedChecksums)
+			log.Infof("Backuped file %s (%d bytes) from archive to backup (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v)",
+				filePath, fileSize, delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums)
 
 			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, delivered.Body); err != nil {
 				// TODO fix resend mechanism
-				log.Errorf("Failed to send message for completed "+
-					"(corr-id: %s, "+
-					"filepath: %s, "+
-					"user: %s, "+
-					"accessionid: %s, "+
-					"decryptedChecksums: %v, error: %v)",
-					delivered.CorrelationId,
-					message.FilePath,
-					message.User,
-					message.AccessionID,
-					message.DecryptedChecksums,
-					err)
+				log.Errorf("Failed to send message for completed (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+					delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, err)
 
 				// Restart loop, do not ack
 				continue
@@ -480,19 +253,8 @@ func main() {
 
 			if err := delivered.Ack(false); err != nil {
 
-				log.Errorf("Failed to ack message after work completed "+
-					"(corr-id: %s, "+
-					"filepath: %s, "+
-					"user: %s, "+
-					"accessionid: %s, "+
-					"decryptedChecksums: %v, error: %v)",
-					delivered.CorrelationId,
-					message.FilePath,
-					message.User,
-					message.AccessionID,
-					message.DecryptedChecksums,
-					err)
-
+				log.Errorf("Failed to ack message after work completed (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
+					delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, err)
 			}
 		}
 	}()

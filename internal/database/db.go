@@ -263,7 +263,7 @@ func (dbs *SQLdb) insertFile(filename, user string) (int64, error) {
 		"encryption_method) " +
 		"VALUES($1, $2, $3,'INIT', 'CRYPT4GH') RETURNING id;"
 	var fileID int64
-	err := db.QueryRow(query, filename, strings.Replace(filepath.Ext(filename), ".", "", -1), user).Scan(&fileID)
+	err := db.QueryRow(query, filename, strings.ReplaceAll(filepath.Ext(filename), ".", ""), user).Scan(&fileID)
 	if err != nil {
 		return 0, err
 	}

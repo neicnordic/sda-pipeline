@@ -65,23 +65,17 @@ func main() {
 	go func() {
 		messages, err := mq.GetMessages(conf.Broker.Queue)
 		if err != nil {
-			log.Fatalf("Failed to get messages (error: %v) ",
-				err)
+			log.Fatalf("Failed to get messages (error: %v) ", err)
 		}
 		for delivered := range messages {
 			var message common.IngestionVerification
-			log.Debugf("Received a message (corr-id: %s, message: %s)",
-				delivered.CorrelationId,
-				delivered.Body)
+			log.Debugf("Received a message (corr-id: %s, message: %s)", delivered.CorrelationId, delivered.Body)
 
 			err := mq.ValidateJSON(&delivered, "ingestion-verification", delivered.Body, &message)
 
 			if err != nil {
-				log.Errorf("Validation (ingestion-verifiation) of incoming message failed "+
-					"(corr-id: %s, error: %v, message: %s)",
-					delivered.CorrelationId,
-					err,
-					delivered.Body)
+				log.Errorf("Validation (ingestion-verifiation) of incoming message failed (corr-id: %s, error: %v, message: %s)",
+					delivered.CorrelationId, err, delivered.Body)
 
 				// Restart on new message
 				continue
@@ -90,41 +84,18 @@ func main() {
 			// we unmarshal the message in the validation step so this is safe to do
 			_ = json.Unmarshal(delivered.Body, &message)
 
-			log.Infof("Received work "+
-				"(corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t)",
-				delivered.CorrelationId,
-				message.User,
-				message.FilePath,
-				message.FileID,
-				message.ArchivePath,
-				message.EncryptedChecksums,
-				message.ReVerify)
+			log.Infof("Received work (corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t)",
+				delivered.CorrelationId, message.User, message.FilePath, message.FileID, message.ArchivePath, message.EncryptedChecksums, message.ReVerify)
 
 			header, err := db.GetHeader(message.FileID)
 			if err != nil {
-				log.Errorf("GetHeader failed "+
-					"(corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
-					delivered.CorrelationId,
-					message.User,
-					message.FilePath,
-					message.FileID,
-					message.ArchivePath,
-					message.EncryptedChecksums,
-					message.ReVerify,
-					err)
+				log.Errorf("GetHeader failed (corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
+					delivered.CorrelationId, message.User, message.FilePath, message.FileID, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, err)
 
 				// Nack message so the server gets notified that something is wrong but don't requeue the message
 				if e := delivered.Nack(false, false); e != nil {
-					log.Errorf("Failed to nack following getheader error message "+
-						"(corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
-						delivered.CorrelationId,
-						message.User,
-						message.FilePath,
-						message.FileID,
-						message.ArchivePath,
-						message.EncryptedChecksums,
-						message.ReVerify,
-						err)
+					log.Errorf("Failed to nack following getheader error message (corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
+						delivered.CorrelationId, message.User, message.FilePath, message.FileID, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, err)
 
 				}
 				// store full message info in case we want to fix the db entry and retry
@@ -138,16 +109,8 @@ func main() {
 
 				// Send the message to an error queue so it can be analyzed.
 				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
-					log.Errorf("Failed to publish getheader error message "+
-						"(corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
-						delivered.CorrelationId,
-						message.User,
-						message.FilePath,
-						message.FileID,
-						message.ArchivePath,
-						message.EncryptedChecksums,
-						message.ReVerify,
-						e)
+					log.Errorf("Failed to publish getheader error message (corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
+						delivered.CorrelationId, message.User, message.FilePath, message.FileID, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, e)
 				}
 
 				continue
@@ -158,43 +121,21 @@ func main() {
 			file.Size, err = archive.GetFileSize(message.ArchivePath)
 
 			if err != nil {
-				log.Errorf("Failed to get archived file size "+
-					"(corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
-					delivered.CorrelationId,
-					message.User,
-					message.FilePath,
-					message.FileID,
-					message.ArchivePath,
-					message.EncryptedChecksums,
-					message.ReVerify,
-					err)
+				log.Errorf("Failed to get archived file size (corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
+					delivered.CorrelationId, message.User, message.FilePath, message.FileID, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, err)
 
 				continue
 			}
 
-			log.Infof("Got archived file size "+
-				"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, archivedsize: %d)",
-				delivered.CorrelationId,
-				message.User,
-				message.FilePath,
-				message.ArchivePath,
-				message.EncryptedChecksums,
-				message.ReVerify,
-				file.Size)
+			log.Infof("Got archived file size (corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, archivedsize: %d)",
+				delivered.CorrelationId, message.User, message.FilePath, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, file.Size)
 
 			archiveFileHash := sha256.New()
 
 			f, err := archive.NewFileReader(message.ArchivePath)
 			if err != nil {
-				log.Errorf("Failed to open archived file "+
-					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
-					delivered.CorrelationId,
-					message.User,
-					message.FilePath,
-					message.ArchivePath,
-					message.EncryptedChecksums,
-					message.ReVerify,
-					err)
+				log.Errorf("Failed to open archived file (corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
+					delivered.CorrelationId, message.User, message.FilePath, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, err)
 
 				// Send the message to an error queue so it can be analyzed.
 				infoErrorMessage := common.InfoError{
@@ -206,15 +147,8 @@ func main() {
 				body, _ := json.Marshal(infoErrorMessage)
 				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
 
-					log.Errorf("Failed to publish file open error message "+
-						"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
-						delivered.CorrelationId,
-						message.User,
-						message.FilePath,
-						message.ArchivePath,
-						message.EncryptedChecksums,
-						message.ReVerify,
-						e)
+					log.Errorf("Failed to publish file open error message (corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
+						delivered.CorrelationId, message.User, message.FilePath, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, e)
 
 				}
 				// Restart on new message
@@ -227,15 +161,8 @@ func main() {
 
 			c4ghr, err := streaming.NewCrypt4GHReader(mr, *key, nil)
 			if err != nil {
-				log.Errorf("Failed to open c4gh decryptor stream "+
-					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
-					delivered.CorrelationId,
-					message.User,
-					message.FilePath,
-					message.ArchivePath,
-					message.EncryptedChecksums,
-					message.ReVerify,
-					err)
+				log.Errorf("Failed to open c4gh decryptor stream (corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
+					delivered.CorrelationId, message.User, message.FilePath, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, err)
 
 				continue
 			}
@@ -246,15 +173,8 @@ func main() {
 			stream := io.TeeReader(c4ghr, md5hash)
 
 			if file.DecryptedSize, err = io.Copy(sha256hash, stream); err != nil {
-				log.Errorf("Failed to copy decrypted data to hash stream "+
-					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
-					delivered.CorrelationId,
-					message.User,
-					message.FilePath,
-					message.ArchivePath,
-					message.EncryptedChecksums,
-					message.ReVerify,
-					err)
+				log.Errorf("Failed to copy decrypted data to hash stream (corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
+					delivered.CorrelationId, message.User, message.FilePath, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, err)
 
 				continue
 			}
@@ -262,18 +182,8 @@ func main() {
 			file.Checksum = archiveFileHash
 			file.DecryptedChecksum = sha256hash
 
-			log.Infof("Calculated decrypted hash "+
-				"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, "+
-				"encryptedchecksums: %v, reverify: %t, decryptedsize: %d, "+
-				"decryptedchecksum: %x)",
-				delivered.CorrelationId,
-				message.User,
-				message.FilePath,
-				message.ArchivePath,
-				message.EncryptedChecksums,
-				message.ReVerify,
-				file.DecryptedSize,
-				file.DecryptedChecksum.Sum(nil))
+			log.Infof("Calculated decrypted hash (corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, decryptedsize: %d, decryptedchecksum: %x)",
+				delivered.CorrelationId, message.User, message.FilePath, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, file.DecryptedSize, file.DecryptedChecksum.Sum(nil))
 
 			//nolint:nestif
 			if !message.ReVerify {
@@ -289,80 +199,39 @@ func main() {
 
 				verifiedMessage, _ := json.Marshal(&c)
 
-				err = mq.ValidateJSON(&delivered,
-					"ingestion-accession-request",
-					verifiedMessage,
-					new(common.IngestionAccessionRequest))
+				err = mq.ValidateJSON(&delivered, "ingestion-accession-request", verifiedMessage, new(common.IngestionAccessionRequest))
 
 				if err != nil {
-					log.Errorf("Validation (ingestion-accession-request) of outgoing message failed "+
-						"(corr-id: %s, error: %v, message: %s)",
-						delivered.CorrelationId,
-						err,
-						verifiedMessage)
-
+					log.Errorf("Validation (ingestion-accession-request) of outgoing message failed (corr-id: %s, error: %v, message: %s)",
+						delivered.CorrelationId, err, verifiedMessage)
 					// Logging is in ValidateJSON so just restart on new message
 					continue
 				}
 
 				// Mark file as "COMPLETED"
 				if e := db.MarkCompleted(file, message.FileID); e != nil {
-					log.Errorf("MarkCompleted failed "+
-						"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
-						delivered.CorrelationId,
-						message.User,
-						message.FilePath,
-						message.ArchivePath,
-						message.EncryptedChecksums,
-						message.ReVerify,
-						e)
+					log.Errorf("MarkCompleted failed (corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
+						delivered.CorrelationId, message.User, message.FilePath, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, e)
 
 					continue
 					// this should really be hadled by the DB retry mechanism
 				}
 
-				log.Infof("File marked completed "+
-					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, decryptedchecksum: %x)",
-					delivered.CorrelationId,
-					message.User,
-					message.FilePath,
-					message.ArchivePath,
-					message.EncryptedChecksums,
-					message.ReVerify,
-					file.DecryptedChecksum.Sum(nil))
-
+				log.Infof("File marked completed (corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, decryptedchecksum: %x)",
+					delivered.CorrelationId, message.User, message.FilePath, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, file.DecryptedChecksum.Sum(nil))
 				// Send message to verified queue
 
-				if err := mq.SendMessage(delivered.CorrelationId,
-					conf.Broker.Exchange,
-					conf.Broker.RoutingKey,
-					conf.Broker.Durable,
-					verifiedMessage); err != nil {
+				if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, verifiedMessage); err != nil {
 					// TODO fix resend mechanism
-
-					log.Errorf("Sending of message failed "+
-						"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
-						delivered.CorrelationId,
-						message.User,
-						message.FilePath,
-						message.ArchivePath,
-						message.EncryptedChecksums,
-						message.ReVerify,
-						err)
+					log.Errorf("Sending of message failed (corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
+						delivered.CorrelationId, message.User, message.FilePath, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, err)
 
 					continue
 				}
 
 				if err := delivered.Ack(false); err != nil {
-					log.Errorf("Failed acking completed work"+
-						"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
-						delivered.CorrelationId,
-						message.User,
-						message.FilePath,
-						message.ArchivePath,
-						message.EncryptedChecksums,
-						message.ReVerify,
-						err)
+					log.Errorf("Failed acking completed work(corr-id: %s, user: %s, filepath: %s, archivepath: %s, encryptedchecksums: %v, reverify: %t, reason: %v)",
+						delivered.CorrelationId, message.User, message.FilePath, message.ArchivePath, message.EncryptedChecksums, message.ReVerify, err)
 				}
 
 				// At the end we try to remove file from inbox
@@ -370,12 +239,8 @@ func main() {
 				// we don't need to force removing the file
 				err = inbox.RemoveFile(message.FilePath)
 				if err != nil {
-					log.Errorf("Remove file from inbox failed "+
-						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
-						delivered.CorrelationId,
-						message.User,
-						message.FilePath,
-						err)
+					log.Errorf("Remove file from inbox failed (corr-id: %s, user: %s, filepath: %s, reason: %v)",
+						delivered.CorrelationId, message.User, message.FilePath, err)
 
 					// Send the message to an error queue so it can be analyzed.
 					fileError := common.InfoError{
@@ -385,12 +250,8 @@ func main() {
 					}
 					body, _ := json.Marshal(fileError)
 					if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
-						log.Errorf("Failed to publish message (remove file error), to error queue "+
-							"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
-							delivered.CorrelationId,
-							message.User,
-							message.FilePath,
-							e)
+						log.Errorf("Failed to publish message (remove file error), to error queue (corr-id: %s, user: %s, filepath: %s, reason: %v)",
+							delivered.CorrelationId, message.User, message.FilePath, e)
 					}
 
 					continue

@@ -87,14 +87,14 @@ func main() {
 					err)
 			}
 
-			for _, aId := range mappings.AccessionIDs {
+			for _, aID := range mappings.AccessionIDs {
 				log.Infof("Mapped file to dataset "+
 					"(corr-id: %s, "+
 					"datasetid: %s, "+
 					"accessionid: %s)",
 					d.CorrelationId,
 					mappings.DatasetID,
-					aId)
+					aID)
 			}
 
 			if err := d.Ack(false); err != nil {

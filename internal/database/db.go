@@ -172,8 +172,8 @@ func (dbs *SQLdb) getHeader(fileID int64) ([]byte, error) {
 	return header, nil
 }
 
-// GetHeaderForStableId retrieves the file header by using stable id
-func (dbs *SQLdb) GetHeaderForStableId(stableID string) (string, error) {
+// GetHeaderForStableID retrieves the file header by using stable id
+func (dbs *SQLdb) GetHeaderForStableID(stableID string) (string, error) {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB

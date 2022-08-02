@@ -304,9 +304,9 @@ func main() {
 			//nolint:nestif
 			if config.CopyHeader() {
 				// Get the header from db
-				header, err := db.GetHeaderForStableId(message.AccessionID)
+				header, err := db.GetHeaderForStableID(message.AccessionID)
 				if err != nil {
-					log.Errorf("GetHeaderForStableId failed "+
+					log.Errorf("GetHeaderForStableIB failed "+
 						"(corr-id: %s, "+
 						"filepath: %s, "+
 						"user: %s, "+

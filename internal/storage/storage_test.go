@@ -53,7 +53,7 @@ var s3Creatable = "somename"
 var writeData = []byte("this is a test")
 
 var cleanupFilesBack [1000]string
-var cleanupFiles []string = cleanupFilesBack[0:0]
+var cleanupFiles = cleanupFilesBack[0:0]
 
 var testPosixConf = posixConf{
 	"/"}

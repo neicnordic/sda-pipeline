@@ -12,6 +12,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"sda-pipeline/internal/common"
 )
 
 const doesNotExist = "/does/not/exist"
@@ -315,51 +316,55 @@ func TestValidateJSON(t *testing.T) {
 	}
 
 	msg := amqp.Delivery{CorrelationId: "2"}
-	message := finalize{
+	message := common.IngestionAccession{
 		Type:        "accession",
 		User:        "foo",
-		Filepath:    "dummy_data.c4gh",
+		FilePath:    "dummy_data.c4gh",
 		AccessionID: "EGAF12345678901",
-		DecryptedChecksums: []checksums{
-			{"sha256", "da886a89637d125ef9f15f6d676357f3a9e5e10306929f0bad246375af89c2e2"},
+		DecryptedChecksums: []common.Checksums{
+			{Type: "sha256", Value: "da886a89637d125ef9f15f6d676357f3a9e5e10306929f0bad246375af89c2e2"},
 		},
 	}
 
 	messageText, _ := json.Marshal(message)
+	msg.Body = messageText
 	decoded := finalize{}
 	c.failPublish = true
 
 	var buf bytes.Buffer
 
 	log.SetOutput(&buf)
-	err := b.ValidateJSON(&msg, "ingestion-accession", messageText, &decoded)
+	err := b.ValidateJSON(&msg, "ingestion-accession", &decoded)
 	assert.Nil(t, err, "ValidateJSON failed unexpectedly")
 	assert.Zero(t, buf.Len(), "Logs from correct validation")
 
-	err = b.ValidateJSON(&msg, "ingestion-accession", messageText, nil)
+	err = b.ValidateJSON(&msg, "ingestion-accession", nil)
 	assert.Nil(t, err, "ValidateJSON failed unexpectedly")
 	assert.Zero(t, buf.Len(), "Logs from correct validation")
 
-	err = b.ValidateJSON(&msg, "ingestion-accession", messageText[:20], &decoded)
+	buf.Reset()
+	err = b.ValidateJSON(&msg, "ingestion-accession", new(testStruct))
+	assert.Error(t, err, "ValidateJSON did not fail when it should")
+	assert.NotZero(t, buf.Len(), "Did not get expected logs from failed ValidateJSON")
+
+	buf.Reset()
+	err = b.ValidateJSON(&msg, "notfound", &decoded)
+	assert.Error(t, err, "ValidateJSON did not fail when it should")
+	assert.NotZero(t, buf.Len(), "Did not get expected logs from failed ValidateJSON")
+
+	buf.Reset()
+	msg.Body = messageText[:20]
+	err = b.ValidateJSON(&msg, "ingestion-accession", &decoded)
 	assert.Error(t, err, "ValidateJSON did not fail when it should")
 	assert.True(t, strings.Contains(buf.String(), "JSON decode error"),
 		"Did not see expected log from failed validation")
 
 	buf.Reset()
-	err = b.ValidateJSON(&msg, "ingestion-accession", messageText, new(testStruct))
-	assert.Error(t, err, "ValidateJSON did not fail when it should")
-	assert.NotZero(t, buf.Len(), "Did not get expected logs from failed ValidateJSON")
-
-	buf.Reset()
-
-	err = b.ValidateJSON(&msg, "ingestion-accession", []byte("{\"test\":\"valid_json\"}"), new(testStruct))
+	msg.Body = []byte("{\"test\":\"valid_json\"}")
+	err = b.ValidateJSON(&msg, "ingestion-accession", new(testStruct))
 	assert.Error(t, err, "ValidateJSON did not fail when it should")
 	assert.True(t, strings.Contains(buf.String(), "JSON validity error"),
 		"Did not see expected log from failed validation")
-
-	err = b.ValidateJSON(&msg, "notfound", messageText, &decoded)
-	assert.Error(t, err, "ValidateJSON did not fail when it should")
-	assert.NotZero(t, buf.Len(), "Did not get expected logs from failed ValidateJSON")
 }
 
 func TestSendJSONError(t *testing.T) {

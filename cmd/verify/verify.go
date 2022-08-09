@@ -71,7 +71,7 @@ func main() {
 			var message common.IngestionVerification
 			log.Debugf("Received a message (corr-id: %s, message: %s)", delivered.CorrelationId, delivered.Body)
 
-			err := mq.ValidateJSON(&delivered, "ingestion-verification", delivered.Body, &message)
+			err := mq.ValidateJSON(&delivered, "ingestion-verification", &message)
 
 			if err != nil {
 				log.Errorf("Validation (ingestion-verifiation) of incoming message failed (corr-id: %s, error: %v, message: %s)",
@@ -199,9 +199,9 @@ func main() {
 
 				verifiedMessage, _ := json.Marshal(&c)
 
-				err = mq.ValidateJSON(&delivered, "ingestion-accession-request", verifiedMessage, new(common.IngestionAccessionRequest))
+				res, err := common.ValidateJSON(conf.Broker.SchemasPath+"/ingestion-accession-request.json", verifiedMessage)
 
-				if err != nil {
+				if err != nil || !res.Valid() {
 					log.Errorf("Validation (ingestion-accession-request) of outgoing message failed (corr-id: %s, error: %v, message: %s)",
 						delivered.CorrelationId, err, verifiedMessage)
 					// Logging is in ValidateJSON so just restart on new message

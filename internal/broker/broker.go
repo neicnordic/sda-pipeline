@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/xeipuuv/gojsonschema"
 	"sda-pipeline/internal/common"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -253,18 +252,18 @@ func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody [
 // ValidateJSON validates JSON in body, verifying that it's valid JSON as well
 // as conforming to the schema specified by messageType. It also optionally
 // verifies that the message can be decoded into the supplied data structure dest
-func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery, messageType string, body []byte, dest interface{}) error {
-	res, err := validateJSON(messageType, broker.Conf.SchemasPath, body)
+func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery, messageType string, dest interface{}) error {
+	res, err := common.ValidateJSON(broker.Conf.SchemasPath+"/"+messageType+".json", delivered.Body)
 
 	if err != nil {
-		log.Errorf("JSON error while validating (corr-id: %s, error: %v, message body: %s)", delivered.CorrelationId, err, body)
+		log.Errorf("JSON error while validating (corr-id: %s, error: %v, message body: %s)", delivered.CorrelationId, err, delivered.Body)
 
 		// Nack message so the server gets notified that something is wrong but don't requeue the message
 		if e := delivered.Nack(false, false); e != nil {
 			log.Errorf("Failed to Nack message (corr-id: %s, errror: %v) ", delivered.CorrelationId, e)
 		}
 		// Send the message to an error queue so it can be analyzed.
-		if e := broker.SendJSONError(delivered, body, broker.Conf, err.Error(), "Validation of JSON message failed"); e != nil {
+		if e := broker.SendJSONError(delivered, delivered.Body, broker.Conf, err.Error(), "Validation of JSON message failed"); e != nil {
 			log.Errorf("Failed to publish JSON decode error message (corr-id: %s, error: %v)", delivered.CorrelationId, e)
 		}
 		// Return error to restart on new message
@@ -286,7 +285,7 @@ func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery, messageType str
 			log.Errorf("Failed to Nack message (corr-id: %s, error: %v)", delivered.CorrelationId, e)
 		}
 		// Send the message to an error queue so it can be analyzed.
-		if e := broker.SendJSONError(delivered, body, broker.Conf, errorString, "Validation of JSON message failed"); e != nil {
+		if e := broker.SendJSONError(delivered, delivered.Body, broker.Conf, errorString, "Validation of JSON message failed"); e != nil {
 			log.Errorf("Failed to publish JSON validity error message (corr-id: %s, error: %v)", delivered.CorrelationId, e)
 
 		}
@@ -300,22 +299,13 @@ func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery, messageType str
 		return nil
 	}
 	//
-	d := json.NewDecoder(bytes.NewBuffer(body))
+	d := json.NewDecoder(bytes.NewBuffer(delivered.Body))
 	d.DisallowUnknownFields()
 
 	err = d.Decode(dest)
 	if err != nil {
-		log.Errorf("Error while unmarshalling JSON (corr-id: %s, error: %v, message body: %s)", delivered.CorrelationId, err, body)
+		log.Errorf("Error while unmarshalling JSON (corr-id: %s, error: %v, message body: %s)", delivered.CorrelationId, err, delivered.Body)
 	}
 
 	return err
-}
-
-// validateJSON is a helper function for ValidateJson
-func validateJSON(messageType string, schemasPath string, body []byte) (*gojsonschema.Result, error) {
-
-	schema := gojsonschema.NewReferenceLoader(schemasPath + "/" + messageType + ".json")
-	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
-
-	return res, err
 }

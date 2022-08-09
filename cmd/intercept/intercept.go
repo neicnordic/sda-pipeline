@@ -90,7 +90,7 @@ func main() {
 				continue
 			}
 
-			err = mq.ValidateJSON(&delivered, schema, delivered.Body, nil)
+			err = mq.ValidateJSON(&delivered, schema, nil)
 
 			if err != nil {
 				log.Errorf("Validation failed for message (corr-id: %s, error: %v, schema: %s, message: %s)",

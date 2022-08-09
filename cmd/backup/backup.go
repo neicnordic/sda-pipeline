@@ -80,7 +80,7 @@ func main() {
 		for delivered := range messages {
 			log.Debugf("Received a message (corr-id: %s, message: %s)", delivered.CorrelationId, delivered.Body)
 
-			err := mq.ValidateJSON(&delivered, jsonSchema, delivered.Body, &message)
+			err := mq.ValidateJSON(&delivered, jsonSchema, &message)
 
 			if err != nil {
 				log.Errorf("Validation of incoming message failed (corr-id: %s, error: %v)", delivered.CorrelationId, err)

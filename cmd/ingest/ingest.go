@@ -74,7 +74,7 @@ func main() {
 		for delivered := range messages {
 			log.Debugf("Received a message: %s", delivered.Body)
 
-			err := mq.ValidateJSON(&delivered, "ingestion-trigger", delivered.Body, &message)
+			err := mq.ValidateJSON(&delivered, "ingestion-trigger", &message)
 
 			if err != nil {
 				log.Errorf("Validation of incoming message failed (corr-id: %s, error: %v)", delivered.CorrelationId, err)
@@ -343,12 +343,9 @@ func main() {
 
 			archivedMsg, _ := json.Marshal(&msg)
 
-			err = mq.ValidateJSON(&delivered,
-				"ingestion-verification",
-				archivedMsg,
-				new(common.IngestionVerification))
+			res, err := common.ValidateJSON(conf.Broker.SchemasPath+"/ingestion-verification.json", archivedMsg)
 
-			if err != nil {
+			if err != nil || !res.Valid() {
 				log.Errorf("Validation of outgoing (archived) message failed (corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 					delivered.CorrelationId, message.User, message.FilePath, archivedFile, err)
 

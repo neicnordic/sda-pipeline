@@ -50,7 +50,7 @@ func main() {
 		}
 		for d := range messages {
 			log.Debugf("received a message: %s", d.Body)
-			err := mq.ValidateJSON(&d, "dataset-mapping", d.Body, &mappings)
+			err := mq.ValidateJSON(&d, "dataset-mapping", &mappings)
 			if err != nil {
 				log.Errorf("Failed to validate message for work (corr-id: %s, message: %s, error: %v)",
 					d.CorrelationId, d.Body, err)

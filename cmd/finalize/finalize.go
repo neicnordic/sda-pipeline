@@ -51,7 +51,7 @@ func main() {
 		for delivered := range messages {
 			log.Debugf("Received a message (corr-id: %s, message: %s)", delivered.CorrelationId, delivered.Body)
 
-			err := mq.ValidateJSON(&delivered, "ingestion-accession", delivered.Body, &message)
+			err := mq.ValidateJSON(&delivered, "ingestion-accession", &message)
 
 			if err != nil {
 				log.Errorf("Validation of incoming message failed (corr-id: %s, error: %v)", delivered.CorrelationId, err)
@@ -82,12 +82,9 @@ func main() {
 
 			completeMsg, _ := json.Marshal(&c)
 
-			err = mq.ValidateJSON(&delivered,
-				"ingestion-completion",
-				completeMsg,
-				new(common.IngestionCompletion))
+			res, err := common.ValidateJSON(conf.Broker.SchemasPath+"/ingestion-completion.json", completeMsg)
 
-			if err != nil {
+			if err != nil || !res.Valid() {
 				log.Errorf("Validation of outgoing message failed (corr-id: %s, filepath: %s, user: %s, accessionid: %s, decryptedChecksums: %v, error: %v)",
 					delivered.CorrelationId, message.FilePath, message.User, message.AccessionID, message.DecryptedChecksums, err)
 

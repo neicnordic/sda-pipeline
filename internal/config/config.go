@@ -41,6 +41,7 @@ type APIConf struct {
 	Host       string
 	Port       int
 	Session    SessionConfig
+	DB         *database.SQLdb
 	MQ         *broker.AMQPBroker
 }
 
@@ -146,6 +147,11 @@ func NewConfig(app string) (*Config, error) {
 	c.configSchemas()
 	switch app {
 	case "api":
+		err = c.configDatabase()
+		if err != nil {
+			return nil, err
+		}
+
 		err = c.configAPI()
 		if err != nil {
 			return nil, err

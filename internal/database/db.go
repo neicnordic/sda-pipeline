@@ -117,6 +117,11 @@ func buildConnInfo(config DBConf) string {
 	return connInfo
 }
 
+func (dbs *SQLdb) Reconnect() {
+	dbs.DB.Close()
+	dbs.DB, _ = sqlOpen("postgres", dbs.ConnInfo)
+}
+
 // checkAndReconnectIfNeeded validates the current connection with a ping
 // and tries to reconnect if necessary
 func (dbs *SQLdb) checkAndReconnectIfNeeded() {

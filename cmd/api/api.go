@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -10,6 +11,7 @@ import (
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
+	"sda-pipeline/internal/database"
 
 	"github.com/gorilla/mux"
 
@@ -25,6 +27,10 @@ func main() {
 		log.Fatal(err)
 	}
 	Conf.API.MQ, err = broker.NewMQ(Conf.Broker)
+	if err != nil {
+		log.Fatal(err)
+	}
+	Conf.API.DB, err = database.NewDB(Conf.Database)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -82,6 +88,7 @@ func setup(config *config.Config) *http.Server {
 func shutdown() {
 	defer Conf.API.MQ.Channel.Close()
 	defer Conf.API.MQ.Connection.Close()
+	defer Conf.API.DB.Close()
 }
 
 func readinessResponse(w http.ResponseWriter, r *http.Request) {
@@ -89,6 +96,12 @@ func readinessResponse(w http.ResponseWriter, r *http.Request) {
 		log.Debugf("MQ connection error: %v", MQRes)
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
+	if DBRes := checkDB(Conf.API.DB, 5*time.Millisecond); DBRes != nil {
+		log.Debugf("DB connection error :%v", DBRes)
+		Conf.API.DB.Reconnect()
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -99,4 +112,14 @@ func checkMQ(addr string, timeout time.Duration) error {
 	}
 
 	return conn.Close()
+}
+
+func checkDB(database *database.SQLdb, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	if database.DB == nil {
+		return fmt.Errorf("database is nil")
+	}
+
+	return database.DB.PingContext(ctx)
 }

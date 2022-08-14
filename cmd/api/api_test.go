@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"sda-pipeline/internal/config"
+	"sda-pipeline/internal/database"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -63,6 +65,11 @@ func TestReadinessResponse(t *testing.T) {
 	assert.Equal(t, "127.0.0.1", Conf.Broker.Host)
 	Conf.Broker.Port, _ = strconv.Atoi(u.Port())
 
+	db, _, err := sqlmock.New()
+	assert.NoError(t, err)
+	assert.NotNil(t, db)
+	Conf.API.DB = &database.SQLdb{DB: db, ConnInfo: ""}
+
 	res, err := http.Get(ts.URL + "/ready")
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode)
@@ -79,4 +86,13 @@ func TestTCPDialCheck(t *testing.T) {
 	u, err := url.Parse(ts.URL)
 	assert.NoError(t, err)
 	assert.NoError(t, checkMQ(u.Host, 1*time.Second))
+}
+
+func TestDatabasePingCheck(t *testing.T) {
+	database := database.SQLdb{}
+	assert.Error(t, checkDB(&database, 1*time.Second), "nil DB should fail")
+
+	database.DB, _, err = sqlmock.New()
+	assert.NoError(t, err)
+	assert.NoError(t, checkDB(&database, 1*time.Second), "ping should succeed")
 }

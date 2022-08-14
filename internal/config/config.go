@@ -41,6 +41,7 @@ type APIConf struct {
 	Host       string
 	Port       int
 	Session    SessionConfig
+	MQ         *broker.AMQPBroker
 }
 
 type SessionConfig struct {

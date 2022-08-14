@@ -3,9 +3,12 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"net"
 	"net/http"
+	"os"
 	"time"
 
+	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
 
 	"github.com/gorilla/mux"
@@ -21,17 +24,29 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	Conf.API.MQ, err = broker.NewMQ(Conf.Broker)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go func() {
+		connError := Conf.API.MQ.ConnectionWatcher()
+		log.Error(connError)
+		os.Exit(1)
+	}()
 
 	srv := setup(Conf)
 
 	if Conf.API.ServerCert != "" && Conf.API.ServerKey != "" {
 		log.Infof("Web server is ready to receive connections at https://%s:%d", Conf.API.Host, Conf.API.Port)
 		if err := srv.ListenAndServeTLS(Conf.API.ServerCert, Conf.API.ServerKey); err != nil {
+			shutdown()
 			log.Fatalln(err)
 		}
 	} else {
 		log.Infof("Web server is ready to receive connections at http://%s:%d", Conf.API.Host, Conf.API.Port)
 		if err := srv.ListenAndServe(); err != nil {
+			shutdown()
 			log.Fatalln(err)
 		}
 	}
@@ -64,6 +79,24 @@ func setup(config *config.Config) *http.Server {
 	return srv
 }
 
+func shutdown() {
+	defer Conf.API.MQ.Channel.Close()
+	defer Conf.API.MQ.Connection.Close()
+}
+
 func readinessResponse(w http.ResponseWriter, r *http.Request) {
+	if MQRes := checkMQ(fmt.Sprintf("%s:%d", Conf.Broker.Host, Conf.Broker.Port), 5*time.Millisecond); MQRes != nil {
+		log.Debugf("MQ connection error: %v", MQRes)
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func checkMQ(addr string, timeout time.Duration) error {
+	conn, err := net.DialTimeout("tcp", addr, timeout)
+	if err != nil {
+		return err
+	}
+
+	return conn.Close()
 }

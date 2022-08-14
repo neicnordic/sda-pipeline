@@ -1,9 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strconv"
 	"testing"
+	"time"
 
 	"sda-pipeline/internal/config"
 
@@ -52,8 +56,27 @@ func TestReadinessResponse(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
+	Conf = &config.Config{}
+	u, err := url.Parse(ts.URL)
+	assert.NoError(t, err)
+	Conf.Broker.Host = u.Hostname()
+	assert.Equal(t, "127.0.0.1", Conf.Broker.Host)
+	Conf.Broker.Port, _ = strconv.Atoi(u.Port())
+
 	res, err := http.Get(ts.URL + "/ready")
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 	defer res.Body.Close()
+}
+
+func TestTCPDialCheck(t *testing.T) {
+	assert.Error(t, checkMQ("localhost:12345", 1*time.Second))
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Hello")
+	}))
+
+	u, err := url.Parse(ts.URL)
+	assert.NoError(t, err)
+	assert.NoError(t, checkMQ(u.Host, 1*time.Second))
 }

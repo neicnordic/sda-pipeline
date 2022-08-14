@@ -194,6 +194,22 @@ services:
       - certs:/dev_utils/certs
     mem_limit: 64m
     restart: always
+  api:
+    command: sda-api
+    container_name: api
+    depends_on:
+      - certfixer
+      - db
+      - mq
+    env_file: ./env.api
+    image: neicnordic/sda-pipeline:latest
+    ports:
+      - "8080:8080"
+    restart: always
+    volumes:
+      - ./config.yaml:/config.yaml
+      - ./:/dev_utils/
+      - certs:/dev_utils/certs
 
 volumes:
      archive:

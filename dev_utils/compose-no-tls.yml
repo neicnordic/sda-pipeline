@@ -186,7 +186,24 @@ services:
       - ./config-notls.yaml:/config.yaml
       - ./:/dev_utils/
     restart: always
-
+  api:
+    command: sda-api
+    container_name: api
+    depends_on: 
+      - db
+      - mq
+    environment:
+      - BROKER_EXCHANGE=sda
+      - BROKER_HOST=mq
+      - BROKER_ROUTINGKEY=ingest
+      - BROKER_ROUTINGERROR=error
+      - DB_HOST=db
+    image: neicnordic/sda-pipeline:latest
+    ports:
+      - "8080:8080"
+    restart: always
+    volumes:
+      - ./config-notls.yaml:/config.yaml
 volumes:
      archive:
      backup:

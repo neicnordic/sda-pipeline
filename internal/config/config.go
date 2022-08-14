@@ -31,6 +31,24 @@ type Config struct {
 	Inbox    storage.Conf
 	Backup   storage.Conf
 	Database database.DBConf
+	API      APIConf
+}
+
+type APIConf struct {
+	CACert     string
+	ServerCert string
+	ServerKey  string
+	Host       string
+	Port       int
+	Session    SessionConfig
+}
+
+type SessionConfig struct {
+	Expiration time.Duration
+	Domain     string
+	Secure     bool
+	HTTPOnly   bool
+	Name       string
 }
 
 // NewConfig initializes and parses the config file and/or environment using
@@ -126,6 +144,13 @@ func NewConfig(app string) (*Config, error) {
 	viper.SetDefault("schema.type", "federated")
 	c.configSchemas()
 	switch app {
+	case "api":
+		err = c.configAPI()
+		if err != nil {
+			return nil, err
+		}
+
+		return c, nil
 	case "ingest":
 		c.configInbox()
 		c.configArchive()
@@ -338,6 +363,38 @@ func (c *Config) configDatabase() error {
 
 	c.Database = db
 	return nil
+}
+
+// configDatabase provides configuration for the database
+func (c *Config) configAPI() error {
+	c.apiDefaults()
+	api := APIConf{}
+
+	api.Session.Expiration = time.Duration(viper.GetInt("api.session.expiration")) * time.Second
+	api.Session.Domain = viper.GetString("api.session.domain")
+	api.Session.Secure = viper.GetBool("api.session.secure")
+	api.Session.HTTPOnly = viper.GetBool("api.session.httponly")
+	api.Session.Name = viper.GetString("api.session.name")
+
+	api.Host = viper.GetString("api.host")
+	api.Port = viper.GetInt("api.port")
+	api.ServerKey = viper.GetString("api.serverKey")
+	api.ServerCert = viper.GetString("api.serverCert")
+	api.CACert = viper.GetString("api.CACert")
+
+	c.API = api
+
+	return nil
+}
+
+// apiDefaults set default values for web server and session
+func (c *Config) apiDefaults() {
+	viper.SetDefault("api.host", "0.0.0.0")
+	viper.SetDefault("api.port", 8080)
+	viper.SetDefault("api.session.expiration", -1)
+	viper.SetDefault("api.session.secure", true)
+	viper.SetDefault("api.session.httponly", true)
+	viper.SetDefault("api.session.name", "api_session_key")
 }
 
 // GetC4GHKey reads and decrypts and returns the c4gh key

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"testing"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -667,4 +668,43 @@ func (suite *TestSuite) TestCopyHeader() {
 	viper.Set("backup.copyHeader", "true")
 	cHeader := CopyHeader()
 	assert.Equal(suite.T(), cHeader, true, "The CopyHeader does not work")
+}
+
+func (suite *TestSuite) TestAPIConfiguration() {
+	// At this point we should fail because we lack configuration
+	viper.Reset()
+	config, err := NewConfig("api")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	// testing deafult values
+	suite.SetupTest()
+	config, err = NewConfig("api")
+	assert.NotNil(suite.T(), config)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config.API)
+	assert.Equal(suite.T(), "0.0.0.0", config.API.Host)
+	assert.Equal(suite.T(), 8080, config.API.Port)
+	assert.Equal(suite.T(), true, config.API.Session.Secure)
+	assert.Equal(suite.T(), true, config.API.Session.HTTPOnly)
+	assert.Equal(suite.T(), "api_session_key", config.API.Session.Name)
+	assert.Equal(suite.T(), -1*time.Second, config.API.Session.Expiration)
+
+	viper.Reset()
+	suite.SetupTest()
+	// over write defaults
+	viper.Set("api.port", 8443)
+	viper.Set("api.session.secure", false)
+	viper.Set("api.session.domain", "test")
+	viper.Set("api.session.expiration", 60)
+
+	config, err = NewConfig("api")
+	assert.NotNil(suite.T(), config)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config.API)
+	assert.Equal(suite.T(), "0.0.0.0", config.API.Host)
+	assert.Equal(suite.T(), 8443, config.API.Port)
+	assert.Equal(suite.T(), false, config.API.Session.Secure)
+	assert.Equal(suite.T(), "test", config.API.Session.Domain)
+	assert.Equal(suite.T(), 60*time.Second, config.API.Session.Expiration)
 }

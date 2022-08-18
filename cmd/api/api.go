@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -103,26 +102,25 @@ func shutdown() {
 }
 
 func readinessResponse(w http.ResponseWriter, r *http.Request) {
-	if MQRes := checkMQ(fmt.Sprintf("%s:%d", Conf.Broker.Host, Conf.Broker.Port), 5*time.Millisecond); MQRes != nil {
-		log.Debugf("MQ connection error: %v", MQRes)
-		w.WriteHeader(http.StatusServiceUnavailable)
+	statusCocde := http.StatusOK
+
+	if Conf.API.MQ.Connection.IsClosed() {
+		statusCocde = http.StatusServiceUnavailable
+		newConn, err := broker.NewMQ(Conf.Broker)
+		if err != nil {
+			log.Errorf("failed to reconnect to MQ, reason: %v", err)
+		} else {
+			Conf.API.MQ = newConn
+		}
 	}
+
 	if DBRes := checkDB(Conf.API.DB, 5*time.Millisecond); DBRes != nil {
 		log.Debugf("DB connection error :%v", DBRes)
 		Conf.API.DB.Reconnect()
-		w.WriteHeader(http.StatusServiceUnavailable)
+		statusCocde = http.StatusServiceUnavailable
 	}
 
-	w.WriteHeader(http.StatusOK)
-}
-
-func checkMQ(addr string, timeout time.Duration) error {
-	conn, err := net.DialTimeout("tcp", addr, timeout)
-	if err != nil {
-		return err
-	}
-
-	return conn.Close()
+	w.WriteHeader(statusCocde)
 }
 
 func checkDB(database *database.SQLdb, timeout time.Duration) error {

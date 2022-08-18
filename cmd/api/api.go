@@ -36,13 +36,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	go func() {
-		connError := Conf.API.MQ.ConnectionWatcher()
-		log.Error(connError)
-		shutdown()
-		os.Exit(1)
-	}()
-
 	sigc := make(chan os.Signal, 5)
 	signal.Notify(sigc, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	go func() {

@@ -107,6 +107,17 @@ func readinessResponse(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if Conf.API.MQ.Channel.IsClosed() {
+		statusCocde = http.StatusServiceUnavailable
+		Conf.API.MQ.Connection.Close()
+		newConn, err := broker.NewMQ(Conf.Broker)
+		if err != nil {
+			log.Errorf("failed to reconnect to MQ, reason: %v", err)
+		} else {
+			Conf.API.MQ = newConn
+		}
+	}
+
 	if DBRes := checkDB(Conf.API.DB, 5*time.Millisecond); DBRes != nil {
 		log.Debugf("DB connection error :%v", DBRes)
 		Conf.API.DB.Reconnect()

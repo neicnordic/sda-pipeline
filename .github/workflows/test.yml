@@ -35,8 +35,11 @@ jobs:
           bash ./make_certs.sh
           cd ..
 
+      - name: Start MQ and DB
+        run: docker-compose -f dev_utils/compose-no-tls.yml up -d db mq
+
       - name: Test
-        run: go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+        run: go test --tags=integration -v -coverprofile=coverage.txt -covermode=atomic ./...
 
       - name: Codecov
         uses: codecov/codecov-action@v3.1.0

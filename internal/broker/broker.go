@@ -25,6 +25,7 @@ type AMQPChannel interface {
 	NotifyPublish(confirm chan amqp.Confirmation) chan amqp.Confirmation
 	Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error
 	Close() error
+	IsClosed() bool
 }
 
 // AMQPBroker is a Broker that reads messages from an AMQP broker

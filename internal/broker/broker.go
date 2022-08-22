@@ -95,18 +95,19 @@ func NewMQ(config MQConf) (*AMQPBroker, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// The queues already exists so we can safely do a passive declaration
-	_, err = Channel.QueueDeclarePassive(
-		config.Queue, // name
-		true,         // durable
-		false,        // auto-deleted
-		false,        // internal
-		false,        // noWait
-		nil,          // arguments
-	)
-	if err != nil {
-		return nil, err
+	if config.Queue != "" {
+		// The queues already exists so we can safely do a passive declaration
+		_, err = Channel.QueueDeclarePassive(
+			config.Queue, // name
+			true,         // durable
+			false,        // auto-deleted
+			false,        // internal
+			false,        // noWait
+			nil,          // arguments
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if e := Channel.Confirm(false); e != nil {

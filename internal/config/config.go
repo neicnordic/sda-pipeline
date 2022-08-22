@@ -80,6 +80,10 @@ func NewConfig(app string) (*Config, error) {
 	}
 
 	switch app {
+	case "api":
+		requiredConfVars = []string{
+			"broker.host", "broker.port", "broker.user", "broker.password", "broker.routingkey", "db.host", "db.port", "db.user", "db.password", "db.database",
+		}
 	case "intercept":
 		// Intercept does not require these extra settings
 		requiredConfVars = []string{

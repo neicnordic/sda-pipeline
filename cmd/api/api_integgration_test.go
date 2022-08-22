@@ -9,7 +9,6 @@ import (
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/database"
 
-	// "github.com/DATA-DOG/go-sqlmock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,7 +22,6 @@ func TestShutdown(t *testing.T) {
 		Password:   "test",
 		RoutingKey: "test",
 		Exchange:   "sda",
-		Queue:      "error",
 		Ssl:        false,
 		Vhost:      "/test",
 	}
@@ -66,7 +64,6 @@ func TestReadinessResponse(t *testing.T) {
 		Password:   "test",
 		RoutingKey: "test",
 		Exchange:   "sda",
-		Queue:      "error",
 		Ssl:        false,
 		Vhost:      "/test",
 	}

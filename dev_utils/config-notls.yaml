@@ -29,7 +29,7 @@ broker:
   user: "test"
   password: "test"
   vhost: "test"
-  queue: ""
+  queue: "error"
   exchange: "sda"
   routingKey: ""
   routingError: ""

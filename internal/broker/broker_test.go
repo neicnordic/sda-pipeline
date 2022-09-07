@@ -75,6 +75,10 @@ func (*mockChannel) Close() error {
 	return nil
 }
 
+func (*mockChannel) IsClosed() bool {
+	return false
+}
+
 func TestGetMessages_Error(t *testing.T) {
 	b := AMQPBroker{}
 	c := mockChannel{}

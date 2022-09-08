@@ -16,7 +16,7 @@ import (
 	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
-	"github.com/elixir-oslo/crypt4gh/streaming"
+	"github.com/neicnordic/crypt4gh/streaming"
 
 	log "github.com/sirupsen/logrus"
 )

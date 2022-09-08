@@ -16,8 +16,8 @@ import (
 	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
-	"github.com/elixir-oslo/crypt4gh/model/headers"
-	"github.com/elixir-oslo/crypt4gh/streaming"
+	"github.com/neicnordic/crypt4gh/model/headers"
+	"github.com/neicnordic/crypt4gh/streaming"
 	"github.com/google/uuid"
 
 	log "github.com/sirupsen/logrus"

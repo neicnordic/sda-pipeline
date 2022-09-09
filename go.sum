@@ -58,8 +58,6 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dchest/bcrypt_pbkdf v0.0.0-20150205184540-83f37f9c154a h1:saTgr5tMLFnmy/yg3qDTft4rE5DY2uJ/cCxCe3q0XTU=
 github.com/dchest/bcrypt_pbkdf v0.0.0-20150205184540-83f37f9c154a/go.mod h1:Bw9BbhOJVNR+t0jCqx2GC6zv0TGBsShs56Y3gfSCvl0=
-github.com/elixir-oslo/crypt4gh v1.5.1 h1:Mt7266OfQzieu6Mnqe0UIXSIItHYQRJa9103ukp4MVU=
-github.com/elixir-oslo/crypt4gh v1.5.1/go.mod h1:7w1beOQEJ/b3s5DH6bQT0/ArEtKPHtombCH3tsII3yc=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
@@ -161,6 +159,8 @@ github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyua
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/mocktools/go-smtp-mock v1.9.0 h1:rfRHLMj7N3tPl5BmAGy/iX+uSr1BId4T05/KTQ7grq4=
 github.com/mocktools/go-smtp-mock v1.9.0/go.mod h1:Yg+FBG1r8q7ImrFLWYGpiHCJzBOkLFYzomSjs8m4cXc=
+github.com/neicnordic/crypt4gh v1.5.2 h1:p6xmo9Ymeb24yNvDcdv5SkUh9obFC1++iUrVJ/U/3w4=
+github.com/neicnordic/crypt4gh v1.5.2/go.mod h1:EwsS60OQgdNS7mTAM5DZNGyj296OEFAwGkYFSdBrqOA=
 github.com/pelletier/go-toml v1.9.5 h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3ve8=
 github.com/pelletier/go-toml v1.9.5/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=
 github.com/pelletier/go-toml/v2 v2.0.2 h1:+jQXlF3scKIcSEKkdHzXhCTDLPFi5r1wnK6yPS+49Gw=

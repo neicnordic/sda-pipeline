@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elixir-oslo/crypt4gh/keys"
+	"github.com/neicnordic/crypt4gh/keys"
 	log "github.com/sirupsen/logrus"
 
 	"sda-pipeline/internal/broker"

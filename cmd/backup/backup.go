@@ -15,7 +15,7 @@ import (
 	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
-	"github.com/elixir-oslo/crypt4gh/model/headers"
+	"github.com/neicnordic/crypt4gh/model/headers"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -544,7 +544,7 @@ func FormatHexHeader(hexData string, secKey [32]byte) (*headers.Header, error) {
 }
 
 // Modified struct of the Crypt4GHWriter struct which can be found here:
-// https://github.com/elixir-oslo/crypt4gh/blob/master/streaming/out.go
+// https://github.com/neicnordic/crypt4gh/blob/master/streaming/out.go
 type headerWriter struct {
 	header                               headers.Header
 	dataEncryptionParametersHeaderPacket headers.DataEncryptionParametersHeaderPacket

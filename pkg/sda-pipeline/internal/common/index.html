@@ -6,16 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#375EAB">
   <title>NeIC sda-pipeline - go documentation</title>
-  <link type="text/css" rel="stylesheet" href="../../../lib/godoc/style.css">
+  <link type="text/css" rel="stylesheet" href="../../../../lib/godoc/style.css">
   
   <script>window.initFuncs = [];</script>
-  <script src="../../../lib/godoc/jquery.js" defer></script>
+  <script src="../../../../lib/godoc/jquery.js" defer></script>
   
 
   
   
   <script>var goVersion = "go1.17.13";</script>
-  <script src="../../../lib/godoc/godocs.js" defer></script>
+  <script src="../../../../lib/godoc/godocs.js" defer></script>
 </head>
 
 <body>
@@ -48,7 +48,7 @@
 
       
       <h1>
-        Directory /src/sda-pipeline/cmd
+        Package common
         <span class="text-muted"></span>
       </h1>
       
@@ -73,118 +73,32 @@
 	correspond to Go identifiers).
 -->
 
-
-
-
+	<script>
+	document.ANALYSIS_DATA = null;
+	document.CALLGRAPH = null;
+	</script>
 
 	
-	
-	<div class="pkg-dir">
-		<table>
-			<tr>
-				<th class="pkg-name">Name</th>
-				<th class="pkg-synopsis">Synopsis</th>
-			</tr>
-
+		
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "sda-pipeline/internal/common"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="index.html#pkg-overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="index.html#pkg-index" class="indexLink">Index</a></dd>
 			
-			<tr>
-				<td colspan="2"><a href="../index.html">..</a></td>
-			</tr>
 			
-
-			
-				<tr>
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="pkg-overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
 				
-					<td class="pkg-name" style="padding-left: 0px;">
-						<a href="api/index.html">api</a>
-					</td>
-				
-					<td class="pkg-synopsis">
-						
-					</td>
-				</tr>
-			
-				<tr>
-				
-					<td class="pkg-name" style="padding-left: 0px;">
-						<a href="backup/index.html">backup</a>
-					</td>
-				
-					<td class="pkg-synopsis">
-						The backup command accepts messages with accessionIDs for ingested files and copies them to the second storage.
-					</td>
-				</tr>
-			
-				<tr>
-				
-					<td class="pkg-name" style="padding-left: 0px;">
-						<a href="finalize/index.html">finalize</a>
-					</td>
-				
-					<td class="pkg-synopsis">
-						The finalize command accepts messages with accessionIDs for ingested files and registers them in the database.
-					</td>
-				</tr>
-			
-				<tr>
-				
-					<td class="pkg-name" style="padding-left: 0px;">
-						<a href="ingest/index.html">ingest</a>
-					</td>
-				
-					<td class="pkg-synopsis">
-						The ingest service accepts messages for files uploaded to the inbox, registers the files in the database with their headers, and stores them header-stripped in the archive storage.
-					</td>
-				</tr>
-			
-				<tr>
-				
-					<td class="pkg-name" style="padding-left: 0px;">
-						<a href="intercept/index.html">intercept</a>
-					</td>
-				
-					<td class="pkg-synopsis">
-						The intercept service relays message between the queue provided from the federated service and local queues.
-					</td>
-				</tr>
-			
-				<tr>
-				
-					<td class="pkg-name" style="padding-left: 0px;">
-						<a href="mapper/index.html">mapper</a>
-					</td>
-				
-					<td class="pkg-synopsis">
-						The mapper service register mapping of accessionIDs (IDs for files) to datasetIDs.
-					</td>
-				</tr>
-			
-				<tr>
-				
-					<td class="pkg-name" style="padding-left: 0px;">
-						<a href="notify/index.html">notify</a>
-					</td>
-				
-					<td class="pkg-synopsis">
-						Notify service, for sending email notifications
-					</td>
-				</tr>
-			
-				<tr>
-				
-					<td class="pkg-name" style="padding-left: 0px;">
-						<a href="verify/index.html">verify</a>
-					</td>
-				
-					<td class="pkg-synopsis">
-						The verify service reads and decrypts ingested files from the archive storage and sends accession requests.
-					</td>
-				</tr>
-			
-		</table>
-	</div>
-
-
 
           <div id="footer">
             Build version go1.17.13.<br>

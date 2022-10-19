@@ -20,10 +20,10 @@ jobs:
           path: gh-pages
           ref: gh-pages
 
-      - name: Set up Go 1.17
+      - name: Set up Go 1.19
         uses: actions/setup-go@v3
         with:
-          go-version: 1.17
+          go-version: 1.19
         id: go
 
       - name: Get godoc

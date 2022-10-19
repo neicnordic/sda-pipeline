@@ -7,7 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
@@ -193,7 +193,7 @@ func TLSConfigBroker(config MQConf) (*tls.Config, error) {
 		if cacert == "" {
 			continue
 		}
-		cacert, err := ioutil.ReadFile(cacert) // #nosec this file comes from our config
+		cacert, err := os.ReadFile(cacert) // #nosec this file comes from our config
 		if err != nil {
 			return nil, err
 		}
@@ -210,11 +210,11 @@ func TLSConfigBroker(config MQConf) (*tls.Config, error) {
 	//nolint:nestif
 	if config.VerifyPeer {
 		if config.ClientCert != "" && config.ClientKey != "" {
-			cert, err := ioutil.ReadFile(config.ClientCert)
+			cert, err := os.ReadFile(config.ClientCert)
 			if err != nil {
 				return nil, err
 			}
-			key, err := ioutil.ReadFile(config.ClientKey)
+			key, err := os.ReadFile(config.ClientKey)
 			if err != nil {
 				return nil, err
 			}

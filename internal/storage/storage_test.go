@@ -3,7 +3,6 @@ package storage
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http/httptest"
 	"os"
 	"strconv"
@@ -59,7 +58,7 @@ var testPosixConf = posixConf{
 	"/"}
 
 func writeName() (name string, err error) {
-	f, err := ioutil.TempFile("", "writablefile")
+	f, err := os.CreateTemp("", "writablefile")
 
 	if err != nil {
 		return "", err

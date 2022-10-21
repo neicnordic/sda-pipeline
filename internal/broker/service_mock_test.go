@@ -34,9 +34,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"net"
+	"os"
 	"reflect"
 	"strconv"
 	"testing"
@@ -163,7 +163,7 @@ type tlsServer struct {
 func tlsServerConfig() *tls.Config {
 	cfg := new(tls.Config)
 	cfg.ClientCAs = x509.NewCertPool()
-	if ca, err := ioutil.ReadFile("../../dev_utils/certs/ca.pem"); err == nil {
+	if ca, err := os.ReadFile("../../dev_utils/certs/ca.pem"); err == nil {
 		cfg.ClientCAs.AppendCertsFromPEM(ca)
 	} else {
 		fmt.Printf("caLoad: %v", err)

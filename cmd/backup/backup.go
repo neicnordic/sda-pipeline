@@ -56,14 +56,19 @@ func main() {
 		log.Fatal(err)
 	}
 
-	key, err := config.GetC4GHKey()
-	if err != nil {
-		log.Fatal(err)
-	}
+	// we don't need crypt4gh keys if copyheader disabled
+	var key *[32]byte
+	var publicKey *[32]byte
+	if config.CopyHeader() {
+		key, err = config.GetC4GHKey()
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	publicKey, err := config.GetC4GHPublicKey()
-	if err != nil {
-		log.Fatal(err)
+		publicKey, err = config.GetC4GHPublicKey()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	defer mq.Channel.Close()

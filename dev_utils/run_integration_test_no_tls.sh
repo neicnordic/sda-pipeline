@@ -32,7 +32,7 @@ curl -u test:test 'localhost:15672/api/exchanges/test/sda/publish' \
 
 RETRY_TIMES=0
 until docker logs --since 30s ingest 2>&1 | grep "File marked as archived"
-do 
+do
     echo "waiting for ingestion to complete"
     RETRY_TIMES=$((RETRY_TIMES+1));
     if [ $RETRY_TIMES -eq 30 ]; then
@@ -72,7 +72,7 @@ if [ "${count}" -gt 0 ]; then
     echo "Actually the file has not been removed after ingest from inbox"
     exit 1
 else
-    echo "Doublec hecked File has been removed after ingest from inbox, continuing ..."
+    echo "Double checked File has been removed after ingest from inbox, continuing ..."
 fi
 
 message=$(curl -u test:test 'localhost:15672/api/queues/test/verified/get' \

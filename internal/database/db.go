@@ -15,6 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	// Needed implicitly to enable Postgres driver
+	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
 
@@ -266,8 +267,26 @@ func (dbs *SQLdb) insertFile(filename, user string) (int64, error) {
 	var fileID int64
 	err := db.QueryRow(query, filename, strings.Replace(filepath.Ext(filename), ".", "", -1), user).Scan(&fileID)
 	if err != nil {
-		return 0, err
+		pgErr, ok := err.(*pq.Error)
+		if ok {
+			// If the error is unique_violation, the files already exists
+			// ID from https://github.com/lib/pq/blob/d5affd5073b06f745459768de35356df2e5fd91d/error.go#L179
+			if pgErr.Code != "23505" {
+				return 0, err
+			}
+			const query = "UPDATE local_ega.main " +
+				"SET status = 'INIT' " +
+				"WHERE submission_file_path = $1 " +
+				"AND submission_user = $2 " +
+				"RETURNING id;"
+			err := db.QueryRow(query, filename, user).Scan(&fileID)
+			if err != nil {
+
+				return 0, err
+			}
+		}
 	}
+
 	return fileID, nil
 }
 

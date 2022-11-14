@@ -320,6 +320,10 @@ func (c *Config) configBroker() error {
 		broker.RoutingKey = viper.GetString("broker.routingkey")
 	}
 
+	if viper.IsSet("broker.exchange") {
+		broker.Exchange = viper.GetString("broker.exchange")
+	}
+
 	if viper.IsSet("broker.durable") {
 		broker.Durable = viper.GetBool("broker.durable")
 	}

@@ -26,6 +26,7 @@ func (suite *TestSuite) SetupTest() {
 	viper.Set("broker.password", "test")
 	viper.Set("broker.queue", "test")
 	viper.Set("broker.routingkey", "test")
+	viper.Set("broker.exchange", "test")
 	viper.Set("db.host", "test")
 	viper.Set("db.port", 123)
 	viper.Set("db.user", "test")
@@ -375,6 +376,7 @@ func (suite *TestSuite) TestFinalizeConfiguration() {
 	assert.Equal(suite.T(), "test", config.Broker.Password)
 	assert.Equal(suite.T(), "test", config.Broker.Queue)
 	assert.Equal(suite.T(), "test", config.Broker.RoutingKey)
+	assert.Equal(suite.T(), "test", config.Broker.Exchange)
 	assert.NotNil(suite.T(), config.Database)
 	assert.Equal(suite.T(), "test", config.Database.Host)
 	assert.Equal(suite.T(), 123, config.Database.Port)
@@ -424,6 +426,7 @@ func (suite *TestSuite) TestVerifyConfiguration() {
 	assert.Equal(suite.T(), "test", config.Broker.Password)
 	assert.Equal(suite.T(), "test", config.Broker.Queue)
 	assert.Equal(suite.T(), "test", config.Broker.RoutingKey)
+	assert.Equal(suite.T(), "test", config.Broker.Exchange)
 	assert.NotNil(suite.T(), config.Database)
 	assert.Equal(suite.T(), "test", config.Database.Host)
 	assert.Equal(suite.T(), 123, config.Database.Port)
@@ -477,6 +480,7 @@ func (suite *TestSuite) TestIngestConfiguration() {
 	assert.Equal(suite.T(), "test", config.Broker.Password)
 	assert.Equal(suite.T(), "test", config.Broker.Queue)
 	assert.Equal(suite.T(), "test", config.Broker.RoutingKey)
+	assert.Equal(suite.T(), "test", config.Broker.Exchange)
 	assert.NotNil(suite.T(), config.Database)
 	assert.Equal(suite.T(), "test", config.Database.Host)
 	assert.Equal(suite.T(), 123, config.Database.Port)
@@ -529,6 +533,7 @@ func (suite *TestSuite) TestInterceptConfiguration() {
 	assert.Equal(suite.T(), "test", config.Broker.Password)
 	assert.Equal(suite.T(), "test", config.Broker.Queue)
 	assert.Equal(suite.T(), "test", config.Broker.RoutingKey)
+	assert.Equal(suite.T(), "test", config.Broker.Exchange)
 
 	// Clear variables
 	viper.Reset()
@@ -623,6 +628,7 @@ func (suite *TestSuite) TestBackupConfiguration() {
 	assert.Equal(suite.T(), "test", config.Broker.Password)
 	assert.Equal(suite.T(), "test", config.Broker.Queue)
 	assert.Equal(suite.T(), "test", config.Broker.RoutingKey)
+	assert.Equal(suite.T(), "test", config.Broker.Exchange)
 	assert.NotNil(suite.T(), config.Database)
 	assert.Equal(suite.T(), "test", config.Database.Host)
 	assert.Equal(suite.T(), 123, config.Database.Port)
@@ -651,6 +657,7 @@ func (suite *TestSuite) TestBackupConfiguration() {
 	viper.Set("broker.password", "test")
 	viper.Set("broker.queue", "test")
 	viper.Set("broker.routingkey", "test")
+	viper.Set("broker.exchange", "test")
 
 	// We should still fail here
 	config, err = NewConfig("backup")
@@ -721,6 +728,7 @@ func (suite *TestSuite) TestNotifyConfiguration() {
 	viper.Set("broker.password", "test")
 	viper.Set("broker.queue", "test")
 	viper.Set("broker.routingkey", "test")
+	viper.Set("broker.exchange", "test")
 
 	viper.Set("smtp.host", "test")
 	viper.Set("smtp.port", 456)

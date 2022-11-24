@@ -81,6 +81,7 @@ func setup(config *config.Config) *http.Server {
 
 	r.HandleFunc("/ready", readinessResponse).Methods("GET")
 	r.HandleFunc("/dataset", dataset).Methods("POST")
+	r.HandleFunc("/metadata", metadata).Methods("POST")
 
 	cfg := &tls.Config{
 		MinVersion:               tls.VersionTLS12,
@@ -240,4 +241,32 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	if err != nil {
 		log.Errorf("failed to write HTTP response, reason: %v", err)
 	}
+}
+
+func metadata(w http.ResponseWriter, r *http.Request) {
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "failed to read request body")
+
+		return
+	}
+	defer r.Body.Close()
+	// the filepath looks funkt for now, it will sort itself out when we switch to sda-common
+	res, err := common.ValidateJSON(Conf.Broker.SchemasPath+"bigpicture/metadata-sync.json", b)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "eror on JSON validation: "+err.Error())
+
+		return
+	}
+	if !res.Valid() {
+		errorString := ""
+		for _, validErr := range res.Errors() {
+			errorString += validErr.String() + "\n\n"
+		}
+		respondWithError(w, http.StatusBadRequest, "JSON validation failed, reason: "+errorString)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

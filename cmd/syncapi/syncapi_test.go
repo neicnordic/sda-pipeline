@@ -224,3 +224,25 @@ func TestDatasetRoute(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, bad.StatusCode)
 	defer bad.Body.Close()
 }
+
+func TestMetadataRoute(t *testing.T) {
+	Conf = &config.Config{}
+	Conf.Broker.SchemasPath = "file://../../schemas/"
+
+	r := mux.NewRouter()
+	r.HandleFunc("/metadata", metadata)
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	goodJSON := []byte(`{"dataset_id": "cd532362-e06e-4460-8490-b9ce64b8d9e7", "metadata": {"dummy":"data"}}`)
+	good, err := http.Post(ts.URL+"/metadata", "application/json", bytes.NewBuffer(goodJSON))
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, good.StatusCode)
+	defer good.Body.Close()
+
+	badJSON := []byte(`{"dataset_id": "phail", "metadata": {}}`)
+	bad, err := http.Post(ts.URL+"/metadata", "application/json", bytes.NewBuffer(badJSON))
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusBadRequest, bad.StatusCode)
+	defer bad.Body.Close()
+}

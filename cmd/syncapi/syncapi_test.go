@@ -190,7 +190,22 @@ func TestDatabasePingCheck(t *testing.T) {
 
 func TestDatasetRoute(t *testing.T) {
 	Conf = &config.Config{}
-	Conf.Broker.SchemasPath = "file://../../schemas/isolated/"
+	Conf.Broker = broker.MQConf{
+		Host:        "localhost",
+		Port:        5672,
+		User:        "test",
+		Password:    "test",
+		RoutingKey:  "test",
+		Exchange:    "sda",
+		Ssl:         false,
+		Vhost:       "/test",
+		SchemasPath: "file://../../schemas/isolated/",
+	}
+	Conf.API.MQ, err = broker.NewMQ(Conf.Broker)
+	if err != nil {
+		t.Skip("skip TestShutdown since broker not present")
+	}
+	assert.NoError(t, err)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/dataset", dataset)

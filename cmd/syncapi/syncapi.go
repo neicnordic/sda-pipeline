@@ -25,6 +25,18 @@ import (
 var Conf *config.Config
 var err error
 
+type syncDataset struct {
+	DatasetID    string         `json:"dataset_id"`
+	DatasetFiles []datasetFiles `json:"dataset_files"`
+	User         string         `json:"user"`
+}
+
+type datasetFiles struct {
+	FilePath string `json:"filepath"`
+	FileID   string `json:"file_id"`
+	ShaSum   string `json:"sha256"`
+}
+
 func main() {
 	Conf, err = config.NewConfig("api")
 	if err != nil {
@@ -168,7 +180,50 @@ func dataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	parseMessage(b)
+
 	w.WriteHeader(http.StatusOK)
+}
+
+// parsemessage parses the JSON blob and sends the relevant messages
+func parseMessage(msg []byte) {
+	blob := syncDataset{}
+	_ = json.Unmarshal(msg, &blob)
+
+	var accessionIDs []string
+	for _, files := range blob.DatasetFiles {
+		accessionIDs = append(accessionIDs, files.FileID)
+		finalize := common.Finalize{
+			Type:               "accession",
+			User:               blob.User,
+			Filepath:           files.FilePath,
+			AccessionID:        files.FileID,
+			DecryptedChecksums: []common.Checksums{{Type: "sha256", Value: files.ShaSum}},
+		}
+		finalizeMsg, err := json.Marshal(finalize)
+		if err != nil {
+			log.Errorf("Failed to marshal json messge: Reason %v", err)
+		}
+		err = Conf.API.MQ.SendMessage(fmt.Sprintf("%v", time.Now().Unix()), Conf.Broker.Exchange, "accessionIDs", true, finalizeMsg)
+		if err != nil {
+			log.Errorf("Failed to send mapping messge: Reason %v", err)
+		}
+	}
+
+	mappings := common.Mappings{
+		Type:         "mappings",
+		DatasetID:    blob.DatasetID,
+		AccessionIDs: accessionIDs,
+	}
+	mappingMsg, err := json.Marshal(mappings)
+	if err != nil {
+		log.Errorf("Failed to marshal json messge: Reason %v", err)
+	}
+
+	err = Conf.API.MQ.SendMessage(fmt.Sprintf("%v", time.Now().Unix()), Conf.Broker.Exchange, "mappings", true, mappingMsg)
+	if err != nil {
+		log.Errorf("Failed to send mapping messge: Reason %v", err)
+	}
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {

@@ -12,13 +12,13 @@ services:
       interval: 5s
       timeout: 20s
       retries: 3
-    image: neicnordic/sda-db:v1.4.0
+    image: neicnordic/sda-db:v1.4.15
     ports:
       - "5432:5432"
     volumes:
       - /tmp/data:/data
   mq:
-    image: neicnordic/sda-mq:v1.4.0
+    image: neicnordic/sda-mq:v1.4.15
     container_name: mq
     environment:
      - MQ_USER=test

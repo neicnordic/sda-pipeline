@@ -46,3 +46,9 @@ type InfoError struct {
 	Reason          string      `json:"reason"`
 	OriginalMessage interface{} `json:"original-message"`
 }
+
+type Mappings struct {
+	Type         string   `json:"type"`
+	DatasetID    string   `json:"dataset_id"`
+	AccessionIDs []string `json:"accession_ids"`
+}

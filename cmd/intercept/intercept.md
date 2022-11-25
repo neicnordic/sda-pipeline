@@ -5,7 +5,7 @@ The intercept service relays messages between Central EGA and Federated EGA node
 ## Service Description
 
 When running, intercept reads messages from the configured RabbitMQ queue (default: "files").
-For each message, these steps are taken (if not otherwise noted, errors halts progress, the message is Nack'ed, the error is written to the log, and to the rabbitMQ error queue.
+For each message, these steps are taken (if not otherwise noted, errors halt progress, the message is Nack'ed, the error is written to the log, and to the rabbitMQ error queue.
 Then the service moves on to the next message):
 
 1. The message type is read from the message "type" field.

@@ -7,14 +7,14 @@ Uses a crypt4gh secret key, this service can decrypt the stored files and checks
 The verify service ensures that ingested files are encrypted with the correct key, and that the provided checksums match those of the ingested files.
 
 When running, verify reads messages from the configured RabbitMQ queue (default: "archived").
-For each message, these steps are taken (if not otherwise noted, errors halts progress and the service moves on to the next message.
+For each message, these steps are taken (if not otherwise noted, errors halt progress and the service moves on to the next message.
 Unless explicitly stated, error messages are *not* written to the RabbitMQ error queue, and messages are not NACK or ACKed.):
 
 1. The message is validated as valid JSON that matches the "ingestion-verification" schema (defined in sda-common).
 If the message can’t be validated it is discarded with an error message in the logs.
 
 1. The service attempts to fetch the header for the file id in the message from the database.
-If this fails a NACK will be sent for the RabbitMQ message, the error will be written to the logs, and send to the RabbitMQ error queue.
+If this fails a NACK will be sent for the RabbitMQ message, the error will be written to the logs, and sent to the RabbitMQ error queue.
 
 1. The file size of the encrypted file is fetched from the archive storage system.
 If this fails an error will be written to the logs.
@@ -28,7 +28,7 @@ If this fails an error will be written to the logs.
 1. The file size, md5 and sha256 checksum will be read from the decryptor.
 If this fails an error will be written to the logs.
 
-1. If the `re_verify` bool is not set in the RabbitMQ message, the message processing ends here, and continues with the next message.
+1. If the `re_verify` boolean is not set in the RabbitMQ message, the message processing ends here, and continues with the next message.
 Otherwise the processing continues with verification:
 
     1. A verification message is created, and validated against the "ingestion-accession-request" schema.

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -87,11 +88,13 @@ func main() {
 				continue
 			}
 
-			_, err = buildSyncDatasetJSON(m.Body)
+			blob, err := buildSyncDatasetJSON(m.Body)
 			if err != nil {
 				log.Errorf("failed to build SyncDatasetJSON, Reason: %v", err)
 			}
-			// http.Client send POST to reciever
+			if err := sendPOST(blob); err != nil {
+				log.Errorf("failed to send POST, Reason: %v", err)
+			}
 
 		}
 	}()
@@ -341,4 +344,20 @@ func buildSyncDatasetJSON(b []byte) ([]byte, error) {
 	}
 
 	return json, nil
+}
+
+func sendPOST(payload []byte) error {
+	client := &http.Client{}
+	URL := Conf.Sync.Host + "/dataset"
+	req, err := http.NewRequest("POST", URL, bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
 }

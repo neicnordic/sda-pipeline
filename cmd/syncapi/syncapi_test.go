@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -286,5 +287,25 @@ func TestBuildJSON(t *testing.T) {
 
 	m := []byte(`{"type":"mapping", "dataset_id": "cd532362-e06e-4460-8490-b9ce64b8d9e7", "accession_ids": ["5fe7b660-afea-4c3a-88a9-3daabf055ebb", "ed6af454-d910-49e3-8cda-488a6f246e76"]}`)
 	_, err = buildSyncDatasetJSON(m)
+	assert.NoError(t, err)
+}
+
+func TestSendPOST(t *testing.T) {
+	r := http.NewServeMux()
+	r.HandleFunc("/dataset", func(w http.ResponseWriter, r *http.Request) {
+		_, err = w.Write([]byte(fmt.Sprint(http.StatusOK)))
+		assert.NoError(t, err)
+	})
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	Conf = &config.Config{}
+	Conf.Sync = config.SyncConf{
+		Host:     ts.URL,
+		User:     "test",
+		Password: "test",
+	}
+	syncJSON := []byte(`{"user":"test.user@example.com", "dataset_id": "cd532362-e06e-4460-8490-b9ce64b8d9e7", "dataset_files": [{"filepath": "inbox/user/file1.c4gh","file_id": "5fe7b660-afea-4c3a-88a9-3daabf055ebb", "sha256": "82E4e60e7beb3db2e06A00a079788F7d71f75b61a4b75f28c4c942703dabb6d6"}, {"filepath": "inbox/user/file2.c4gh","file_id": "ed6af454-d910-49e3-8cda-488a6f246e76", "sha256": "c967d96e56dec0f0cfee8f661846238b7f15771796ee1c345cae73cd812acc2b"}]}`)
+	err := sendPOST(syncJSON)
 	assert.NoError(t, err)
 }

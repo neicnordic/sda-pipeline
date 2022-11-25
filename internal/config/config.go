@@ -33,8 +33,14 @@ type Config struct {
 	Database database.DBConf
 	API      APIConf
 	Notify   SMTPConf
+	Sync     SyncConf
 }
 
+type SyncConf struct {
+	Host     string
+	Password string
+	User     string
+}
 type APIConf struct {
 	CACert     string
 	ServerCert string

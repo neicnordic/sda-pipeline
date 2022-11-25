@@ -1,6 +1,6 @@
 # sda-pipeline: backup
 
-Merges data with the encryption header and moves it to backup storage.
+Moves data to backup storage and optionally merges it with the encryption header.
 
 ## Service Description
 The backup service copies files from the archive storage, reattaches the encryption header, and writes the complete file to backup storage.

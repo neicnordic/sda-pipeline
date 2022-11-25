@@ -63,7 +63,7 @@ services:
   ingest:
     command: sda-ingest
     container_name: ingest
-    depends_on: 
+    depends_on:
       - db
       - mq
       - s3
@@ -87,7 +87,7 @@ services:
   verify:
     command: sda-verify
     container_name: verify
-    depends_on: 
+    depends_on:
       - db
       - mq
       - s3
@@ -111,7 +111,7 @@ services:
   finalize:
     command: sda-finalize
     container_name: finalize
-    depends_on: 
+    depends_on:
       - db
       - mq
     environment:
@@ -155,7 +155,7 @@ services:
   mapper:
     command: sda-mapper
     container_name: mapper
-    depends_on: 
+    depends_on:
       - db
       - mq
     environment:
@@ -173,7 +173,7 @@ services:
     restart: always
   interceptor:
     command: sda-intercept
-    depends_on: 
+    depends_on:
       - mq
     environment:
       - BROKER_EXCHANGE=sda
@@ -189,7 +189,7 @@ services:
   api:
     command: sda-api
     container_name: api
-    depends_on: 
+    depends_on:
       - db
       - mq
     environment:

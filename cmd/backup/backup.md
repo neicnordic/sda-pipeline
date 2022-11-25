@@ -3,7 +3,7 @@
 Moves data to backup storage and optionally merges it with the encryption header.
 
 ## Service Description
-The backup service copies files from the archive storage to backup storage. If a public key is supplied the header will be re-encrypted and attached to the file before writing it to backup storage.
+The backup service copies files from the archive storage to backup storage. If a public key is supplied and the copyHeader option is enabled the header will be re-encrypted and attached to the file before writing it to backup storage.
 
 When running, backup reads messages from the configured RabbitMQ queue (default "backup").
 For each message, these steps are taken (if not otherwise noted, errors halts progress, the message is Nack'ed, and the service moves on to the next message):
@@ -11,7 +11,8 @@ For each message, these steps are taken (if not otherwise noted, errors halts pr
 1. The message is validated as valid JSON that matches either the "ingestion-completion" or "ingestion-accession" schema (based on configuration).
 If the message can’t be validated it is discarded with an error message in the logs.
 
-1. The file path and file size is fetched from the database.
+1. The file path and file size is fetched from the database. 
+    1. In case the service is configured to copy headers, the path is replaced by the one of the incoming message and it is the original location where the file was uploaded in the inbox.
 
 1. The file size on disk is requested from the storage system.
 

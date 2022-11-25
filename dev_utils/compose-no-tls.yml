@@ -4,6 +4,7 @@ services:
     command: server /data
     container_name: db
     environment:
+      - POSTGRES_PASSWORD=postgres
       - DB_LEGA_IN_PASSWORD=lega_in
       - DB_LEGA_OUT_PASSWORD=lega_out
       - NOTLS=true
@@ -16,7 +17,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - /tmp/data:/data
+      - data:/data
   mq:
     image: neicnordic/sda-mq:v1.4.15
     container_name: mq
@@ -205,6 +206,7 @@ services:
     volumes:
       - ./config-notls.yaml:/config.yaml
 volumes:
-     archive:
-     backup:
-     inbox:
+  archive:
+  backup:
+  inbox:
+  data:

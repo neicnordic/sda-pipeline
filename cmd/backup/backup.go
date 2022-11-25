@@ -3,7 +3,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"io"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/neicnordic/crypt4gh/model/headers"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/chacha20poly1305"
 )
 
 // Backup struct that holds the json message data
@@ -346,9 +346,9 @@ func main() {
 
 				// Decrypt header
 				log.Debug("Decrypt header")
-				DecrHeader, err := FormatHexHeader(header, *key)
+				DecHeader, err := FormatHexHeader(header)
 				if err != nil {
-					log.Errorf("Failed to decrypt the header %s "+
+					log.Errorf("Failed to decode the header %s "+
 						"(corr-id: %s, "+
 						"filepath: %s, "+
 						"user: %s, "+
@@ -363,7 +363,7 @@ func main() {
 						err)
 
 					if e := delivered.Nack(false, true); e != nil {
-						log.Errorf("Failed to NAck because of decrypt header failed "+
+						log.Errorf("Failed to NAck because of decode header failed "+
 							"(corr-id: %s, "+
 							"filepath: %s, "+
 							"user: %s, "+
@@ -380,7 +380,9 @@ func main() {
 
 				// Reencrypt header
 				log.Debug("Reencrypt header")
-				newHeader, err := reencryptHeader(*key, *publicKey, *DecrHeader)
+				pubkeyList := [][chacha20poly1305.KeySize]byte{}
+				pubkeyList = append(pubkeyList, *publicKey)
+				newHeader, err := headers.ReEncryptHeader(DecHeader, *key, pubkeyList)
 				if err != nil {
 					log.Errorf("Failed to reencrypt the header %s "+
 						"(corr-id: %s, "+
@@ -524,9 +526,8 @@ func main() {
 	<-forever
 }
 
-// FormatHexHeader decrypts a hex formatted file header using the proivided secret key,
-// and returns the data as a Header struct
-func FormatHexHeader(hexData string, secKey [32]byte) (*headers.Header, error) {
+// FormatHexHeader decodes a hex formatted file header, and returns the data as a binary
+func FormatHexHeader(hexData string) ([]byte, error) {
 
 	// Trim whitespace that might otherwise confuse the hex parse
 	headerHexStr := strings.TrimSpace(hexData)
@@ -537,83 +538,5 @@ func FormatHexHeader(hexData string, secKey [32]byte) (*headers.Header, error) {
 		return nil, err
 	}
 
-	// This will return the same data, but will check validity
-	headerReader := bytes.NewReader(binaryHeader)
-	_, err = headers.ReadHeader(headerReader)
-	if err != nil {
-		return nil, err
-	}
-
-	// Rewind header reader
-	_, err = headerReader.Seek(0, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create the header struct
-	header, err := headers.NewHeader(headerReader, secKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return header, nil
-}
-
-// Modified struct of the Crypt4GHWriter struct which can be found here:
-// https://github.com/neicnordic/crypt4gh/blob/master/streaming/out.go
-type headerWriter struct {
-	header                               headers.Header
-	dataEncryptionParametersHeaderPacket headers.DataEncryptionParametersHeaderPacket
-}
-
-// reencryptHeader reencrypts the given header by decrypting it with the givern secKey, and
-// reencrypting it for the pubKey.
-func reencryptHeader(secKey, pubKey [32]byte, header headers.Header) ([]byte, error) {
-
-	buffer := bytes.Buffer{}
-
-	// Get data encryption key from previous header
-	encryptionPackets, err := header.GetDataEncryptionParameterHeaderPackets()
-	if err != nil {
-		return nil, err
-	}
-	encryptionPacket := headers.DataEncryptionParametersHeaderPacket{}
-	for _, encPack := range *encryptionPackets {
-		encryptionPacket = encPack
-	}
-
-	fileHeader := make([]headers.HeaderPacket, 0)
-
-	headerWriter := headerWriter{}
-	headerWriter.dataEncryptionParametersHeaderPacket = encryptionPacket
-
-	// Add the private and public keys to the header
-	fileHeader = append(fileHeader, headers.HeaderPacket{
-		WriterPrivateKey:       secKey,
-		ReaderPublicKey:        pubKey,
-		HeaderEncryptionMethod: headers.X25519ChaCha20IETFPoly1305,
-		EncryptedHeaderPacket:  encryptionPacket,
-	})
-
-	// Create the main header block
-	headerWriter.header = headers.Header{
-		MagicNumber:       header.MagicNumber,
-		Version:           header.Version,
-		HeaderPacketCount: uint32(len(fileHeader)),
-		HeaderPackets:     fileHeader,
-	}
-
-	// Convert to binary
-	binaryHeader, err := headerWriter.header.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = buffer.Write(binaryHeader)
-	if err != nil {
-		return nil, err
-	}
-	buffer.Grow(headers.UnencryptedDataSegmentSize)
-
-	return buffer.Bytes(), nil
+	return binaryHeader, nil
 }

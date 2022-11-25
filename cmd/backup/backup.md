@@ -3,7 +3,7 @@
 Moves data to backup storage and optionally merges it with the encryption header.
 
 ## Service Description
-The backup service copies files from the archive storage, reattaches the encryption header, and writes the complete file to backup storage.
+The backup service copies files from the archive storage to backup storage. If a public key is supplied the header will be re-encrypted and attached to the file before writing it to backup storage.
 
 When running, backup reads messages from the configured RabbitMQ queue (default "backup").
 For each message, these steps are taken (if not otherwise noted, errors halts progress, the message is Nack'ed, and the service moves on to the next message):

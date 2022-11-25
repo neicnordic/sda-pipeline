@@ -56,6 +56,11 @@ for aid in $accessids; do
 
 	rm -f "tmp/$apath"
 
+	apath=$(docker run --rm --name client --network dev_utils_default -v /home/runner/work/sda-pipeline/sda-pipeline/dev_utils/certs:/certs \
+		-e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+		neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
+		-t -A -c "SELECT inbox_path FROM local_ega.files where stable_id='$aid';")
+
 	# Check checksum for backuped copy as well
 	s3cmd -c s3cmd.conf get "s3://backup/$apath" "tmp/$apath"
 

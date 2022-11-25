@@ -111,6 +111,7 @@ func main() {
 					"(corr-id: %s, error: %v)",
 					delivered.CorrelationId,
 					err)
+
 				continue
 			}
 
@@ -167,6 +168,7 @@ func main() {
 						message.DecryptedChecksums,
 						e)
 				}
+
 				continue
 			}
 
@@ -242,8 +244,8 @@ func main() {
 						message.DecryptedChecksums,
 						e)
 				}
-				continue
 
+				continue
 			}
 
 			file, err := archive.NewFileReader(filePath)
@@ -277,7 +279,14 @@ func main() {
 						message.DecryptedChecksums,
 						e)
 				}
+
 				continue
+			}
+
+			// If the copy header is enabled, use the actual filepath to make backup
+			// This will be used in the BigPicture backup, enabling for ingestion of the file
+			if config.CopyHeader() {
+				filePath = message.Filepath
 			}
 
 			dest, err := backupStorage.NewFileWriter(filePath)
@@ -311,6 +320,7 @@ func main() {
 						message.DecryptedChecksums,
 						e)
 				}
+
 				continue
 			}
 
@@ -452,6 +462,7 @@ func main() {
 						message.DecryptedChecksums,
 						e)
 				}
+
 				continue
 			}
 

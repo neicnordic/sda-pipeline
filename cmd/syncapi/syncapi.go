@@ -59,6 +59,44 @@ func main() {
 		os.Exit(0)
 	}()
 
+	forever := make(chan bool)
+	go func() {
+		messages, err := Conf.API.MQ.GetMessages(Conf.Broker.Queue)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for m := range messages {
+			log.Debugf("Received a message (corr-id: %s, message: %s)", m.CorrelationId, m.Body)
+			res, err := common.ValidateJSON(Conf.Broker.SchemasPath+"dataset-mapping.json", m.Body)
+			if err != nil {
+				if err := m.Nack(false, false); err != nil {
+					log.Errorf("Failed to nack message, reason: %v", err)
+				}
+
+				continue
+			}
+			if !res.Valid() {
+				errorString := ""
+				for _, validErr := range res.Errors() {
+					errorString += validErr.String() + "\n\n"
+				}
+				if err := m.Nack(false, false); err != nil {
+					log.Errorf("Failed to nack message, reason: %v", err)
+				}
+
+				continue
+			}
+
+			_, err = buildSyncDatasetJSON(m.Body)
+			if err != nil {
+				log.Errorf("failed to build SyncDatasetJSON, Reason: %v", err)
+			}
+			// http.Client send POST to reciever
+
+		}
+	}()
+	<-forever
+
 	srv := setup(Conf)
 
 	if Conf.API.ServerCert != "" && Conf.API.ServerKey != "" {

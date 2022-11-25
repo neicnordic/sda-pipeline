@@ -25,6 +25,7 @@ type Database interface {
 	MarkCompleted(checksum string, fileID int) error
 	MarkReady(accessionID, user, filepath, checksum string) error
 	GetArchived(user, filepath, checksum string) (string, int, error)
+	GetSyncData(accessionID string) (SyncData, error)
 	Close()
 }
 
@@ -464,4 +465,41 @@ func (dbs *SQLdb) getArchived(user, filepath, checksum string) (string, int, err
 func (dbs *SQLdb) Close() {
 	db := dbs.DB
 	db.Close()
+}
+
+type SyncData struct {
+	User     string
+	FilePath string
+	Checksum string
+}
+
+// GetSyncData retrieves the file information needed to sync a dataset
+func (dbs *SQLdb) GetSyncData(accessionID string) (SyncData, error) {
+	var (
+		s   SyncData
+		err error
+	)
+
+	for count := 1; count <= dbRetryTimes; count++ {
+		s, err = dbs.getSyncData(accessionID)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Duration(math.Pow(3, float64(count))) * time.Second)
+	}
+
+	return s, err
+}
+
+// getSyncData is the actual function performing work for GetSyncData
+func (dbs *SQLdb) getSyncData(accessionID string) (SyncData, error) {
+	dbs.checkAndReconnectIfNeeded()
+
+	const query = "SELECT elixir_id, inbox_path, decrypted_file_checksum from local_ega.files WHERE stable_id = $1 AND status = 'READY';"
+	var data SyncData
+	if err := dbs.DB.QueryRow(query, accessionID).Scan(&data.User, &data.FilePath, &data.Checksum); err != nil {
+		return SyncData{}, err
+	}
+
+	return data, nil
 }

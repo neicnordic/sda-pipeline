@@ -246,3 +246,47 @@ func TestMetadataRoute(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, bad.StatusCode)
 	defer bad.Body.Close()
 }
+
+func TestBuildJSON(t *testing.T) {
+	Conf = &config.Config{}
+	Conf.Database = database.DBConf{
+		Host:     "localhost",
+		Port:     5432,
+		User:     "postgres",
+		Password: "postgres",
+		Database: "lega",
+		SslMode:  "disable",
+	}
+	Conf.API.DB, err = database.NewDB(Conf.Database)
+	if err != nil {
+		t.Skip("skip TestShutdown since broker not present")
+	}
+	assert.NoError(t, err)
+
+	db := Conf.API.DB.DB
+
+	var fileID int64
+	const insert = "INSERT INTO local_ega.main(submission_file_path, submission_user, decrypted_file_checksum, status, submission_file_extension) VALUES($1, $2, $3, 'READY', 'c4gh') RETURNING id;"
+	const accession = "UPDATE local_ega.files SET stable_id = $1 WHERE inbox_path = $2;"
+	const mapping = "INSERT INTO local_ega_ebi.filedataset(file_id, dataset_stable_id) VALUES ($1, 'cd532362-e06e-4460-8490-b9ce64b8d9e7');"
+
+	err := db.QueryRow(insert, "dummy.user/test/file1.c4gh", "dummy.user", "c967d96e56dec0f0cfee8f661846238b7f15771796ee1c345cae73cd812acc2b").Scan(&fileID)
+	assert.NoError(t, err)
+	err = db.QueryRow(accession, "ed6af454-d910-49e3-8cda-488a6f246e76", "dummy.user/test/file1.c4gh").Err()
+	assert.NoError(t, err)
+	err = db.QueryRow(mapping, fileID).Err()
+	assert.NoError(t, err)
+
+	err = db.QueryRow(insert, "dummy.user/test/file2.c4gh", "dummy.user", "82E4e60e7beb3db2e06A00a079788F7d71f75b61a4b75f28c4c942703dabb6d6").Scan(&fileID)
+	assert.NoError(t, err)
+	err = db.QueryRow(accession, "5fe7b660-afea-4c3a-88a9-3daabf055ebb", "dummy.user/test/file2.c4gh").Err()
+	assert.NoError(t, err)
+	err = db.QueryRow(mapping, fileID).Err()
+	assert.NoError(t, err)
+
+	m := []byte(`{"type":"mapping", "dataset_id": "cd532362-e06e-4460-8490-b9ce64b8d9e7", "accession_ids": ["5fe7b660-afea-4c3a-88a9-3daabf055ebb", "ed6af454-d910-49e3-8cda-488a6f246e76"]}`)
+	ds, err := buildSyncDatasetJSON(m)
+	assert.NoError(t, err)
+	assert.Equal(t, "dummy.user", ds.User)
+
+}

@@ -270,3 +270,32 @@ func metadata(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func buildSyncDatasetJSON(b []byte) (syncDataset, error) {
+	var msg common.Mappings
+	_ = json.Unmarshal(b, &msg)
+
+	var dataset = syncDataset{
+		DatasetID: msg.DatasetID,
+	}
+
+	for _, ID := range msg.AccessionIDs {
+		if DBRes := checkDB(Conf.API.DB, 20*time.Millisecond); DBRes != nil {
+			log.Infof("DB connection error :%v", DBRes)
+			Conf.API.DB.Reconnect()
+		}
+		data, err := Conf.API.DB.GetSyncData(ID)
+		if err != nil {
+			return syncDataset{}, err
+		}
+		datasetFile := datasetFiles{
+			FilePath: data.FilePath,
+			FileID:   ID,
+			ShaSum:   data.Checksum,
+		}
+		dataset.DatasetFiles = append(dataset.DatasetFiles, datasetFile)
+		dataset.User = data.User
+	}
+
+	return dataset, nil
+}

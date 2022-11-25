@@ -309,7 +309,7 @@ func metadata(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func buildSyncDatasetJSON(b []byte) (syncDataset, error) {
+func buildSyncDatasetJSON(b []byte) ([]byte, error) {
 	var msg common.Mappings
 	_ = json.Unmarshal(b, &msg)
 
@@ -324,7 +324,7 @@ func buildSyncDatasetJSON(b []byte) (syncDataset, error) {
 		}
 		data, err := Conf.API.DB.GetSyncData(ID)
 		if err != nil {
-			return syncDataset{}, err
+			return nil, err
 		}
 		datasetFile := datasetFiles{
 			FilePath: data.FilePath,
@@ -335,5 +335,10 @@ func buildSyncDatasetJSON(b []byte) (syncDataset, error) {
 		dataset.User = data.User
 	}
 
-	return dataset, nil
+	json, err := json.Marshal(dataset)
+	if err != nil {
+		return nil, err
+	}
+
+	return json, nil
 }

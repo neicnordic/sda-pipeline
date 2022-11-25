@@ -285,8 +285,6 @@ func TestBuildJSON(t *testing.T) {
 	assert.NoError(t, err)
 
 	m := []byte(`{"type":"mapping", "dataset_id": "cd532362-e06e-4460-8490-b9ce64b8d9e7", "accession_ids": ["5fe7b660-afea-4c3a-88a9-3daabf055ebb", "ed6af454-d910-49e3-8cda-488a6f246e76"]}`)
-	ds, err := buildSyncDatasetJSON(m)
+	_, err = buildSyncDatasetJSON(m)
 	assert.NoError(t, err)
-	assert.Equal(t, "dummy.user", ds.User)
-
 }

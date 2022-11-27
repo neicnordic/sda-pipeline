@@ -12,6 +12,6 @@ For each message, these steps are taken (if not otherwise noted, errors halt pro
 If the message can’t be validated it is discarded with an error message in the logs.
 
 1. AccessionIDs from the message are mapped to a datasetID (also in the message) in the database.
-On failure an error message is written to the logs, but processing is not halted.
+On error the service sleeps for 5 minutes to allow for database recovery, the message is Nacked and then re-queued and an error message is written to the logs.
 
 1. The RabbitMQ message is Ack'ed.

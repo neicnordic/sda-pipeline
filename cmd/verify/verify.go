@@ -146,7 +146,7 @@ func main() {
 						message.ArchivePath,
 						message.EncryptedChecksums,
 						message.ReVerify,
-						err)
+						e)
 
 				}
 				// store full message info in case we want to fix the db entry and retry

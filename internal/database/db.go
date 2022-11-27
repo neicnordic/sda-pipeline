@@ -409,7 +409,7 @@ func (dbs *SQLdb) mapFilesToDataset(datasetID string, accessionIDs []string) err
 		}
 		_, err = transaction.Exec(mapping, fileID, datasetID)
 		if err != nil {
-			log.Errorf("something went wrong with the DB query: %s", err)
+			log.Errorf("something went wrong with the DB transaction: %s", err)
 			if e := transaction.Rollback(); e != nil {
 				log.Errorf("failed to rollback the transaction: %s", e)
 			}

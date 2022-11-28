@@ -347,13 +347,10 @@ func (dbs *SQLdb) setArchived(file FileInfo, id int64) error {
 // MarkReady marks the file as "READY"
 func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error {
 
-	var (
-		err   error = nil
-		count int   = 0
-	)
+	var err error
 
 	// 3, 9, 27, 81, 243 seconds between each retry event.
-	for count = 1; count <= dbRetryTimes; count++ {
+	for count := 1; count <= dbRetryTimes; count++ {
 		err = dbs.markReady(accessionID, user, filepath, checksum)
 		if err == nil {
 			break
@@ -383,13 +380,11 @@ func (dbs *SQLdb) markReady(accessionID, user, filepath, checksum string) error 
 
 // MapFilesToDataset maps a set of files to a dataset in the database
 func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) error {
-	var (
-		err   error
-		count int
-	)
+
+	var err error
 
 	// 3, 9, 27, 81, 243 seconds between each retry event.
-	for count = 1; count <= dbRetryTimes; count++ {
+	for count := 1; count <= dbRetryTimes; count++ {
 		err = dbs.mapFilesToDataset(datasetID, accessionIDs)
 		if err == nil {
 			break

@@ -56,7 +56,7 @@ type FileInfo struct {
 }
 
 // dbRetryTimes is the number of times to retry the same function if it fails
-var dbRetryTimes = 8
+var dbRetryTimes = 5
 
 // dbReconnectTimeout is how long to try to re-establish a connection to the database
 var dbReconnectTimeout = 5 * time.Minute
@@ -376,14 +376,17 @@ func (dbs *SQLdb) markReady(accessionID, user, filepath, checksum string) error 
 // MapFilesToDataset maps a set of files to a dataset in the database
 func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) error {
 	var (
-		err   error = nil
-		count int   = 0
+		err   error
+		count int
 	)
 
+	// 0, 3, 9, 27, 81, 243 seconds between each retry event.
 	for count == 0 || (err != nil && count < dbRetryTimes) {
+		time.Sleep(time.Duration(count*3) * time.Second)
 		err = dbs.mapFilesToDataset(datasetID, accessionIDs)
 		count++
 	}
+
 	return err
 }
 
@@ -409,7 +412,7 @@ func (dbs *SQLdb) mapFilesToDataset(datasetID string, accessionIDs []string) err
 		}
 		_, err = transaction.Exec(mapping, fileID, datasetID)
 		if err != nil {
-			log.Errorf("something went wrong with the DB query: %s", err)
+			log.Errorf("something went wrong with the DB transaction: %s", err)
 			if e := transaction.Rollback(); e != nil {
 				log.Errorf("failed to rollback the transaction: %s", e)
 			}

@@ -53,28 +53,28 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to get message from mq (error: %v)", err)
 		}
-		for d := range messages {
-			log.Debugf("received a message: %s", d.Body)
-			err := mq.ValidateJSON(&d, "dataset-mapping", d.Body, &mappings)
+		for delivered := range messages {
+			log.Debugf("received a message: %s", delivered.Body)
+			err := mq.ValidateJSON(&delivered, "dataset-mapping", delivered.Body, &mappings)
 			if err != nil {
 				log.Errorf("Failed to validate message for work "+
 					"(corr-id: %s, "+
 					"message: %s, "+
 					"error: %v)",
-					d.CorrelationId,
-					d.Body,
+					delivered.CorrelationId,
+					delivered.Body,
 					err)
 
 				continue
 			}
 
-			if err := json.Unmarshal(d.Body, &mappings); err != nil {
+			if err := json.Unmarshal(delivered.Body, &mappings); err != nil {
 				log.Errorf("Failed to unmarshal message for work "+
 					"(corr-id: %s, "+
 					"message: %s, "+
 					"error: %v)",
-					d.CorrelationId,
-					d.Body,
+					delivered.CorrelationId,
+					delivered.Body,
 					err)
 
 				continue
@@ -86,33 +86,47 @@ func main() {
 					"datasetid: %s, "+
 					"accessionids: %v, "+
 					"error: %v)",
-					d.CorrelationId,
+					delivered.CorrelationId,
 					mappings.DatasetID,
 					mappings.AccessionIDs,
 					err)
+
+				// Nack message so the server gets notified that something is wrong and requeue the message
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorf("Failed to nack message on mapping files to dataset) "+
+						"(corr-id: %s, "+
+						"datasetid: %s, "+
+						"accessionid: %s, "+
+						"reason: %v)",
+						delivered.CorrelationId,
+						mappings.DatasetID,
+						mappings.AccessionIDs,
+						e)
+				}
+
+				continue
 			}
 
-			for _, aId := range mappings.AccessionIDs {
+			for _, aID := range mappings.AccessionIDs {
 				log.Infof("Mapped file to dataset "+
 					"(corr-id: %s, "+
 					"datasetid: %s, "+
 					"accessionid: %s)",
-					d.CorrelationId,
+					delivered.CorrelationId,
 					mappings.DatasetID,
-					aId)
+					aID)
 			}
 
-			if err := d.Ack(false); err != nil {
+			if err := delivered.Ack(false); err != nil {
 				log.Errorf("Failed to ack message for work "+
 					"(corr-id: %s, "+
 					"datasetid: %s, "+
 					"accessionids: %v, "+
 					"error: %v)",
-					d.CorrelationId,
+					delivered.CorrelationId,
 					mappings.DatasetID,
 					mappings.AccessionIDs,
 					err)
-
 			}
 		}
 	}()

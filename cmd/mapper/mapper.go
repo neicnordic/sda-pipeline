@@ -5,7 +5,6 @@ package main
 import (
 	"encoding/json"
 	"os"
-	"time"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
@@ -91,9 +90,6 @@ func main() {
 					mappings.DatasetID,
 					mappings.AccessionIDs,
 					err)
-
-				// Before nacking the message, sleep in order to wait for the db to recover
-				time.Sleep(5 * time.Second)
 
 				// Nack message so the server gets notified that something is wrong but don't requeue the message
 				if e := delivered.Nack(false, true); e != nil {

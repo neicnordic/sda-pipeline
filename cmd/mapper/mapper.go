@@ -91,9 +91,9 @@ func main() {
 					mappings.AccessionIDs,
 					err)
 
-				// Nack message so the server gets notified that something is wrong but don't requeue the message
+				// Nack message so the server gets notified that something is wrong and requeue the message
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorf("Failed to nack following getheader error message "+
+					log.Errorf("Failed to nack message on mapping files to dataset) "+
 						"(corr-id: %s, "+
 						"datasetid: %s, "+
 						"accessionid: %s, "+

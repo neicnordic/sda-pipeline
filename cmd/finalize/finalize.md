@@ -16,7 +16,7 @@ If the message can’t be validated it is discarded with an error message in the
 If the validation fails, an error message is written to the logs.
 
 1. The file accession ID in the message is marked as "ready" in the database.
-If this fails an error message is written to the logs, the initial message is Nack'ed, and an error message is written to the RabbitMQ error queue.
+On error the service sleeps for up to 5 minutes to allow for database recovery, after 5 minutes the message is Nacked, re-queued and an error message is written to the logs.
 
 1. The complete message is sent to RabbitMQ. On error, a message is written to the logs.
 

@@ -61,8 +61,8 @@ func main() {
 		os.Exit(0)
 	}()
 
-	forever := make(chan bool)
 	go func() {
+		forever := make(chan bool)
 		messages, err := Conf.API.MQ.GetMessages(Conf.Broker.Queue)
 		if err != nil {
 			log.Fatal(err)
@@ -88,7 +88,7 @@ func main() {
 
 				continue
 			}
-
+			log.Infoln("buildSyncDatasetJSON")
 			blob, err := buildSyncDatasetJSON(m.Body)
 			if err != nil {
 				log.Errorf("failed to build SyncDatasetJSON, Reason: %v", err)
@@ -96,10 +96,13 @@ func main() {
 			if err := sendPOST(blob); err != nil {
 				log.Errorf("failed to send POST, Reason: %v", err)
 			}
+			if err := m.Ack(false); err != nil {
+				log.Errorf("Failed to ack message: reason %v", err)
+			}
 
 		}
+		<-forever
 	}()
-	<-forever
 
 	srv := setup(Conf)
 

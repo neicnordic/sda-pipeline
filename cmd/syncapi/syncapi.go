@@ -222,13 +222,15 @@ func dataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parseMessage(b)
+	if err := parseMessage(b); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
 // parsemessage parses the JSON blob and sends the relevant messages
-func parseMessage(msg []byte) {
+func parseMessage(msg []byte) error {
 	blob := syncDataset{}
 	_ = json.Unmarshal(msg, &blob)
 
@@ -241,11 +243,11 @@ func parseMessage(msg []byte) {
 		}
 		ingestMsg, err := json.Marshal(ingest)
 		if err != nil {
-			log.Errorf("Failed to marshal json messge: Reason %v", err)
+			return fmt.Errorf("Failed to marshal json messge: Reason %v", err)
 		}
 		err = Conf.API.MQ.SendMessage(fmt.Sprintf("%v", time.Now().Unix()), Conf.Broker.Exchange, "ingest", true, ingestMsg)
 		if err != nil {
-			log.Errorf("Failed to send ingest messge: Reason %v", err)
+			return fmt.Errorf("Failed to send ingest messge: Reason %v", err)
 		}
 
 		accessionIDs = append(accessionIDs, files.FileID)
@@ -258,11 +260,11 @@ func parseMessage(msg []byte) {
 		}
 		finalizeMsg, err := json.Marshal(finalize)
 		if err != nil {
-			log.Errorf("Failed to marshal json messge: Reason %v", err)
+			return fmt.Errorf("Failed to marshal json messge: Reason %v", err)
 		}
 		err = Conf.API.MQ.SendMessage(fmt.Sprintf("%v", time.Now().Unix()), Conf.Broker.Exchange, "accessionIDs", true, finalizeMsg)
 		if err != nil {
-			log.Errorf("Failed to send mapping messge: Reason %v", err)
+			return fmt.Errorf("Failed to send mapping messge: Reason %v", err)
 		}
 	}
 
@@ -273,13 +275,15 @@ func parseMessage(msg []byte) {
 	}
 	mappingMsg, err := json.Marshal(mappings)
 	if err != nil {
-		log.Errorf("Failed to marshal json messge: Reason %v", err)
+		return fmt.Errorf("Failed to marshal json messge: Reason %v", err)
 	}
 
 	err = Conf.API.MQ.SendMessage(fmt.Sprintf("%v", time.Now().Unix()), Conf.Broker.Exchange, "mappings", true, mappingMsg)
 	if err != nil {
-		log.Errorf("Failed to send mapping messge: Reason %v", err)
+		return fmt.Errorf("Failed to send mapping messge: Reason %v", err)
 	}
+
+	return nil
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {

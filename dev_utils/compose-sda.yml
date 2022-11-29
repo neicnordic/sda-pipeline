@@ -1,7 +1,7 @@
 version: "2.4"
 services:
   certfixer:
-    command: 
+    command:
       - /bin/sh
       - -c
       - |
@@ -20,7 +20,7 @@ services:
   db:
     command: server /data
     container_name: db
-    depends_on: 
+    depends_on:
       - certfixer
     environment:
       - DB_LEGA_IN_PASSWORD=lega_in
@@ -101,7 +101,7 @@ services:
   ingest:
     command: sda-ingest
     container_name: ingest
-    depends_on: 
+    depends_on:
       - certfixer
       - mq
       - db
@@ -118,7 +118,7 @@ services:
   verify:
     command: sda-verify
     container_name: verify
-    depends_on: 
+    depends_on:
       - certfixer
       - mq
       - db
@@ -135,7 +135,7 @@ services:
   finalize:
     command: sda-finalize
     container_name: finalize
-    depends_on: 
+    depends_on:
       - certfixer
       - mq
       - db
@@ -154,6 +154,7 @@ services:
       - certfixer
       - mq
       - db
+      - sftp-server
     env_file: ./env.backup
     image: neicnordic/sda-pipeline:latest
     volumes:
@@ -162,12 +163,13 @@ services:
       - certs:/dev_utils/certs
       - archive:/tmp
       - backup:/backup
+      - ./keys:/keys/
     mem_limit: 64m
     restart: always
   mapper:
     command: sda-mapper
     container_name: mapper
-    depends_on: 
+    depends_on:
       - certfixer
       - mq
       - db
@@ -182,12 +184,11 @@ services:
   interceptor:
     command: sda-intercept
     container_name: intercept
-    depends_on: 
+    depends_on:
       - certfixer
       - mq
     env_file: ./env.intercept
     image: neicnordic/sda-pipeline:latest
-    
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/

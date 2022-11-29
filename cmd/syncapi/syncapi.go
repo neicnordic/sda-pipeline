@@ -222,7 +222,7 @@ func dataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := parseMessage(b); err != nil {
+	if err := parseDatasetMessage(b); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
@@ -230,7 +230,7 @@ func dataset(w http.ResponseWriter, r *http.Request) {
 }
 
 // parsemessage parses the JSON blob and sends the relevant messages
-func parseMessage(msg []byte) error {
+func parseDatasetMessage(msg []byte) error {
 	blob := syncDataset{}
 	_ = json.Unmarshal(msg, &blob)
 

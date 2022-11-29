@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -366,7 +367,11 @@ func buildSyncDatasetJSON(b []byte) ([]byte, error) {
 
 func sendPOST(payload []byte) error {
 	client := &http.Client{}
-	URL := Conf.Sync.Host + "/dataset"
+	URL, err := createHostURL(Conf.Sync.Host, Conf.Sync.Port)
+	if err != nil {
+		return err
+	}
+
 	req, err := http.NewRequest("POST", URL, bytes.NewBuffer(payload))
 	if err != nil {
 		return err
@@ -378,4 +383,17 @@ func sendPOST(payload []byte) error {
 	defer resp.Body.Close()
 
 	return nil
+}
+
+func createHostURL(host string, port int) (string, error) {
+	url, err := url.ParseRequestURI(host)
+	if err != nil {
+		return "", err
+	}
+	if url.Port() == "" && port != 0 {
+		url.Host += fmt.Sprintf(":%d", port)
+	}
+	url.Path = "/dataset"
+
+	return url.String(), nil
 }

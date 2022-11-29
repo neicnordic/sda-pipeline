@@ -309,3 +309,15 @@ func TestSendPOST(t *testing.T) {
 	err := sendPOST(syncJSON)
 	assert.NoError(t, err)
 }
+
+func TestCreateHostURL(t *testing.T) {
+	Conf = &config.Config{}
+	Conf.Sync = config.SyncConf{
+		Host: "http://localhost",
+		Port: 443,
+	}
+
+	s, err := createHostURL(Conf.Sync.Host, Conf.Sync.Port)
+	assert.NoError(t, err)
+	assert.Equal(t, "http://localhost:443/dataset", s)
+}

@@ -234,6 +234,20 @@ func parseMessage(msg []byte) {
 
 	var accessionIDs []string
 	for _, files := range blob.DatasetFiles {
+		ingest := common.Ingest{
+			Type:     "ingest",
+			User:     blob.User,
+			FilePath: files.FilePath,
+		}
+		ingestMsg, err := json.Marshal(ingest)
+		if err != nil {
+			log.Errorf("Failed to marshal json messge: Reason %v", err)
+		}
+		err = Conf.API.MQ.SendMessage(fmt.Sprintf("%v", time.Now().Unix()), Conf.Broker.Exchange, "ingest", true, ingestMsg)
+		if err != nil {
+			log.Errorf("Failed to send ingest messge: Reason %v", err)
+		}
+
 		accessionIDs = append(accessionIDs, files.FileID)
 		finalize := common.Finalize{
 			Type:               "accession",
@@ -253,7 +267,7 @@ func parseMessage(msg []byte) {
 	}
 
 	mappings := common.Mappings{
-		Type:         "mappings",
+		Type:         "mapping",
 		DatasetID:    blob.DatasetID,
 		AccessionIDs: accessionIDs,
 	}

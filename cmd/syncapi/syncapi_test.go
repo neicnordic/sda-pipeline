@@ -321,3 +321,32 @@ func TestCreateHostURL(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "http://localhost:443/dataset", s)
 }
+
+func TestBasicAuth(t *testing.T) {
+	Conf = &config.Config{}
+	Conf.Broker.SchemasPath = "file://../../schemas/"
+	Conf.API = config.APIConf{
+		User:     "dummy",
+		Password: "test",
+	}
+
+	r := mux.NewRouter()
+	r.HandleFunc("/metadata", basicAuth(metadata))
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	goodJSON := []byte(`{"dataset_id": "cd532362-e06e-4460-8490-b9ce64b8d9e7", "metadata": {"dummy":"data"}}`)
+	req, err := http.NewRequest("POST", ts.URL+"/metadata", bytes.NewBuffer(goodJSON))
+	assert.NoError(t, err)
+	req.SetBasicAuth(Conf.API.User, Conf.API.Password)
+	good, err := ts.Client().Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, good.StatusCode)
+	defer good.Body.Close()
+
+	req.SetBasicAuth(Conf.API.User, "wrongpass")
+	bad, err := ts.Client().Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusUnauthorized, bad.StatusCode)
+	defer bad.Body.Close()
+}

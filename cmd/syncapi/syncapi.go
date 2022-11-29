@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"crypto/subtle"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -125,8 +127,8 @@ func setup(config *config.Config) *http.Server {
 	r := mux.NewRouter().SkipClean(true)
 
 	r.HandleFunc("/ready", readinessResponse).Methods("GET")
-	r.HandleFunc("/dataset", dataset).Methods("POST")
-	r.HandleFunc("/metadata", metadata).Methods("POST")
+	r.HandleFunc("/dataset", basicAuth(http.HandlerFunc(dataset))).Methods("POST")
+	r.HandleFunc("/metadata", basicAuth(http.HandlerFunc(metadata))).Methods("POST")
 
 	cfg := &tls.Config{
 		MinVersion:               tls.VersionTLS12,
@@ -379,6 +381,7 @@ func sendPOST(payload []byte) error {
 	if err != nil {
 		return err
 	}
+	req.SetBasicAuth(Conf.Sync.User, Conf.Sync.Password)
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return err
@@ -399,4 +402,28 @@ func createHostURL(host string, port int) (string, error) {
 	url.Path = "/dataset"
 
 	return url.String(), nil
+}
+
+func basicAuth(auth http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username, password, ok := r.BasicAuth()
+		if ok {
+			usernameHash := sha256.Sum256([]byte(username))
+			passwordHash := sha256.Sum256([]byte(password))
+			expectedUsernameHash := sha256.Sum256([]byte(Conf.API.User))
+			expectedPasswordHash := sha256.Sum256([]byte(Conf.API.Password))
+
+			usernameMatch := (subtle.ConstantTimeCompare(usernameHash[:], expectedUsernameHash[:]) == 1)
+			passwordMatch := (subtle.ConstantTimeCompare(passwordHash[:], expectedPasswordHash[:]) == 1)
+
+			if usernameMatch && passwordMatch {
+				auth.ServeHTTP(w, r)
+
+				return
+			}
+		}
+
+		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	})
 }

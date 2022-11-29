@@ -51,6 +51,8 @@ type APIConf struct {
 	Session    SessionConfig
 	DB         *database.SQLdb
 	MQ         *broker.AMQPBroker
+	User       string
+	Password   string
 }
 
 type SessionConfig struct {

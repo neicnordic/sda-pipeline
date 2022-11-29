@@ -39,7 +39,7 @@ var testS3Conf = S3Conf{
 	"../../dev_utils/certs/ca.pem",
 	2 * time.Second}
 
-var testConf = Conf{posixType, testS3Conf, testPosixConf}
+var testConf = Conf{posixType, testS3Conf, testPosixConf, testSftpConf}
 
 var posixDoesNotExist = "/this/does/not/exist"
 var posixNotCreatable = posixDoesNotExist
@@ -56,6 +56,14 @@ var cleanupFiles []string = cleanupFilesBack[0:0]
 
 var testPosixConf = posixConf{
 	"/"}
+
+var testSftpConf = SftpConf{
+	"http://127.0.0.1",
+	"6222",
+	"user",
+	"some/key/path",
+	"test",
+}
 
 func writeName() (name string, err error) {
 	f, err := os.CreateTemp("", "writablefile")

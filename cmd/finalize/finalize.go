@@ -156,7 +156,7 @@ func main() {
 					message.DecryptedChecksums,
 					err)
 
-				// Nack message and requeue so the server gets notified that something is wrong. Do not requeue.
+				// Nack message so the server gets notified that something is wrong and requeue the message
 				if e := delivered.Nack(false, true); e != nil {
 					log.Errorf("Failed to NAck because of MarkReady failed "+
 						"(corr-id: %s, "+

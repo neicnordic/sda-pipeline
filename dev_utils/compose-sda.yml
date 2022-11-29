@@ -210,9 +210,26 @@ services:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
       - certs:/dev_utils/certs
+  sftp-server:
+    build:
+        context: sftp-server
+    hostname: sftp-serv
+    environment:
+      - SFTP_USER=user
+      - SFTP_USER_PASS=user
+      - DELETE_UPLOADED_FILES=false
+      - FILE_CHECK_INTERVAL=0
+      - FILE_AGE=0.01 #minutes
+    container_name: sftp-server-local
+    ports:
+        - "6222:22"
+    volumes:
+        - /uploads:/uploads
+        - ./keys:/keys
 
 volumes:
      archive:
      certs:
      backup:
      inbox:
+     uploads:

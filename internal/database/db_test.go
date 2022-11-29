@@ -533,3 +533,17 @@ func TestClose(t *testing.T) {
 
 	assert.Nil(t, r, "Close failed unexpectedly")
 }
+
+func TestGetSyncData(t *testing.T) {
+	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		mock.ExpectQuery("SELECT elixir_id, inbox_path, decrypted_file_checksum from local_ega.files WHERE stable_id = \\$1 AND status = 'READY'").
+			WithArgs("accessionId").WillReturnRows(sqlmock.NewRows([]string{"elixir_id", "inbox_path", "decrypted_file_checksum"}).AddRow("dummy", "/file/paht", "abc123"))
+
+		s, err := testDb.GetSyncData("accessionId")
+		assert.Equal(t, "dummy", s.User)
+
+		return err
+	})
+
+	assert.Nil(t, r, "GetSyncData failed unexpectedly")
+}

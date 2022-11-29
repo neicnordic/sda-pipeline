@@ -39,7 +39,7 @@ type datasetFiles struct {
 }
 
 func main() {
-	Conf, err = config.NewConfig("api")
+	Conf, err = config.NewConfig("sync")
 	if err != nil {
 		log.Fatal(err)
 	}

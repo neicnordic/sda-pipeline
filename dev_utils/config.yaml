@@ -29,6 +29,13 @@ backup:
   # posix backend
   location: "dev_utils"
   copyHeader: "false"
+  # sftp backend
+  sftp:
+    host: "localhost"
+    port: "6222"
+    userName: "user"
+    pemKeyPath: "./keys/sftp-key.pem"
+    pemKeyPass: "test"
 
 broker:
   host: "localhost"

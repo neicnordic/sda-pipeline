@@ -229,7 +229,11 @@ func dataset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := parseDatasetMessage(b); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		if err.Error() == "Dataset exists" {
+			w.WriteHeader(http.StatusAlreadyReported)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -239,6 +243,14 @@ func dataset(w http.ResponseWriter, r *http.Request) {
 func parseDatasetMessage(msg []byte) error {
 	blob := syncDataset{}
 	_ = json.Unmarshal(msg, &blob)
+
+	ds, err := Conf.API.DB.CheckIfDatasetExists(blob.DatasetID)
+	if err != nil {
+		return fmt.Errorf("Failed to check dataset existance: Reason %v", err)
+	}
+	if ds {
+		return fmt.Errorf("Dataset exists")
+	}
 
 	var accessionIDs []string
 	for _, files := range blob.DatasetFiles {

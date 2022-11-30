@@ -26,6 +26,7 @@ type Database interface {
 	MarkReady(accessionID, user, filepath, checksum string) error
 	GetArchived(user, filepath, checksum string) (string, int, error)
 	GetSyncData(accessionID string) (SyncData, error)
+	CheckIfDatasetExists(datasetID string) (bool, error)
 	Close()
 }
 
@@ -502,4 +503,35 @@ func (dbs *SQLdb) getSyncData(accessionID string) (SyncData, error) {
 	}
 
 	return data, nil
+}
+
+// CheckIfDatasetExists checks if a dataset already is registered
+func (dbs *SQLdb) CheckIfDatasetExists(datasetID string) (bool, error) {
+	var (
+		ds  bool
+		err error
+	)
+
+	for count := 1; count <= dbRetryTimes; count++ {
+		ds, err = dbs.checkIfDatasetExists(datasetID)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Duration(math.Pow(3, float64(count))) * time.Second)
+	}
+
+	return ds, err
+}
+
+// getSyncData is the actual function performing work for GetSyncData
+func (dbs *SQLdb) checkIfDatasetExists(datasetID string) (bool, error) {
+	dbs.checkAndReconnectIfNeeded()
+
+	const query = "SELECT EXISTS(SELECT id from local_ega_ebi.filedataset WHERE dataset_stable_id = $1);"
+	var yesNo bool
+	if err := dbs.DB.QueryRow(query, datasetID).Scan(&yesNo); err != nil {
+		return yesNo, err
+	}
+
+	return yesNo, nil
 }

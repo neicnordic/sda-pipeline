@@ -206,14 +206,25 @@ func TestDatasetRoute(t *testing.T) {
 	if err != nil {
 		t.Skip("skip TestShutdown since broker not present")
 	}
-	assert.NoError(t, err)
+	Conf.Database = database.DBConf{
+		Host:     "localhost",
+		Port:     5432,
+		User:     "postgres",
+		Password: "postgres",
+		Database: "lega",
+		SslMode:  "disable",
+	}
+	Conf.API.DB, err = database.NewDB(Conf.Database)
+	if err != nil {
+		t.Skip("skip TestShutdown since broker not present")
+	}
 
 	r := mux.NewRouter()
 	r.HandleFunc("/dataset", dataset)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	goodJSON := []byte(`{"user":"test.user@example.com", "dataset_id": "cd532362-e06e-4460-8490-b9ce64b8d9e7", "dataset_files": [{"filepath": "inbox/user/file1.c4gh","file_id": "5fe7b660-afea-4c3a-88a9-3daabf055ebb", "sha256": "82E4e60e7beb3db2e06A00a079788F7d71f75b61a4b75f28c4c942703dabb6d6"}, {"filepath": "inbox/user/file2.c4gh","file_id": "ed6af454-d910-49e3-8cda-488a6f246e76", "sha256": "c967d96e56dec0f0cfee8f661846238b7f15771796ee1c345cae73cd812acc2b"}]}`)
+	goodJSON := []byte(`{"user":"test.user@example.com", "dataset_id": "cd532362-e06e-4460-8490-b9ce64b8d9e6", "dataset_files": [{"filepath": "inbox/user/file1.c4gh","file_id": "5fe7b660-afea-4c3a-88a9-3daabf055ebb", "sha256": "82E4e60e7beb3db2e06A00a079788F7d71f75b61a4b75f28c4c942703dabb6d6"}, {"filepath": "inbox/user/file2.c4gh","file_id": "ed6af454-d910-49e3-8cda-488a6f246e76", "sha256": "c967d96e56dec0f0cfee8f661846238b7f15771796ee1c345cae73cd812acc2b"}]}`)
 	good, err := http.Post(ts.URL+"/dataset", "application/json", bytes.NewBuffer(goodJSON))
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, good.StatusCode)
@@ -262,7 +273,6 @@ func TestBuildJSON(t *testing.T) {
 	if err != nil {
 		t.Skip("skip TestShutdown since broker not present")
 	}
-	assert.NoError(t, err)
 
 	db := Conf.API.DB.DB
 

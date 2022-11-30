@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"hash"
+	"math"
 	"path/filepath"
 	"strings"
 	"time"
@@ -202,6 +203,7 @@ func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
 		err = dbs.markCompleted(file, fileID)
 		count++
 	}
+
 	return err
 }
 
@@ -232,6 +234,7 @@ func (dbs *SQLdb) markCompleted(file FileInfo, fileID int) error {
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
 		return errors.New("something went wrong with the query zero rows were changed")
 	}
+
 	return nil
 }
 
@@ -344,15 +347,17 @@ func (dbs *SQLdb) setArchived(file FileInfo, id int64) error {
 // MarkReady marks the file as "READY"
 func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error {
 
-	var (
-		err   error = nil
-		count int   = 0
-	)
+	var err error
 
-	for count == 0 || (err != nil && count < dbRetryTimes) {
+	// 3, 9, 27, 81, 243 seconds between each retry event.
+	for count := 1; count <= dbRetryTimes; count++ {
 		err = dbs.markReady(accessionID, user, filepath, checksum)
-		count++
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Duration(math.Pow(3, float64(count))) * time.Second)
 	}
+
 	return err
 }
 
@@ -375,16 +380,16 @@ func (dbs *SQLdb) markReady(accessionID, user, filepath, checksum string) error 
 
 // MapFilesToDataset maps a set of files to a dataset in the database
 func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) error {
-	var (
-		err   error
-		count int
-	)
 
-	// 0, 3, 9, 27, 81, 243 seconds between each retry event.
-	for count == 0 || (err != nil && count < dbRetryTimes) {
-		time.Sleep(time.Duration(count*3) * time.Second)
+	var err error
+
+	// 3, 9, 27, 81, 243 seconds between each retry event.
+	for count := 1; count <= dbRetryTimes; count++ {
 		err = dbs.mapFilesToDataset(datasetID, accessionIDs)
-		count++
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Duration(math.Pow(3, float64(count))) * time.Second)
 	}
 
 	return err

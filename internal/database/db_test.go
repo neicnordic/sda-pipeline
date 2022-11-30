@@ -38,7 +38,7 @@ const testConnInfo = "host=localhost port=42 user=user password=password dbname=
 func TestMain(m *testing.M) {
 	// Set up our helper doing panic instead of os.exit
 	logFatalf = testLogFatalf
-	dbRetryTimes = 0
+	dbRetryTimes = 1
 	dbReconnectTimeout = 200 * time.Millisecond
 	dbReconnectSleep = time.Millisecond
 	code := m.Run()

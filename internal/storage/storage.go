@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -389,7 +390,9 @@ func newSftpBackend(config SftpConf) (*sftpBackend, error) {
 			Auth: []ssh.AuthMethod{
 				ssh.PublicKeys(signer),
 			},
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			HostKeyCallback: func(_ string, _ net.Addr, k ssh.PublicKey) error {
+				return nil
+			},
 		},
 	)
 	if err != nil {

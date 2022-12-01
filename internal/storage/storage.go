@@ -462,7 +462,7 @@ func (sfb *sftpBackend) NewFileReader(filePath string) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("Invalid sftpBackend")
 	}
 
-	file, err := sfb.Client.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR)
+	file, err := sfb.Client.Open(filePath)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -471,10 +471,16 @@ func (sfb *sftpBackend) NewFileReader(filePath string) (io.ReadCloser, error) {
 	return file, nil
 }
 
-// RemoveFile removes a file from a given path (place holder fow now)
+// RemoveFile removes a file from a given path
 func (sfb *sftpBackend) RemoveFile(filePath string) error {
 	if sfb == nil {
 		return fmt.Errorf("Invalid sftpBackend")
+	}
+
+	err := sfb.Client.Remove(filePath)
+	if err != nil {
+		log.Error(err)
+		return err
 	}
 
 	return nil

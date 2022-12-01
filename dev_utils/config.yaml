@@ -34,7 +34,7 @@ backup:
     host: "localhost"
     port: "6222"
     userName: "user"
-    pemKeyPath: "./keys/sftp-key.pem"
+    pemKeyPath: "./dev_utils/certs/sftp-key.pem"
     pemKeyPass: "test"
 
 broker:

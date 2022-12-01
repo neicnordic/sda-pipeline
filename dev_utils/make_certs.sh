@@ -22,4 +22,8 @@ openssl x509 -req -in ./certs/s3.csr -days 1200 -CA ./certs/ca.pem -CAkey ./cert
 openssl req -config "$(dirname "$0")"/ssl.cnf -new -nodes -newkey rsa:4096 -keyout ./certs/client-key.pem -out ./certs/client.csr -extensions client_cert
 openssl x509 -req -in ./certs/client.csr -days 1200 -CA ./certs/ca.pem -CAkey ./certs/ca-key.pem -set_serial 01 -out ./certs/client.pem -extensions client_cert -extfile "$(dirname "$0")"/ssl.cnf
 
+# Create rsa key-pair for sftp client authentication
+ssh-keygen -t rsa -f ./certs/sftp-key -P "test"
+mv ./certs/sftp-key ./certs/sftp-key.pem
+
 chmod 644 ./certs/*

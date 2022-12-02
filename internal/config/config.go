@@ -117,7 +117,7 @@ func NewConfig(app string) (*Config, error) {
 		}
 	case "sync":
 		requiredConfVars = []string{
-			"broker.host", "broker.port", "broker.user", "broker.password", "broker.routingkey", "db.host", "db.port", "db.user", "db.password", "db.database", "sync.host", "sync.password", "sync.user",
+			"broker.host", "broker.port", "broker.user", "broker.password", "broker.routingkey",
 		}
 	default:
 		requiredConfVars = []string{
@@ -234,9 +234,11 @@ func NewConfig(app string) (*Config, error) {
 
 		return c, nil
 	case "sync":
-		err = c.configDatabase()
-		if err != nil {
-			return nil, err
+		if viper.IsSet("db.host") {
+			err = c.configDatabase()
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		err = c.configAPI()
@@ -244,7 +246,9 @@ func NewConfig(app string) (*Config, error) {
 			return nil, err
 		}
 
-		c.configSync()
+		if viper.IsSet("sync.host") {
+			c.configSync()
+		}
 
 		return c, nil
 	}

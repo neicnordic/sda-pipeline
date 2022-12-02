@@ -743,6 +743,7 @@ func (suite *TestSuite) TestNotifyConfiguration() {
 
 func (suite *TestSuite) TestSyncConfiguration() {
 	// At this point we should fail because we lack configuration
+	viper.Reset()
 	config, err := NewConfig("sync")
 	assert.Error(suite.T(), err)
 	assert.Nil(suite.T(), config)

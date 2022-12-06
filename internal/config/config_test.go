@@ -534,6 +534,12 @@ func (suite *TestSuite) TestInterceptConfiguration() {
 	assert.Equal(suite.T(), "test", config.Broker.Queue)
 	assert.Equal(suite.T(), "test", config.Broker.RoutingKey)
 	assert.Equal(suite.T(), "test", config.Broker.Exchange)
+	assert.NotNil(suite.T(), config.Database)
+	assert.Equal(suite.T(), "test", config.Database.Host)
+	assert.Equal(suite.T(), 123, config.Database.Port)
+	assert.Equal(suite.T(), "test", config.Database.User)
+	assert.Equal(suite.T(), "test", config.Database.Password)
+	assert.Equal(suite.T(), "test", config.Database.Database)
 
 	// Clear variables
 	viper.Reset()
@@ -549,6 +555,11 @@ func (suite *TestSuite) TestInterceptConfiguration() {
 	viper.Set("broker.user", "test")
 	viper.Set("broker.password", "test")
 	viper.Set("broker.queue", "test")
+	viper.Set("db.host", "test")
+	viper.Set("db.port", 123)
+	viper.Set("db.user", "test")
+	viper.Set("db.password", "test")
+	viper.Set("db.database", "test")
 
 	// Now we should have enough
 	config, err = NewConfig("intercept")

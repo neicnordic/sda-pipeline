@@ -93,9 +93,8 @@ func NewConfig(app string) (*Config, error) {
 			"broker.host", "broker.port", "broker.user", "broker.password", "broker.routingkey", "db.host", "db.port", "db.user", "db.password", "db.database",
 		}
 	case "intercept":
-		// Intercept does not require these extra settings
 		requiredConfVars = []string{
-			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue",
+			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "db.host", "db.port", "db.user", "db.password", "db.database",
 		}
 	case "mapper":
 		// Mapper does not require broker.routingkey thus we remove it
@@ -184,6 +183,11 @@ func NewConfig(app string) (*Config, error) {
 		}
 		return c, nil
 	case "intercept":
+		err = c.configDatabase()
+		if err != nil {
+			return nil, err
+		}
+
 		return c, nil
 	case "verify":
 		c.configInbox()

@@ -10,6 +10,7 @@ import (
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
+	"sda-pipeline/internal/database"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -31,8 +32,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+	db, err := database.NewDB(conf.Database)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
+	defer db.Close()
 
 	go func() {
 		connError := mq.ConnectionWatcher()
@@ -77,9 +84,7 @@ func main() {
 			}
 
 			schema, err := schemaNameFromType(msgType)
-
 			if err != nil {
-
 				log.Errorf("Don't know schema for message type "+
 					"(corr-id: %s, msgType: %s, error: %v, message: %s)",
 					delivered.CorrelationId,
@@ -117,22 +122,86 @@ func main() {
 
 			routing := map[string]string{
 				msgAccession: "accessionIDs",
+				msgCancel:    "ingest",
 				msgIngest:    "ingest",
 				msgMapping:   "mappings",
 			}
 
-			routingKey := routing[msgType]
+			switch msgType {
+			case msgCancel:
+				message := make(map[string]interface{})
+				_ = json.Unmarshal(delivered.Body, &message)
 
-			if routingKey == "" {
+				if err := db.DisableFile(message["filepath"].(string), message["user"].(string)); err != nil {
+					log.Errorf("MarkDisabled failed: %v", err)
+				}
+
+				if err := delivered.Ack(false); err != nil {
+					log.Errorf("Failed to ack message: %v", err)
+				}
+
+				continue
+
+			case msgIngest:
+				message := make(map[string]interface{})
+				_ = json.Unmarshal(delivered.Body, &message)
+
+				ID, err := db.GetFileID(message["filepath"].(string), message["user"].(string))
+				if err != nil {
+					switch err.Error() {
+					case "sql: no rows in result set":
+						ID, err = db.InsertFile(message["filepath"].(string), message["user"].(string))
+						if err != nil {
+							log.Errorf("InsertFile failed: %v", err)
+
+							if err := delivered.Nack(false, true); err != nil {
+								log.Errorf("Failed to nack message: %v", err)
+							}
+
+							continue
+						}
+					default:
+						log.Errorf("Failed to get file id: %v", err)
+						if err := delivered.Nack(false, true); err != nil {
+							log.Errorf("Failed to nack message: %v", err)
+						}
+
+						continue
+					}
+				}
+
+				status, err := db.GetStatus(ID)
+				if err != nil {
+					log.Errorf("Failed to check file status: %v", err)
+
+					if err := delivered.Nack(false, true); err != nil {
+						log.Errorf("Failed to nack message: %v", err)
+					}
+
+					continue
+				}
+				if status == "DISABLED" {
+					if err := db.ResetFileStatus(ID); err != nil {
+						log.Errorf("Failed to reset file status: %v", err)
+
+						if err := delivered.Nack(false, true); err != nil {
+							log.Errorf("Failed to nack message: %v", err)
+						}
+
+						continue
+					}
+				}
+
+			case "":
 				continue
 			}
 
 			log.Infof("Routing message "+
 				"(corr-id: %s, routingkey: %s)",
 				delivered.CorrelationId,
-				routingKey)
+				routing[msgType])
 
-			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, routingKey, conf.Broker.Durable, delivered.Body); err != nil {
+			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, routing[msgType], conf.Broker.Durable, delivered.Body); err != nil {
 				// TODO fix resend mechanism
 				log.Errorln("We need to fix this resend stuff ...")
 			}

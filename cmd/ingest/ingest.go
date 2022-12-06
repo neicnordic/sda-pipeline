@@ -112,6 +112,38 @@ func main() {
 			// we unmarshal the message in the validation step so this is safe to do
 			_ = json.Unmarshal(delivered.Body, &message)
 
+
+			ID, err := db.GetFileID(message.Filepath, message.User)
+			if err != nil {
+				log.Errorf("Failed to get file id: %v", err)
+
+				if err := delivered.Nack(false, true); err != nil {
+					log.Errorf("Failed to nack message: %v", err)
+				}
+
+				continue
+			}
+
+			status, err := db.GetStatus(ID)
+			if err != nil {
+				log.Errorf("Failed to check file status: %v", err)
+
+				if err := delivered.Nack(false, true); err != nil {
+					log.Errorf("Failed to nack message: %v", err)
+				}
+
+				continue
+			}
+
+			if status == "DISABLED" {
+				if err := delivered.Ack(false); err != nil {
+					log.Errorf("Failed to ack message: %v", err)
+				}
+
+				continue
+			}
+
+
 			log.Infof("Received work (corr-id: %s, "+
 				"filepath: %s, "+
 				"user: %s)",
@@ -224,15 +256,15 @@ func main() {
 				continue
 			}
 
-			fileID, err := db.InsertFile(message.Filepath, message.User)
+			fileID, err := db.GetFileID(message.Filepath, message.User)
 			if err != nil {
-				log.Errorf("InsertFile failed "+
-					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
-					delivered.CorrelationId,
-					message.User,
-					message.Filepath,
-					archivedFile,
-					err)
+				log.Errorf("Failed to get file id: %v", err)
+
+				if err := delivered.Nack(false, true); err != nil {
+					log.Errorf("Failed to nack message: %v", err)
+				}
+
+				continue
 			}
 
 			// 4MiB readbuffer, this must be large enough that we get the entire header and the first 64KiB datablock
@@ -378,6 +410,32 @@ func main() {
 
 			file.Close()
 			dest.Close()
+
+			status, err = db.GetStatus(fileID)
+			if err != nil {
+				log.Errorf("Failed to check file status: %v", err)
+
+				if err := archive.RemoveFile(archivedFile); err != nil {
+					log.Errorf("Failed to remove file from archive: %v", err)
+				}
+
+				if err := delivered.Nack(false, true); err != nil {
+					log.Errorf("Failed to nack message: %v", err)
+				}
+
+				continue
+			}
+			if status == "DISABLED" {
+				if err := archive.RemoveFile(archivedFile); err != nil {
+					log.Errorf("Failed to remove file from archive: %v", err)
+				}
+
+				if err := delivered.Ack(false); err != nil {
+					log.Errorf("Failed to ack message: %v", err)
+				}
+
+				continue
+			}
 
 			fileInfo := database.FileInfo{}
 			fileInfo.Path = archivedFile

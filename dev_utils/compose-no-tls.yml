@@ -173,14 +173,18 @@ services:
     restart: always
   interceptor:
     command: sda-intercept
+    container_name: intercept
     depends_on:
       - mq
+      - db
     environment:
       - BROKER_EXCHANGE=sda
       - BROKER_HOST=mq
       - BROKER_QUEUE=files
-      - BROKER_ROUTINGKEY=ingest
       - BROKER_ROUTINGERROR=error
+      - DB_HOST=db
+      - DB_USER=lega_in
+      - DB_PASSWORD=lega_in
     image: neicnordic/sda-pipeline:latest
     volumes:
       - ./config-notls.yaml:/config.yaml

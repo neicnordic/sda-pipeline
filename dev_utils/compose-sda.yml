@@ -185,9 +185,9 @@ services:
     depends_on: 
       - certfixer
       - mq
+      - db
     env_file: ./env.intercept
     image: neicnordic/sda-pipeline:latest
-    
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/

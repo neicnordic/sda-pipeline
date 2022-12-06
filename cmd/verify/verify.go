@@ -61,10 +61,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	inbox, err := storage.NewBackend(conf.Inbox)
-	if err != nil {
-		log.Fatal(err)
-	}
 	key, err := config.GetC4GHKey()
 	if err != nil {
 		log.Fatal(err)
@@ -111,6 +107,28 @@ func main() {
 
 			// we unmarshal the message in the validation step so this is safe to do
 			_ = json.Unmarshal(delivered.Body, &message)
+
+			status, err := db.GetStatus(int64(message.FileID))
+			if err != nil {
+				log.Errorf("Failed to check file status: %v", err)
+
+				if err := delivered.Nack(false, true); err != nil {
+					log.Errorf("Failed to nack message: %v", err)
+				}
+
+				continue
+			}
+			if status == "DISABLED" {
+				if err := archive.RemoveFile(message.ArchivePath); err != nil {
+					log.Errorf("Failed to remove file from archive: %v", err)
+				}
+
+				if err := delivered.Ack(false); err != nil {
+					log.Errorf("Failed to ack message: %v", err)
+				}
+
+				continue
+			}
 
 			log.Infof("Received work "+
 				"(corr-id: %s, user: %s, filepath: %s, fileid: %d, archivepath: %s, encryptedchecksums: %v, reverify: %t)",
@@ -326,6 +344,28 @@ func main() {
 					continue
 				}
 
+				status, err := db.GetStatus(int64(message.FileID))
+				if err != nil {
+					log.Errorf("Failed to check file status: %v", err)
+
+					if err := delivered.Nack(false, true); err != nil {
+						log.Errorf("Failed to nack message: %v", err)
+					}
+
+					continue
+				}
+				if status == "DISABLED" {
+					if err := archive.RemoveFile(message.ArchivePath); err != nil {
+						log.Errorf("Failed to remove file from archive: %v", err)
+					}
+
+					if err := delivered.Ack(false); err != nil {
+						log.Errorf("Failed to ack message: %v", err)
+					}
+
+					continue
+				}
+
 				// Mark file as "COMPLETED"
 				if e := db.MarkCompleted(file, message.FileID); e != nil {
 					log.Errorf("MarkCompleted failed "+
@@ -384,41 +424,7 @@ func main() {
 						message.ReVerify,
 						err)
 				}
-
-				// At the end we try to remove file from inbox
-				// In case of error we send a message to error queue to track it
-				// we don't need to force removing the file
-				err = inbox.RemoveFile(message.FilePath)
-				if err != nil {
-					log.Errorf("Remove file from inbox failed "+
-						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
-						delivered.CorrelationId,
-						message.User,
-						message.FilePath,
-						err)
-
-					// Send the message to an error queue so it can be analyzed.
-					fileError := broker.InfoError{
-						Error:           "RemoveFile failed",
-						Reason:          err.Error(),
-						OriginalMessage: message,
-					}
-					body, _ := json.Marshal(fileError)
-					if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
-						log.Errorf("Failed to publish message (remove file error), to error queue "+
-							"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
-							delivered.CorrelationId,
-							message.User,
-							message.FilePath,
-							e)
-					}
-
-					continue
-				}
-				log.Debugf("Removed file from inbox: %s", message.FilePath)
-
 			}
-
 		}
 	}()
 

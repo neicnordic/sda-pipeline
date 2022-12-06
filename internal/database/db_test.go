@@ -533,3 +533,94 @@ func TestClose(t *testing.T) {
 
 	assert.Nil(t, r, "Close failed unexpectedly")
 }
+
+func TestDisableFile(t *testing.T) {
+	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+
+		r := sqlmock.NewResult(10, 1)
+
+		mock.ExpectExec("UPDATE local_ega.files SET status = 'DISABLED' WHERE inbox_path = \\$1 and elixir_id = \\$2 and status != 'READY';").
+			WithArgs("/tmp/file.c4gh", "nobody").
+			WillReturnResult(r)
+
+		return testDb.DisableFile("/tmp/file.c4gh", "nobody")
+	})
+
+	assert.Nil(t, r, "DisableFile failed unexpectedly")
+
+	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+
+		mock.ExpectExec("UPDATE local_ega.files SET status = 'DISABLED' WHERE inbox_path = \\$1 and elixir_id = \\$2 and status != 'READY';").
+			WithArgs("/tmp/file.c4gh", "nobody").
+			WillReturnError(fmt.Errorf("error for testing"))
+
+		return testDb.DisableFile("/tmp/file.c4gh", "nobody")
+	})
+
+	assert.NotNil(t, r, "DisableFile did not fail as expected")
+}
+
+func TestGetStatus(t *testing.T) {
+	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		mock.ExpectQuery("SELECT status FROM local_ega.files WHERE id = \\$1;").
+			WithArgs(123).
+			WillReturnRows(sqlmock.NewRows([]string{"status"}).AddRow("READY"))
+
+		x, err := testDb.GetStatus(123)
+		assert.Equal(t, "READY", string(x), "did not get expected status")
+
+		return err
+	})
+
+	assert.Nil(t, r, "GetStatus failed unexpectedly")
+}
+
+func TestGetFileID(t *testing.T) {
+	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		mock.ExpectQuery("SELECT id FROM local_ega.files WHERE inbox_path = \\$1 and elixir_id = \\$2;").
+			WithArgs("/tmp/file.c4gh", "nobody").
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(42))
+
+		x, err := testDb.GetFileID("/tmp/file.c4gh", "nobody")
+		assert.Equal(t, int64(42), x, "did not get the expected file ID")
+
+		return err
+	})
+
+	assert.Nil(t, r, "GetFileID failed unexpectedly")
+
+	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		mock.ExpectQuery("SELECT id FROM local_ega.files WHERE inbox_path = \\$1 and elixir_id = \\$2;").
+			WithArgs("/tmp/file.c4gh", "nobody").
+			WillReturnRows(sqlmock.NewRows([]string{"id"}))
+
+		x, err := testDb.GetFileID("/tmp/file.c4gh", "nobody")
+		assert.Equal(t, int64(0), x, "did not get the expected file ID")
+
+		return err
+	})
+
+	assert.EqualError(t, r, "sql: no rows in result set")
+}
+
+func TestResetFileStatus(t *testing.T) {
+	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		mock.ExpectExec("UPDATE local_ega.files SET status = 'INIT' WHERE id = \\$1;").
+			WithArgs(123).
+			WillReturnResult(sqlmock.NewResult(10, 1))
+
+		return testDb.ResetFileStatus(123)
+	})
+
+	assert.Nil(t, r, "ResetFileStatus failed unexpectedly")
+
+	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		mock.ExpectExec("UPDATE local_ega.files SET status = 'INIT' WHERE id = \\$1;").
+			WithArgs(123).
+			WillReturnResult(sqlmock.NewResult(0, 0))
+
+		return testDb.ResetFileStatus(123)
+	})
+
+	assert.EqualError(t, r, "something went wrong with the query zero rows were changed")
+}

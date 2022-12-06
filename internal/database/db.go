@@ -21,10 +21,13 @@ import (
 
 // Database defines methods to be implemented by SQLdb
 type Database interface {
+	DisableFile(filepath, user string) error
+	GetArchived(user, filepath, checksum string) (string, int, error)
+	GetFileID(filepath, user string) (int, error)
 	GetHeader(fileID int) ([]byte, error)
+	GetStatus(fileID int) (string, error)
 	MarkCompleted(checksum string, fileID int) error
 	MarkReady(accessionID, user, filepath, checksum string) error
-	GetArchived(user, filepath, checksum string) (string, int, error)
 	Close()
 }
 
@@ -464,4 +467,96 @@ func (dbs *SQLdb) getArchived(user, filepath, checksum string) (string, int, err
 func (dbs *SQLdb) Close() {
 	db := dbs.DB
 	db.Close()
+}
+
+// DisableFile marks the file as 'DISABLE'
+func (dbs *SQLdb) DisableFile(filePath, user string) error {
+	var err error
+	for count := 1; count <= dbRetryTimes; count++ {
+		err = dbs.disableFile(filePath, user)
+		if err == nil {
+			break
+		}
+	}
+
+	return err
+}
+func (dbs *SQLdb) disableFile(filePath, user string) error {
+	dbs.checkAndReconnectIfNeeded()
+
+	db := dbs.DB
+	const disable = "UPDATE local_ega.files SET status = 'DISABLED' WHERE inbox_path = $1 and elixir_id = $2 and status != 'READY';"
+	result, err := db.Exec(disable, filePath, user)
+	if err != nil {
+		return err
+	}
+	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
+		return errors.New("something went wrong with the query zero rows were changed")
+	}
+
+	return nil
+}
+
+// GetStatus returnes the status for a given fileID
+func (dbs *SQLdb) GetStatus(fileID int64) (string, error) {
+	status, err := dbs.getStatus(fileID)
+	if err != nil {
+		return "", err
+	}
+
+	return status, nil
+}
+func (dbs *SQLdb) getStatus(fileID int64) (string, error) {
+	dbs.checkAndReconnectIfNeeded()
+
+	db := dbs.DB
+	const check = "SELECT status FROM local_ega.files WHERE id = $1;"
+	var status string
+	if err := db.QueryRow(check, fileID).Scan(&status); err != nil {
+		return "", err
+	}
+
+	return status, nil
+}
+
+// GetFileID returnes the ID for a given inbox path and user combination
+func (dbs *SQLdb) GetFileID(filePath, user string) (int64, error) {
+	fileID, err := dbs.getFileID(filePath, user)
+	if err != nil {
+		return 0, err
+	}
+
+	return fileID, nil
+}
+func (dbs *SQLdb) getFileID(filePath, user string) (int64, error) {
+	dbs.checkAndReconnectIfNeeded()
+
+	db := dbs.DB
+	const check = "SELECT id FROM local_ega.files WHERE inbox_path = $1 and elixir_id = $2;"
+	var fileID int64
+	if err := db.QueryRow(check, filePath, user).Scan(&fileID); err != nil {
+		return 0, err
+	}
+
+	return fileID, nil
+}
+
+// ResetStatus marks the file as 'DISABLED'
+func (dbs *SQLdb) ResetFileStatus(fileID int64) error {
+	return dbs.resetFileStatus(fileID)
+}
+func (dbs *SQLdb) resetFileStatus(fileID int64) error {
+	dbs.checkAndReconnectIfNeeded()
+
+	db := dbs.DB
+	const reset = "UPDATE local_ega.files SET status = 'INIT' WHERE id = $1;"
+	result, err := db.Exec(reset, fileID)
+	if err != nil {
+		return err
+	}
+	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
+		return errors.New("something went wrong with the query zero rows were changed")
+	}
+
+	return nil
 }

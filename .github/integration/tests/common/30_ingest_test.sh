@@ -124,23 +124,6 @@ for file in dummy_data.c4gh largefile.c4gh; do
 		sleep 10
 	done
 
-	RETRY_TIMES=0
-	until docker logs verify --since="$now" 2>&1 | grep "Removed file from inbox"; do
-		echo "waiting for verify to remove file from inbox"
-		RETRY_TIMES=$((RETRY_TIMES + 1))
-		if [ "$RETRY_TIMES" -eq 10 ]; then
-			echo "::error::Time out while waiting for verify to remove file, logs:"
-
-			echo
-			echo verify
-			echo
-
-			docker logs --since="$now" verify
-			exit 1
-		fi
-		sleep 10
-	done
-
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 	access=$(printf "EGAF%05d%06d" "$RANDOM" "$count")
 

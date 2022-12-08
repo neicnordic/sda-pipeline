@@ -5,14 +5,14 @@ on: [pull_request]
 
 jobs:
   integrationtests:
-    name: integration-${{ matrix.storagetype }}
+    name: integration-${{ matrix.testtype }}
     runs-on: ubuntu-latest
     env:
-      STORAGETYPE: ${{ matrix.storagetype }}
+      TESTTYPE: ${{ matrix.testtype }}
 
     strategy:
       matrix:
-        storagetype: [s3, posix, s3notls, s3header, s3notlsheader, posixheader]
+        testtype: [s3, posix, s3notls, s3header, s3notlsheader, posixheader]
 
     steps:
       - name: Set up Python
@@ -25,13 +25,13 @@ jobs:
 
       - name: Run setup scripts
         run: 'set -e;
-              ls -1 .github/integration/setup/{common,${{ matrix.storagetype }}}/*.sh 2>/dev/null | sort -t/ -k5 -n | while read -r runscript; do
+              ls -1 .github/integration/setup/{common,${{ matrix.testtype }}}/*.sh 2>/dev/null | sort -t/ -k5 -n | while read -r runscript; do
                  echo "Executing setup script $runscript";
                  bash -x "$runscript";
               done'
 
       - name: Run tests
-        run: 'ls -1 .github/integration/tests/{common,${{ matrix.storagetype }}}/*.sh 2>/dev/null | sort -t/ -k5 -n | while read -r runscript; do
+        run: 'ls -1 .github/integration/tests/{common,${{ matrix.testtype }}}/*.sh 2>/dev/null | sort -t/ -k5 -n | while read -r runscript; do
                 echo "Executing test script $runscript";
                 bash -x "$runscript";
               done'

@@ -5,7 +5,7 @@ docker build -t neicnordic/sda-pipeline:latest . || exit 1
 
 cd dev_utils || exit 1
 
-if [ "$STORAGETYPE" = s3notls ]; then
+if [ "$TESTTYPE" = s3notls ]; then
     docker-compose -f compose-no-tls.yml up -d
 
     RETRY_TIMES=0
@@ -22,7 +22,7 @@ if [ "$STORAGETYPE" = s3notls ]; then
         done
     done
 
-elif [ "$STORAGETYPE" = s3notlsheader ]; then
+elif [ "$TESTTYPE" = s3notlsheader ]; then
     sed -i 's/copyHeader: "false"/copyHeader: "true"/g' config-notls.yaml
 
     docker-compose -f compose-no-tls.yml up -d
@@ -48,9 +48,9 @@ else
 
     tostart="certfixer db mq"
 
-    if [ "$STORAGETYPE" = s3 ]; then
+    if [ "$TESTTYPE" = s3 ]; then
         tostart="certfixer db mq s3"
-    elif [ "$STORAGETYPE" = s3header ] || [ "$STORAGETYPE" = posixheader ]; then
+    elif [ "$TESTTYPE" = s3header ] || [ "$TESTTYPE" = posixheader ]; then
         tostart="certfixer db mq s3"
         sed -i 's/copyHeader: "false"/copyHeader: "true"/g' config.yaml
     fi
@@ -93,7 +93,7 @@ else
         done
     done
 
-    if [ "$STORAGETYPE" = s3header ] || [ "$STORAGETYPE" = posixheader ]; then
+    if [ "$TESTTYPE" = s3header ] || [ "$TESTTYPE" = posixheader ]; then
         sed -i 's/copyHeader: "true"/copyHeader: "false"/g' config.yaml
     fi
 

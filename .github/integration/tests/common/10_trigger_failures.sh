@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$STORAGETYPE" = s3notls ] || [ "$STORAGETYPE" = s3notlsheader ]; then
+if [ "$TESTTYPE" = s3notls ] || [ "$TESTTYPE" = s3notlsheader ]; then
     exit 0
 fi
 
@@ -113,7 +113,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
 
 # Verify that message is moved to the error queue (takes a few mins).
 
-if [ "$STORAGETYPE" = posix ] || [ "$STORAGETYPE" = posixheader ]; then
+if [ "$TESTTYPE" = posix ] || [ "$TESTTYPE" = posixheader ]; then
 	check_move_to_error_queue "no such file or directory"
 else
 	check_move_to_error_queue "NoSuchKey: The specified key does not exist."

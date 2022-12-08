@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$TESTTYPE" = s3notls ] || [ "$TESTTYPE" = s3notlsheader ]; then
+if [ "$TESTTYPE" = s3notls ] || [ "$TESTTYPE" = s3notlsheader ]|| [ "$TESTTYPE" = cancel ]; then
     exit 0
 fi
 

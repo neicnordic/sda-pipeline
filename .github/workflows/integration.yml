@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        testtype: [s3, posix, s3notls, s3header, s3notlsheader, posixheader]
+        testtype: [s3, posix, s3notls, s3header, s3notlsheader, posixheader, cancel]
 
     steps:
       - name: Set up Python

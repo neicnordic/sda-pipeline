@@ -48,9 +48,9 @@ else
 
     tostart="certfixer db mq"
 
-    if [ "$STORAGETYPE" = s3 ]; then
+    if [ "$STORAGETYPE" = s3 ] || [ "$STORAGETYPE" = sftp ]; then
         tostart="certfixer db mq s3"
-    elif [ "$STORAGETYPE" = s3header ] || [ "$STORAGETYPE" = posixheader ]; then
+    elif [ "$STORAGETYPE" = s3header ] || [ "$STORAGETYPE" = posixheader ] || [ "$STORAGETYPE" = sftpheader ]; then
         tostart="certfixer db mq s3"
         sed -i 's/copyHeader: "false"/copyHeader: "true"/g' config.yaml
     fi
@@ -79,7 +79,7 @@ else
 
     docker-compose -f compose-sda.yml up -d
 
-    for p in ingest verify finalize mapper intercept; do
+    for p in ingest verify finalize mapper intercept backup; do
         RETRY_TIMES=0
         until docker ps -f name="$p" --format "{{.Status}}" | grep "Up"
         do echo "waiting for $p to become ready"
@@ -93,7 +93,7 @@ else
         done
     done
 
-    if [ "$STORAGETYPE" = s3header ] || [ "$STORAGETYPE" = posixheader ]; then
+    if [ "$STORAGETYPE" = s3header ] || [ "$STORAGETYPE" = posixheader ] || [ "$STORAGETYPE" = sftpheader ]; then
         sed -i 's/copyHeader: "true"/copyHeader: "false"/g' config.yaml
     fi
 

@@ -4,11 +4,11 @@ cd dev_utils || exit 1
 
 chmod 600 certs/client-key.pem
 
-echo "Checking archive files in backup"
+echo "Checking archive files in s3"
 
 # Earlier tests verify that the file is in the database correctly
 
-accessids=$(docker run --rm --name client --network dev_utils_default -v /home/runner/work/sda-pipeline/sda-pipeline/dev_utils/certs:/certs \
+accessids=$(docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
 	-e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 	neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 	-t -A -c "SELECT stable_id FROM local_ega.files where status='READY';")
@@ -21,23 +21,22 @@ fi
 for aid in $accessids; do
 	echo "Checking accesssionid $aid"
 
-	apath=$(docker run --rm --name client --network dev_utils_default -v /home/runner/work/sda-pipeline/sda-pipeline/dev_utils/certs:/certs \
+	apath=$(docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
 		-e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 		neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 		-t -A -c "SELECT archive_path FROM local_ega.files where stable_id='$aid';")
 
-	acheck=$(docker run --rm --name client --network dev_utils_default -v /home/runner/work/sda-pipeline/sda-pipeline/dev_utils/certs:/certs \
+	acheck=$(docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
 		-e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 		neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 		-t -A -c "SELECT archive_file_checksum FROM local_ega.files where stable_id='$aid';")
 
-	achecktype=$(docker run --rm --name client --network dev_utils_default -v /home/runner/work/sda-pipeline/sda-pipeline/dev_utils/certs:/certs \
+	achecktype=$(docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
 		-e PGSSLCERT=certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 		neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 		-t -A -c "SELECT archive_file_checksum_type FROM local_ega.files where stable_id='$aid';")
 
-	mkdir -p tmp/
-	docker cp "ingest:/tmp/$apath" tmp/
+	s3cmd -c s3cmd.conf get "s3://archive/$apath" "tmp/$apath"
 
 	if [ "${achecktype,,*}" = 'md5sum' ]; then
 		filecheck=$(md5sum "tmp/$apath" | cut -d' ' -f1)
@@ -53,7 +52,15 @@ for aid in $accessids; do
 	rm -f "tmp/$apath"
 
 	# Check checksum for backuped copy as well
-	docker cp "backup:/backup/$apath" tmp/
+	chmod 700 "$PWD/certs/sftp-key.pem"
+	/usr/bin/expect <<EOD
+	spawn sftp -i "$PWD/certs/sftp-key.pem" -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -P 6222 user@localhost:"$apath" "tmp/$apath"
+	match_max 100000
+	expect -exact "Warning: Permanently added '\[localhost\]:6222' (ECDSA) to the list of known hosts.\r
+	Enter passphrase for key '$PWD/dev_utils/certs/sftp-key.pem': "
+	send -- "test\r"
+	expect eof
+EOD
 
 	if [ "${achecktype,,*}" = 'md5sum' ]; then
 		filecheck=$(md5sum "tmp/$apath" | cut -d' ' -f1)
@@ -66,7 +73,7 @@ for aid in $accessids; do
 		exit 1
 	fi
 
-	rm -f "tmp/$apath"
+	rm -r "tmp/$apath"
 done
 
-echo "Passed check for archive and backup (posix)"
+echo "Passed check for archive (s3) and backup (sftp)"

@@ -378,7 +378,12 @@ func newSftpBackend(config SftpConf) (*sftpBackend, error) {
 		log.Errorf("Failed to read pem key file: %v", err)
 	}
 
-	signer, err := ssh.ParsePrivateKeyWithPassphrase(key, []byte(config.PemKeyPass))
+	var signer ssh.Signer
+	if config.PemKeyPass == "" {
+		signer, err = ssh.ParsePrivateKey(key)
+	} else {
+		signer, err = ssh.ParsePrivateKeyWithPassphrase(key, []byte(config.PemKeyPass))
+	}
 	if err != nil {
 		log.Errorf("Failed to parse private key: %v", err)
 	}

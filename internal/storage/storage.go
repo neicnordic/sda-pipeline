@@ -375,7 +375,7 @@ func newSftpBackend(config SftpConf) (*sftpBackend, error) {
 	// read in and parse pem key
 	key, err := os.ReadFile(config.PemKeyPath)
 	if err != nil {
-		log.Errorf("Failed to read pem key file: %v", err)
+		return nil, fmt.Errorf("Failed to read from key file, %v", err)
 	}
 
 	var signer ssh.Signer
@@ -385,7 +385,7 @@ func newSftpBackend(config SftpConf) (*sftpBackend, error) {
 		signer, err = ssh.ParsePrivateKeyWithPassphrase(key, []byte(config.PemKeyPass))
 	}
 	if err != nil {
-		log.Errorf("Failed to parse private key: %v", err)
+		return nil, fmt.Errorf("Failed to parse private key, %v", err)
 	}
 
 	// connect
@@ -401,14 +401,14 @@ func newSftpBackend(config SftpConf) (*sftpBackend, error) {
 		},
 	)
 	if err != nil {
-		log.Errorf("Failed to start ssh connection: %v", err)
+		return nil, fmt.Errorf("Failed to start ssh connection, %v", err)
 	}
 	// defer conn.Close()
 
 	// create new SFTP client
 	client, err := sftp.NewClient(conn)
 	if err != nil {
-		log.Errorf("%v", err)
+		return nil, fmt.Errorf("Failed to start sftp client, %v", err)
 	}
 	// defer client.Close()
 
@@ -421,7 +421,7 @@ func newSftpBackend(config SftpConf) (*sftpBackend, error) {
 	_, err = client.ReadDir("./")
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to list files with sftp, %v", err)
 	}
 
 	return sfb, nil
@@ -436,14 +436,12 @@ func (sfb *sftpBackend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 	parent := filepath.Dir(filePath)
 	err := sfb.Client.MkdirAll(parent)
 	if err != nil {
-		log.Error(err)
-		return nil, err
+		return nil, fmt.Errorf("Failed to create dir with sftp, %v", err)
 	}
 
 	file, err := sfb.Client.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR)
 	if err != nil {
-		log.Error(err)
-		return nil, err
+		return nil, fmt.Errorf("Failed to create file with sftp, %v", err)
 	}
 
 	return file, nil
@@ -457,8 +455,7 @@ func (sfb *sftpBackend) GetFileSize(filePath string) (int64, error) {
 
 	stat, err := sfb.Client.Lstat(filePath)
 	if err != nil {
-		log.Error(err)
-		return 0, err
+		return 0, fmt.Errorf("Failed to get file size with sftp, %v", err)
 	}
 
 	return stat.Size(), nil
@@ -472,14 +469,13 @@ func (sfb *sftpBackend) NewFileReader(filePath string) (io.ReadCloser, error) {
 
 	file, err := sfb.Client.Open(filePath)
 	if err != nil {
-		log.Error(err)
-		return nil, err
+		return nil, fmt.Errorf("Failed to open file with sftp, %v", err)
 	}
 
 	return file, nil
 }
 
-// RemoveFile removes a file from a given path
+// RemoveFile removes a file or an empty directory.
 func (sfb *sftpBackend) RemoveFile(filePath string) error {
 	if sfb == nil {
 		return fmt.Errorf("Invalid sftpBackend")
@@ -487,8 +483,7 @@ func (sfb *sftpBackend) RemoveFile(filePath string) error {
 
 	err := sfb.Client.Remove(filePath)
 	if err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("Failed to remove file with sftp, %v", err)
 	}
 
 	return nil

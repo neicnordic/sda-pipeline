@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        storagetype: [s3, posix, s3notls, s3header, s3notlsheader, posixheader]
+        storagetype: [s3, posix, s3notls, s3header, s3notlsheader, posixheader, sftp, sftpheader]
 
     steps:
       - name: Set up Python

@@ -144,6 +144,26 @@ func (suite *TestSuite) TestMissingRequiredBackupPosixConfVar() {
 	}
 }
 
+func (suite *TestSuite) TestMissingRequiredBackupSftpConfVar() {
+	viper.Set("backup.type", SFTP)
+	viper.Set("backup.sftp.host", "test")
+	viper.Set("backup.sftp.port", "test")
+	viper.Set("backup.sftp.userName", "test")
+	viper.Set("backup.sftp.pemKeyPath", "test")
+	viper.Set("backup.sftp.pemKeyPass", "test")
+	for _, requiredConfVar := range append([]string{"backup.sftp.host", "backup.sftp.port", "backup.sftp.userName", "backup.sftp.pemKeyPath", "backup.sftp.pemKeyPass"}, requiredConfVars...) {
+		requiredConfVarValue := viper.Get(requiredConfVar)
+		viper.Set(requiredConfVar, nil)
+		expectedError := fmt.Errorf("%s not set", requiredConfVar)
+		config, err := NewConfig("test")
+		assert.Nil(suite.T(), config)
+		if assert.Error(suite.T(), err) {
+			assert.Equal(suite.T(), expectedError, err)
+		}
+		viper.Set(requiredConfVar, requiredConfVarValue)
+	}
+}
+
 func (suite *TestSuite) TestMissingRequiredInboxS3ConfVar() {
 	viper.Set("inbox.type", S3)
 	viper.Set("inbox.url", "test")
@@ -269,6 +289,26 @@ func (suite *TestSuite) TestConfigBackupS3Storage() {
 	assert.Equal(suite.T(), "test", config.Backup.S3.Region)
 	assert.Equal(suite.T(), 128974848, config.Backup.S3.Chunksize)
 	assert.Equal(suite.T(), "test", config.Backup.S3.Cacert)
+}
+
+func (suite *TestSuite) TestConfigBackupSftpStorage() {
+	viper.Set("backup.type", SFTP)
+	viper.Set("backup.sftp.host", "test")
+	viper.Set("backup.sftp.port", "123")
+	viper.Set("backup.sftp.UserName", "test")
+	viper.Set("backup.sftp.pemKeyPath", "test")
+	viper.Set("backup.sftp.pemKeyPass", "test")
+	config, err := NewConfig("backup")
+	assert.NotNil(suite.T(), config)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config.Backup)
+	assert.NotNil(suite.T(), config.Backup.SFTP)
+	assert.Equal(suite.T(), SFTP, config.Backup.Type)
+	assert.Equal(suite.T(), "test", config.Backup.SFTP.Host)
+	assert.Equal(suite.T(), "123", config.Backup.SFTP.Port)
+	assert.Equal(suite.T(), "test", config.Backup.SFTP.UserName)
+	assert.Equal(suite.T(), "test", config.Backup.SFTP.PemKeyPath)
+	assert.Equal(suite.T(), "test", config.Backup.SFTP.PemKeyPass)
 }
 
 func (suite *TestSuite) TestConfigBroker() {

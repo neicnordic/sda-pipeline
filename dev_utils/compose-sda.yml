@@ -211,16 +211,18 @@ services:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
       - certs:/dev_utils/certs
+
   sftp-server:
     build:
         context: sftp-server
     hostname: sftp-serv
+    depends_on:
+      certfixer:
+        condition: service_completed_successfully
     environment:
       - SFTP_USER=user
       - SFTP_USER_PASS=user
-      - DELETE_UPLOADED_FILES=false
-      - FILE_CHECK_INTERVAL=0
-      - FILE_AGE=0.01 #minutes
+      - SFTP_USER_PUB_KEY=/keys/sftp-key.pub
     container_name: sftp-server-local
     ports:
         - "6222:22"

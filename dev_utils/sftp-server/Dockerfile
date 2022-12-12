@@ -5,7 +5,6 @@ RUN apt-get update && apt-get install -y \
     sudo openssh-server \
     && apt-get clean
 
-COPY ssh_config /etc/ssh/ssh_config
 COPY sshd_config /etc/ssh/sshd_config
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

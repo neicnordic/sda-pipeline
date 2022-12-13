@@ -119,6 +119,7 @@ func main() {
 				continue
 			}
 			if status == "DISABLED" {
+				log.Debugln("file is DISABLED, removing from archive")
 				if err := archive.RemoveFile(message.ArchivePath); err != nil {
 					log.Errorf("Failed to remove file from archive: %v", err)
 				}
@@ -355,6 +356,7 @@ func main() {
 					continue
 				}
 				if status == "DISABLED" {
+					log.Debugln("file is DISABLED, removing from archive")
 					if err := archive.RemoveFile(message.ArchivePath); err != nil {
 						log.Errorf("Failed to remove file from archive: %v", err)
 					}

@@ -4,6 +4,7 @@ package storage
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net"
@@ -87,6 +88,7 @@ func (pb *posixBackend) NewFileReader(filePath string) (io.ReadCloser, error) {
 	file, err := os.Open(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 
@@ -102,6 +104,7 @@ func (pb *posixBackend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 	file, err := os.OpenFile(filepath.Join(filepath.Clean(pb.Location), filePath), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0640)
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 
@@ -117,6 +120,7 @@ func (pb *posixBackend) GetFileSize(filePath string) (int64, error) {
 	stat, err := os.Stat(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
+
 		return 0, err
 	}
 
@@ -132,6 +136,7 @@ func (pb *posixBackend) RemoveFile(filePath string) error {
 	err := os.Remove(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
+
 		return err
 	}
 
@@ -235,6 +240,7 @@ func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 
@@ -261,6 +267,7 @@ func (sb *s3Backend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 			_ = reader.CloseWithError(err)
 		}
 	}()
+
 	return writer, nil
 }
 
@@ -294,6 +301,7 @@ func (sb *s3Backend) GetFileSize(filePath string) (int64, error) {
 
 	if err != nil {
 		log.Errorln(err)
+
 		return 0, err
 	}
 
@@ -311,6 +319,7 @@ func (sb *s3Backend) RemoveFile(filePath string) error {
 		Key:    aws.String(filePath)})
 	if err != nil {
 		log.Error(err)
+
 		return err
 	}
 
@@ -369,6 +378,7 @@ type SftpConf struct {
 	UserName   string
 	PemKeyPath string
 	PemKeyPass string
+	HostKey    string
 }
 
 func newSftpBackend(config SftpConf) (*sftpBackend, error) {
@@ -395,9 +405,7 @@ func newSftpBackend(config SftpConf) (*sftpBackend, error) {
 			Auth: []ssh.AuthMethod{
 				ssh.PublicKeys(signer),
 			},
-			HostKeyCallback: func(_ string, _ net.Addr, k ssh.PublicKey) error {
-				return nil
-			},
+			HostKeyCallback: TrustedHostKeyCallback(config.HostKey),
 		},
 	)
 	if err != nil {
@@ -487,4 +495,25 @@ func (sfb *sftpBackend) RemoveFile(filePath string) error {
 	}
 
 	return nil
+}
+
+func TrustedHostKeyCallback(key string) ssh.HostKeyCallback {
+	if key == "" {
+		return func(_ string, _ net.Addr, k ssh.PublicKey) error {
+			keyString := k.Type() + " " + base64.StdEncoding.EncodeToString(k.Marshal())
+			// fmt.Fprintf(os.Stderr, "[WARN] SSH key verification is not in effect (Fix by adding trustedKey: %q)", keyString(k))
+			log.Warningf("host key verification is not in effect (Fix by adding trustedKey: %q)", keyString)
+
+			return nil
+		}
+	}
+
+	return func(_ string, _ net.Addr, k ssh.PublicKey) error {
+		keyString := k.Type() + " " + base64.StdEncoding.EncodeToString(k.Marshal())
+		if ks := keyString; key != ks {
+			return fmt.Errorf("host key verification expected %q but got %q", key, ks)
+		}
+
+		return nil
+	}
 }

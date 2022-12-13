@@ -277,6 +277,11 @@ func configS3Storage(prefix string) storage.S3Conf {
 // configSFTP populates and returns a sftpConf with sftp backend configuration
 func configSFTP(prefix string) storage.SftpConf {
 	sftpConf := storage.SftpConf{}
+	if viper.IsSet(prefix + ".sftp.hostKey") {
+		sftpConf.HostKey = viper.GetString(prefix + ".sftp.hostKey")
+	} else {
+		sftpConf.HostKey = ""
+	}
 	// All these are required
 	sftpConf.Host = viper.GetString(prefix + ".sftp.host")
 	sftpConf.Port = viper.GetString(prefix + ".sftp.port")

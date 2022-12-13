@@ -136,6 +136,7 @@ func main() {
 			}
 
 			if status == "DISABLED" {
+				log.Debugln("File is DISABLED, canceling ingestion")
 				if err := delivered.Ack(false); err != nil {
 					log.Errorf("Failed to ack message: %v", err)
 				}

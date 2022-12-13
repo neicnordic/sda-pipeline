@@ -131,7 +131,7 @@ func main() {
 			case msgCancel:
 				message := make(map[string]interface{})
 				_ = json.Unmarshal(delivered.Body, &message)
-
+				log.Debugln("mark file as DISABLED")
 				if err := db.DisableFile(message["filepath"].(string), message["user"].(string)); err != nil {
 					log.Errorf("MarkDisabled failed: %v", err)
 				}
@@ -150,6 +150,7 @@ func main() {
 				if err != nil {
 					switch err.Error() {
 					case "sql: no rows in result set":
+						log.Debugln("inserting file in DB")
 						ID, err = db.InsertFile(message["filepath"].(string), message["user"].(string))
 						if err != nil {
 							log.Errorf("InsertFile failed: %v", err)
@@ -171,6 +172,7 @@ func main() {
 				}
 
 				status, err := db.GetStatus(ID)
+				log.Debugf("status: %v", status)
 				if err != nil {
 					log.Errorf("Failed to check file status: %v", err)
 

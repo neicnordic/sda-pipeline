@@ -36,6 +36,7 @@ backup:
     userName: "user"
     pemKeyPath: "./dev_utils/certs/sftp-key.pem"
     pemKeyPass: "test"
+    hostKey: ""
 
 broker:
   host: "localhost"

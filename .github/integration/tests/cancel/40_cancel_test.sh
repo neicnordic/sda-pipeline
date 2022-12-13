@@ -210,3 +210,88 @@ until docker logs verify --since="$now" 2>&1 | grep "file is DISABLED, removing 
 	fi
 	sleep 10
 done
+
+## case cancel message arrives before accession ID is set.
+
+now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+curl --cacert certs/ca.pem -v -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+	-H 'Content-Type: application/json;charset=UTF-8' \
+	--data-binary "$(echo '{"vhost":"test", "name":"sda",
+							"properties":{
+								"delivery_mode":2,
+								"correlation_id":"4001",
+								"content_encoding":"UTF-8",
+								"content_type":"application/json"
+							},
+							"routing_key":"files",
+							"payload_encoding":"string",
+							"payload":"{\"type\":\"ingest\",\"user\":\"test4\",\"filepath\":\"largefile.c4gh\",\"encrypted_checksums\":[
+								{\"type\":\"sha256\",\"value\":\"SHA256SUM\"},
+								{\"type\":\"md5\",\"value\":\"MD5SUM\"}
+							]}"
+							}' | sed -e "s/MD5SUM/${md5sum}/" -e "s/SHA256SUM/${sha256sum}/")"
+
+RETRY_TIMES=0
+until docker logs verify --since="$now" 2>&1 | grep "File marked completed"; do
+	echo "waiting for verify to complete"
+	RETRY_TIMES=$((RETRY_TIMES + 1))
+	if [ "$RETRY_TIMES" -eq 60 ]; then
+		echo "::error::Time out while waiting for verify to complete, logs:"
+		docker logs --since="$now" verify
+		exit 10
+	fi
+	sleep 10
+done
+
+curl --cacert certs/ca.pem -v -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+	-H 'Content-Type: application/json;charset=UTF-8' \
+	--data-binary "$(echo '{"vhost":"test", "name":"sda",
+							"properties":{
+								"delivery_mode":2,
+								"correlation_id":"4002",
+								"content_encoding":"UTF-8",
+								"content_type":"application/json"
+							},
+							"routing_key":"files",
+							"payload_encoding":"string",
+							"payload":"{\"type\":\"cancel\",\"user\":\"test4\",\"filepath\":\"largefile.c4gh\",\"encrypted_checksums\":[
+								{\"type\":\"sha256\",\"value\":\"SHA256SUM\"},
+								{\"type\":\"md5\",\"value\":\"MD5SUM\"}
+							]}"
+							}' | sed -e "s/MD5SUM/${md5sum}/" -e "s/SHA256SUM/${sha256sum}/")"
+
+access=$(printf "EGAF%05d%06d" "$RANDOM" "1")
+filepath=$(
+	curl --cacert certs/ca.pem -u test:test 'https://localhost:15672/api/queues/test/verified/get' \
+		-H 'Content-Type: application/json;charset=UTF-8' \
+		-d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto","truncate":50000}' |
+		jq -r '.[0]["payload"]' | jq -r '.["filepath"]'
+)
+
+curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+	-H 'Content-Type: application/json;charset=UTF-8' \
+	--data-binary "$(echo '{"vhost":"test", "name":"sda",
+							"properties":{
+								"delivery_mode":2,
+								"correlation_id":"4003",
+								"content_encoding":"UTF-8",
+								"content_type":"application/json"
+							},
+							"routing_key":"files",
+							"payload_encoding":"string",
+							"payload":"{ \"type\":\"accession\", \"user\":\"test\", \"filepath\":\"FILENAME\", \"accession_id\":\"ACCESSIONID\",
+								\"decrypted_checksums\":[{\"type\":\"sha256\", \"value\":\"DECSHA256SUM\"},{\"type\":\"md5\", \"value\":\"DECMD5SUM\"}]}"
+							}' | sed -e "s/FILENAME/$filepath/" -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/${access}/")"
+
+RETRY_TIMES=0
+until docker logs finalize --since="$now" 2>&1 | grep "MarkReady failed"; do
+	echo "waiting for finalize to fail"
+	RETRY_TIMES=$((RETRY_TIMES + 1))
+	if [ "$RETRY_TIMES" -eq 60 ]; then
+		echo "::error::Time out while waiting for finalize to fail, logs:"
+		docker logs --since="$now" finalize
+		exit 10
+	fi
+	sleep 10
+done

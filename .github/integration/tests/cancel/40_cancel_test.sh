@@ -66,3 +66,17 @@ if [ "$status" != "DISABLED" ]; then
 	docker logs intercept --since="$now"
 	exit 1
 fi
+
+docker unpause ingest
+
+RETRY_TIMES=0
+until docker logs ingest --since="$now" 2>&1 | grep "File is DISABLED"; do
+	echo "waiting for ingestion to be canceled"
+	RETRY_TIMES=$((RETRY_TIMES + 1))
+	if [ "$RETRY_TIMES" -eq 60 ]; then
+		echo "::error::Time out while waiting for ingest to be canceled, logs:"
+		docker logs --since="$now" ingest
+		exit 1
+	fi
+	sleep 10
+done

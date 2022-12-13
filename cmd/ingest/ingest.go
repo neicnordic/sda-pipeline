@@ -427,6 +427,7 @@ func main() {
 				continue
 			}
 			if status == "DISABLED" {
+				log.Debugln("file is DISABLED, reverting changes")
 				if err := archive.RemoveFile(archivedFile); err != nil {
 					log.Errorf("Failed to remove file from archive: %v", err)
 				}

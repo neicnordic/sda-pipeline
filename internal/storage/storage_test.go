@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http/httptest"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -69,6 +70,7 @@ var testSftpConf = SftpConf{
 	"user",
 	"../../dev_utils/certs/sftp-key.pem",
 	"test",
+	"",
 }
 
 func writeName() (name string, err error) {
@@ -82,6 +84,7 @@ func writeName() (name string, err error) {
 
 	// Add to cleanup
 	cleanupFiles = append(cleanupFiles, name)
+
 	return name, err
 }
 
@@ -98,9 +101,18 @@ func TestNewBackend(t *testing.T) {
 	p, err := NewBackend(testConf)
 	assert.Nil(t, err, "Backend posix failed")
 
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+
 	testConf.Type = sftpType
 	sf, err := NewBackend(testConf)
 	assert.Nil(t, err, "Backend sftp failed")
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
+
+	// update host key from server for later use
+	rgx := regexp.MustCompile(`\\\"(.*?)\\"`)
+	testConf.SFTP.HostKey = strings.Trim(rgx.FindString(buf.String()), "\\\"")
+	buf.Reset()
 
 	testConf.Type = s3Type
 	s, err := NewBackend(testConf)
@@ -146,6 +158,7 @@ func TestPosixBackend(t *testing.T) {
 	writable, err := writeName()
 	if err != nil {
 		t.Error("could not find a writable name, bailing out from test")
+
 		return
 	}
 
@@ -175,6 +188,7 @@ func TestPosixBackend(t *testing.T) {
 
 	if reader == nil {
 		t.Error("reader that should be usable is not, bailing out")
+
 		return
 	}
 
@@ -229,6 +243,7 @@ func setupFakeS3() (err error) {
 
 	if err != nil {
 		log.Error("Unexpected error while setting up fake s3")
+
 		return err
 	}
 
@@ -371,12 +386,20 @@ func TestSftpFail(t *testing.T) {
 	dummyKeyFile, err := writeName()
 	if err != nil {
 		t.Error("could not find a writable name, bailing out from test")
+
 		return
 	}
 	testConf.SFTP.PemKeyPath = dummyKeyFile
 	_, err = NewBackend(testConf)
 	assert.EqualError(t, err, "Failed to parse private key, ssh: no key found")
 	testConf.SFTP.PemKeyPath = tmpKeyPath
+
+	// worng host key
+	tmpHostKey := testConf.SFTP.HostKey
+	testConf.SFTP.HostKey = "wronghostkey"
+	_, err = NewBackend(testConf)
+	assert.ErrorContains(t, err, "Failed to start ssh connection, ssh: handshake failed: host key verification expected")
+	testConf.SFTP.HostKey = tmpHostKey
 }
 
 func TestS3Backend(t *testing.T) {
@@ -413,6 +436,7 @@ func TestS3Backend(t *testing.T) {
 
 	if reader == nil {
 		t.Error("reader that should be usable is not, bailing out")
+
 		return
 	}
 
@@ -452,16 +476,22 @@ func TestS3Backend(t *testing.T) {
 
 func TestSftpBackend(t *testing.T) {
 
-	var sftpDoesNotExist = "nonexistent/file"
-	var sftpCreatable = "this/file/exists"
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
 
 	testConf.Type = sftpType
 	backend, err := NewBackend(testConf)
 	assert.Nil(t, err, "Backend failed")
 
+	assert.Zero(t, buf.Len(), "Got warning when not expected")
+	buf.Reset()
+
 	sftpBack := backend.(*sftpBackend)
 
 	assert.IsType(t, sftpBack, &sftpBackend{}, "Wrong type from NewBackend with sftp")
+
+	var sftpDoesNotExist = "nonexistent/file"
+	var sftpCreatable = "this/file/exists"
 
 	writer, err := sftpBack.NewFileWriter(sftpCreatable)
 	assert.NotNil(t, writer, "Got a nil reader for writer from sftp")
@@ -483,6 +513,7 @@ func TestSftpBackend(t *testing.T) {
 
 	if reader == nil {
 		t.Error("reader that should be usable is not, bailing out")
+
 		return
 	}
 

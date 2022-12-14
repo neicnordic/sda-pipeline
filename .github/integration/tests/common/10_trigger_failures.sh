@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$TESTTYPE" = s3notls ] || [ "$TESTTYPE" = s3notlsheader ]|| [ "$TESTTYPE" = cancel ]; then
+if [ "$TESTTYPE" = s3notls ] || [ "$TESTTYPE" = s3notlsheader ]; then
     exit 0
 fi
 
@@ -285,7 +285,7 @@ echo "Waiting for ingest to confirm delivery."
 			docker logs --since="$now" ingest
 			exit 1
 		fi
-		sleep 1
+		sleep 10
 	done
 
 chmod 600 certs/client-key.pem
@@ -298,7 +298,22 @@ docker unpause verify &> /dev/null
 
 # Verify that message is moved to the error queue.
 
-check_move_to_error_queue "sql: no rows in result set"
+RETRY_TIMES=0
+echo
+echo "Waiting for verify to fail."
+until docker logs --since="$now" verify 2>&1 | grep -q "sql: no rows in result set"; do
+	printf '%s' "."
+	RETRY_TIMES=$((RETRY_TIMES + 1))
+	if [ $RETRY_TIMES -eq 60 ]; then
+		echo "::error::Time out while waiting for verify to fail, logs:"
+		echo
+		echo ingest
+		echo
+		docker logs --since="$now" verify
+		exit 1
+	fi
+	sleep 10
+done
 
 # Cleanup queues
 curl --cacert certs/ca.pem  -u test:test -X DELETE 'https://localhost:15672/api/queues/test/completed/contents'

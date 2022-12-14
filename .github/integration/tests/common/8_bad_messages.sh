@@ -17,7 +17,7 @@ function check_move_to_error_queue() {
 	RETRY_TIMES=0
 	echo
 	echo "Waiting for msg containing \"""$1""\" to move to error queue."
-	until curl --cacert certs/ca.pem  -u test:test 'https://localhost:15672/api/queues/test/error/get' \
+	until curl --cacert certs/ca.pem -u test:test 'https://localhost:15672/api/queues/test/error/get' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		-d '{"count":1,"ackmode":"ack_requeue_false","encoding":"auto","truncate":50000}' 2>&1 | grep -q "$1"; do
 		printf '%s' "."
@@ -39,7 +39,7 @@ function check_move_to_error_queue() {
 	echo
 }
 
-for routingkey in files ingest archived accessionIDs backup mappings; do
+for routingkey in files ingest; do
 	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		--data-binary '{
@@ -53,15 +53,14 @@ for routingkey in files ingest archived accessionIDs backup mappings; do
 						},
 						"routing_key":"'"$routingkey"'",
 						"payload_encoding":"string",
-						"payload":"{
-						I give you bad json!}"
+						"payload":"{I give you bad json!}"
 					}'
 
 check_move_to_error_queue "I give you bad json"
 
 done
 
-for routingkey in files ingest archived accessionIDs backup mappings; do
+for routingkey in files ingest; do
 	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		--data-binary '{

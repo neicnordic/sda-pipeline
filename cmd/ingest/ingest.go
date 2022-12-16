@@ -113,7 +113,7 @@ func main() {
 			_ = json.Unmarshal(delivered.Body, &message)
 
 
-			ID, err := db.GetFileID(message.Filepath, message.User)
+			fileID, err := db.GetFileID(message.Filepath, message.User)
 			if err != nil {
 				log.Errorf("Failed to get file id: %v", err)
 
@@ -124,7 +124,7 @@ func main() {
 				continue
 			}
 
-			status, err := db.GetStatus(ID)
+			status, err := db.GetStatus(fileID)
 			if err != nil {
 				log.Errorf("Failed to check file status: %v", err)
 
@@ -254,17 +254,6 @@ func main() {
 						archivedFile,
 						e)
 				}
-				continue
-			}
-
-			fileID, err := db.GetFileID(message.Filepath, message.User)
-			if err != nil {
-				log.Errorf("Failed to get file id: %v", err)
-
-				if err := delivered.Nack(false, true); err != nil {
-					log.Errorf("Failed to nack message: %v", err)
-				}
-
 				continue
 			}
 

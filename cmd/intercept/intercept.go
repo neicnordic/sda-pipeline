@@ -134,6 +134,11 @@ func main() {
 				log.Debugln("mark file as DISABLED")
 				if err := db.DisableFile(message["filepath"].(string), message["user"].(string)); err != nil {
 					log.Errorf("MarkDisabled failed: %v", err)
+					if err := delivered.Nack(false, true); err != nil {
+						log.Errorf("Failed to nack message: %v", err)
+					}
+
+					continue
 				}
 
 				if err := delivered.Ack(false); err != nil {

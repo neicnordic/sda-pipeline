@@ -341,7 +341,6 @@ func TestSftpFail(t *testing.T) {
 	// test connection
 	tmpHost := testConf.SFTP.Host
 
-	// defer func() { testConf.SFTP.Host = tmp }()
 	testConf.SFTP.Host = "nonexistenthost"
 	_, err := NewBackend(testConf)
 	assert.NotNil(t, err, "Backend worked when it should not")

@@ -27,7 +27,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Backend defines methods to be implemented by PosixBackend and S3Backend
+// Backend defines methods to be implemented by PosixBackend, S3Backend and sftpBackend
 type Backend interface {
 	GetFileSize(filePath string) (int64, error)
 	RemoveFile(filePath string) error
@@ -401,24 +401,20 @@ func newSftpBackend(config SftpConf) (*sftpBackend, error) {
 	// connect
 	conn, err := ssh.Dial("tcp", config.Host+":"+config.Port,
 		&ssh.ClientConfig{
-			User: config.UserName,
-			Auth: []ssh.AuthMethod{
-				ssh.PublicKeys(signer),
-			},
+			User:            config.UserName,
+			Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
 			HostKeyCallback: TrustedHostKeyCallback(config.HostKey),
 		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to start ssh connection, %v", err)
 	}
-	// defer conn.Close()
 
 	// create new SFTP client
 	client, err := sftp.NewClient(conn)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to start sftp client, %v", err)
 	}
-	// defer client.Close()
 
 	sfb := &sftpBackend{
 		Connection: conn,
@@ -501,7 +497,6 @@ func TrustedHostKeyCallback(key string) ssh.HostKeyCallback {
 	if key == "" {
 		return func(_ string, _ net.Addr, k ssh.PublicKey) error {
 			keyString := k.Type() + " " + base64.StdEncoding.EncodeToString(k.Marshal())
-			// fmt.Fprintf(os.Stderr, "[WARN] SSH key verification is not in effect (Fix by adding trustedKey: %q)", keyString(k))
 			log.Warningf("host key verification is not in effect (Fix by adding trustedKey: %q)", keyString)
 
 			return nil

@@ -12,6 +12,11 @@ accessids=$(docker run --rm --name client --network dev_utils_default \
 	neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
 	-t -A -c "SELECT stable_id FROM local_ega.files where status='READY';")
 
+if [ -z $accessids ]; then
+	echo "Failed to get accession ids"
+	exit 1
+fi
+
 for aid in $accessids; do
 	echo "Checking accesssionid $aid"
 
@@ -59,4 +64,4 @@ for aid in $accessids; do
 	rm -f "tmp/$apath"
 done
 
-echo "Passed check for archive and backup (s3)"
+echo "Passed check for archive and backup (s3, no tls)"

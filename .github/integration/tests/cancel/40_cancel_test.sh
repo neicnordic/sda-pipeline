@@ -279,7 +279,7 @@ curl --cacert certs/ca.pem -u test:test 'https://localhost:15672/api/exchanges/t
 							}' | sed -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/${access}/")"
 
 RETRY_TIMES=0
-until docker logs finalize --since="$now" 2>&1 | grep "MarkReady failed"; do
+until docker logs finalize --since="$now" 2>&1 | grep "file is DISABLED, stopping work"; do
 	echo "case4 waiting for finalize to fail"
 	RETRY_TIMES=$((RETRY_TIMES + 1))
 	if [ "$RETRY_TIMES" -eq 60 ]; then

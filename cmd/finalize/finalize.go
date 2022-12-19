@@ -92,6 +92,36 @@ func main() {
 			// we unmarshal the message in the validation step so this is safe to do
 			_ = json.Unmarshal(delivered.Body, &message)
 
+			fileID, err := db.GetFileID(message.Filepath, message.User)
+			if err != nil {
+				log.Errorf("Failed to get file id: %v", err)
+
+				if err := delivered.Nack(false, true); err != nil {
+					log.Errorf("Failed to nack message: %v", err)
+				}
+
+				continue
+			}
+
+			status, err := db.GetStatus(int64(fileID))
+			if err != nil {
+				log.Errorf("Failed to check file status: %v", err)
+
+				if err := delivered.Nack(false, true); err != nil {
+					log.Errorf("Failed to nack message: %v", err)
+				}
+
+				continue
+			}
+			if status == "DISABLED" {
+				log.Debugln("file is DISABLED, stopping work")
+				if err := delivered.Ack(false); err != nil {
+					log.Errorf("Failed to ack message: %v", err)
+				}
+
+				continue
+			}
+
 			log.Infof("Received work (corr-id: %s, "+
 				"filepath: %s, "+
 				"user: %s, "+

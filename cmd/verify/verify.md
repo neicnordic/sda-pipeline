@@ -13,6 +13,8 @@ Unless explicitly stated, error messages are *not* written to the RabbitMQ error
 1. The message is validated as valid JSON that matches the "ingestion-verification" schema (defined in sda-common).
 If the message can’t be validated it is discarded with an error message in the logs.
 
+1. A check is performed to get the status of the file that is to be verified, if the status is `DISABLED` the work is aborted, the file will be removed from the archive and the message will be acked.
+
 1. The service attempts to fetch the header for the file id in the message from the database.
 If this fails a NACK will be sent for the RabbitMQ message, the error will be written to the logs, and sent to the RabbitMQ error queue.
 
@@ -34,6 +36,8 @@ Otherwise the processing continues with verification:
     1. A verification message is created, and validated against the "ingestion-accession-request" schema.
     If this fails an error will be written to the logs.
 
+    1. A check is performed to get the status of the file, if the status is `DISABLED` the work is aborted, the file will be removed from the archive and the message will be acked.
+
     1. The file is marked as *verified* in the database (*COMPLETED* if you are using database schema <= 3).
     If this fails an error will be written to the logs.
 
@@ -45,4 +49,3 @@ Otherwise the processing continues with verification:
 
     1. The archive file is removed from the inbox storage.
     If this fails an error is written to the logs, and an error is written to the error queue.
-

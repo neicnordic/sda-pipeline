@@ -4,13 +4,16 @@ Splits the Crypt4GH header and moves it to database. The remainder of the file
 is sent to the storage backend (archive). No cryptographic tasks are done.
 
 ## Service Description
+
 The ingest service copies files from the file inbox to the archive, and registers them in the database.
 
 When running, ingest reads messages from the configured RabbitMQ queue (default: "ingest").
 For each message, these steps are taken (if not otherwise noted, errors halt progress and the service moves on to the next message):
 
-1.  The message is validated as valid JSON that matches the "ingestion-trigger" schema (defined in sda-common).
+1. The message is validated as valid JSON that matches the "ingestion-trigger" schema (defined in sda-common).
 If the message can’t be validated it is discarded with an error message in the logs.
+
+1. A check is performed to get the status of the file that is to be ingested, if the status is `DISABLED` the work is aborted and the message will be acked.
 
 1. A file reader is created for the filepath in the message.
 If the file reader can’t be created an error is written to the logs, the message is Nacked and forwarded to the error queue.
@@ -36,6 +39,8 @@ Errors are written to the error log.
 
 1. The size of the archived file is read.
 Errors are written to the error log.
+
+1. A check is performed to get the status of the file, if the status is `DISABLED` the work is aborted, the file will be removed from the archive and the message will be acked.
 
 1. The database is updated with the file size, archive path, and archive checksum, and the file is set as “archived”.
 Errors are written to the error log.

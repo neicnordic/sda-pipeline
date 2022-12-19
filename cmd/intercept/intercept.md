@@ -15,6 +15,10 @@ Then the service moves on to the next message):
 1. The message is validated as valid JSON following the schema read in the previous step.
 If this fails an error is written to the logs, but not to the error queue and the message is not Ack'ed or Nack'ed.
 
+1. If the message is of type `cancel`, the file will be marked as `DISABLED` in the database.
+
+1. If the message is of type `ingest` an entry will be inserted in the database unless it already exists.
+
 1. The correct queue for the message is decided based on message type.
 This is not supposed to be able to fail.
 
@@ -22,4 +26,3 @@ This is not supposed to be able to fail.
 This has no error handling as the resend-mechanism hasn't been finished.
 
 1. The message is Ack'ed.
-

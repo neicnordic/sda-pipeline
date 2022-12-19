@@ -2,8 +2,6 @@
 
 cd dev_utils || exit 1
 
-chmod 600 certs/client-key.pem
-
 echo "Checking archive files in s3"
 
 # Earlier tests verify that the file is in the database correctly

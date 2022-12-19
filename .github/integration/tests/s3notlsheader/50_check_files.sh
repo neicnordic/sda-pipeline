@@ -2,8 +2,6 @@
 
 cd dev_utils || exit 1
 
-chmod 600 certs/client-key.pem
-
 echo "Checking archive files in s3"
 
 # Earlier tests verify that the file is in the database correctly
@@ -50,6 +48,8 @@ for aid in $accessids; do
 	fi
 
 	rm -f "tmp/$apath"
+
+	apath=$(db_query "SELECT inbox_path FROM local_ega.files where stable_id='$aid';")
 
 	# Check checksum for backuped copy as well
 	s3cmd -c s3cmd-notls.conf get "s3://backup/$apath" "tmp/$apath"

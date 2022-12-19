@@ -277,6 +277,22 @@ func main() {
 					message.ReVerify,
 					err)
 
+				// Send the message to an error queue so it can be analyzed.
+				infoErrorMessage := broker.InfoError{
+					Error:           "Failed to verify archived file",
+					Reason:          err.Error(),
+					OriginalMessage: message,
+				}
+
+				body, _ := json.Marshal(infoErrorMessage)
+				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
+					log.Errorf("Failed to publish error message: %v", e)
+				}
+
+				if err := delivered.Ack(false); err != nil {
+					log.Errorf("Failed to ack message: %v", err)
+				}
+
 				continue
 			}
 

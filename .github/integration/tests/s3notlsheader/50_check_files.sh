@@ -49,7 +49,9 @@ for aid in $accessids; do
 
 	rm -f "tmp/$apath"
 
-	apath=$(db_query "SELECT inbox_path FROM local_ega.files where stable_id='$aid';")
+	apath=$(docker run --rm --name client --network dev_utils_default \
+		neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
+		-t -A -c "SELECT inbox_path FROM local_ega.files where stable_id='$aid';")
 
 	# Check checksum for backuped copy as well
 	s3cmd -c s3cmd-notls.conf get "s3://backup/$apath" "tmp/$apath"

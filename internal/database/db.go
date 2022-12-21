@@ -469,7 +469,7 @@ func (dbs *SQLdb) Close() {
 	db.Close()
 }
 
-// DisableFile marks the file as 'DISABLE'
+// DisableFile marks the file as 'DISABLED'
 func (dbs *SQLdb) DisableFile(filePath, user string) error {
 	var err error
 	for count := 1; count <= dbRetryTimes; count++ {
@@ -497,7 +497,7 @@ func (dbs *SQLdb) disableFile(filePath, user string) error {
 	return nil
 }
 
-// GetStatus returnes the status for a given fileID
+// GetStatus returns the status for a given fileID
 func (dbs *SQLdb) GetStatus(fileID int64) (string, error) {
 	status, err := dbs.getStatus(fileID)
 	if err != nil {
@@ -519,7 +519,7 @@ func (dbs *SQLdb) getStatus(fileID int64) (string, error) {
 	return status, nil
 }
 
-// GetFileID returnes the ID for a given inbox path and user combination
+// GetFileID returns the ID for a given inbox path and user combination
 func (dbs *SQLdb) GetFileID(filePath, user string) (int64, error) {
 	fileID, err := dbs.getFileID(filePath, user)
 	if err != nil {

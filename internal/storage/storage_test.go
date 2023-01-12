@@ -2,6 +2,10 @@ package storage
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"io"
 	"net/http/httptest"
 	"os"
@@ -14,7 +18,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/gliderlabs/ssh"
 	"github.com/johannesboyne/gofakes3/backend/s3mem"
+	"github.com/pkg/sftp"
+	cryptossh "golang.org/x/crypto/ssh"
 
 	"github.com/johannesboyne/gofakes3"
 	"github.com/stretchr/testify/assert"
@@ -53,9 +60,6 @@ var ts *httptest.Server
 var s3DoesNotExist = "nothing such"
 var s3Creatable = "somename"
 
-// var sftpDoesNotExist = "nonexistent/file"
-// var sftpCreatable = "this/file/exists"
-
 var writeData = []byte("this is a test")
 
 var cleanupFilesBack [1000]string
@@ -65,13 +69,20 @@ var testPosixConf = posixConf{
 	"/"}
 
 var testSftpConf = SftpConf{
-	"127.0.0.1",
+	"localhost",
 	"6222",
 	"user",
-	"../../dev_utils/certs/sftp-key.pem",
+	"to/be/updated",
 	"test",
 	"",
 }
+
+// HoneyPot encapsulates the initialized mock sftp server struct
+type HoneyPot struct {
+	server *ssh.Server
+}
+
+var hp *HoneyPot
 
 func writeName() (name string, err error) {
 	f, err := os.CreateTemp("", "writablefile")
@@ -134,14 +145,24 @@ func TestMain(m *testing.M) {
 	err := setupFakeS3()
 
 	if err != nil {
-		log.Error("Setup of fake s3 failed, bailing out")
+		log.Errorf("Setup of fake s3 failed, bailing out: %v", err)
+		os.Exit(1)
+	}
+
+	err = setupMockSFTP()
+
+	if err != nil {
+		log.Errorf("Setup of mock sftp failed, bailing out: %v", err)
 		os.Exit(1)
 	}
 
 	ret := m.Run()
 	ts.Close()
+	hp.server.Close()
+	os.Remove(testConf.SFTP.PemKeyPath)
 	os.Exit(ret)
 }
+
 func TestPosixBackend(t *testing.T) {
 
 	defer doCleanup()
@@ -334,6 +355,91 @@ func TestPOSIXFail(t *testing.T) {
 	assert.NotNil(t, err, "RemoveFile worked when it should not")
 }
 
+// Initializes a mock sftp server instance
+func setupMockSFTP() error {
+
+	password := testConf.SFTP.PemKeyPass
+	addr := testConf.SFTP.Host + ":" + testConf.SFTP.Port
+
+	// Key-pair generation
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return err
+	}
+	publicRsaKey, err := cryptossh.NewPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return err
+	}
+	// pem.Block
+	privBlock := pem.Block{
+		Type:    "RSA PRIVATE KEY",
+		Headers: nil,
+		Bytes:   x509.MarshalPKCS1PrivateKey(privateKey),
+	}
+	block, err := x509.EncryptPEMBlock(rand.Reader, privBlock.Type, privBlock.Bytes, []byte(password), x509.PEMCipherAES256) //nolint:staticcheck
+	if err != nil {
+		return err
+	}
+
+	// Private key file in PEM format
+	privateKeyBytes := pem.EncodeToMemory(block)
+
+	// Create temp key file and update config
+	fi, err := os.CreateTemp("", "sftp-key")
+	testConf.SFTP.PemKeyPath = fi.Name()
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(testConf.SFTP.PemKeyPath, privateKeyBytes, 0600)
+	if err != nil {
+		return err
+	}
+
+	// Initialize a sftp honeypot instance
+	hp = NewHoneyPot(addr, publicRsaKey)
+
+	// Start the server in the background
+	go func() {
+		if err := hp.server.ListenAndServe(); err != nil {
+			log.Panic(err)
+		}
+	}()
+
+	return err
+}
+
+// NewHoneyPot takes in IP address to be used for sftp honeypot
+func NewHoneyPot(addr string, key ssh.PublicKey) *HoneyPot {
+	return &HoneyPot{
+		server: &ssh.Server{
+			Addr: addr,
+			SubsystemHandlers: map[string]ssh.SubsystemHandler{
+				"sftp": func(sess ssh.Session) {
+					debugStream := io.Discard
+					serverOptions := []sftp.ServerOption{
+						sftp.WithDebug(debugStream),
+					}
+					server, err := sftp.NewServer(
+						sess,
+						serverOptions...,
+					)
+					if err != nil {
+						log.Errorf("sftp server init error: %v\n", err)
+
+						return
+					}
+					if err := server.Serve(); err != io.EOF {
+						log.Errorf("sftp server completed with error: %v\n", err)
+					}
+				},
+			},
+			PublicKeyHandler: func(ctx ssh.Context, key ssh.PublicKey) bool {
+				return true
+			},
+		},
+	}
+}
+
 func TestSftpFail(t *testing.T) {
 
 	testConf.Type = sftpType
@@ -393,7 +499,7 @@ func TestSftpFail(t *testing.T) {
 	assert.EqualError(t, err, "Failed to parse private key, ssh: no key found")
 	testConf.SFTP.PemKeyPath = tmpKeyPath
 
-	// worng host key
+	// wrong host key
 	tmpHostKey := testConf.SFTP.HostKey
 	testConf.SFTP.HostKey = "wronghostkey"
 	_, err = NewBackend(testConf)
@@ -490,7 +596,7 @@ func TestSftpBackend(t *testing.T) {
 	assert.IsType(t, sftpBack, &sftpBackend{}, "Wrong type from NewBackend with sftp")
 
 	var sftpDoesNotExist = "nonexistent/file"
-	var sftpCreatable = "this/file/exists"
+	var sftpCreatable = os.TempDir() + "/this/file/exists"
 
 	writer, err := sftpBack.NewFileWriter(sftpCreatable)
 	assert.NotNil(t, writer, "Got a nil reader for writer from sftp")

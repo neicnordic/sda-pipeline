@@ -38,9 +38,6 @@ jobs:
       - name: Start MQ and DB
         run: docker-compose -f dev_utils/compose-no-tls.yml up -d db mq
 
-      - name: Start SFTP server
-        run: docker-compose -f dev_utils/compose-sda.yml up -d sftp-server
-
       - name: Test
         run: go test --tags=integration -v -coverprofile=coverage.txt -covermode=atomic ./...
 

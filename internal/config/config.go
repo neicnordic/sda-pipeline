@@ -33,8 +33,15 @@ type Config struct {
 	Database database.DBConf
 	API      APIConf
 	Notify   SMTPConf
+	Sync     SyncConf
 }
 
+type SyncConf struct {
+	Host     string
+	Password string
+	Port     int
+	User     string
+}
 type APIConf struct {
 	CACert     string
 	ServerCert string
@@ -44,6 +51,8 @@ type APIConf struct {
 	Session    SessionConfig
 	DB         *database.SQLdb
 	MQ         *broker.AMQPBroker
+	User       string
+	Password   string
 }
 
 type SessionConfig struct {
@@ -105,6 +114,10 @@ func NewConfig(app string) (*Config, error) {
 	case "notify":
 		requiredConfVars = []string{
 			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "smtp.host", "smtp.port", "smtp.password", "smtp.from",
+		}
+	case "sync":
+		requiredConfVars = []string{
+			"broker.host", "broker.port", "broker.user", "broker.password", "broker.routingkey",
 		}
 	default:
 		requiredConfVars = []string{
@@ -218,6 +231,24 @@ func NewConfig(app string) (*Config, error) {
 		return c, nil
 	case "notify":
 		c.configSMTP()
+
+		return c, nil
+	case "sync":
+		if viper.IsSet("db.host") {
+			err = c.configDatabase()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		err = c.configAPI()
+		if err != nil {
+			return nil, err
+		}
+
+		if viper.IsSet("sync.host") {
+			c.configSync()
+		}
 
 		return c, nil
 	}
@@ -436,6 +467,17 @@ func (c *Config) configSMTP() {
 	c.Notify.Port = viper.GetInt("smtp.port")
 	c.Notify.Password = viper.GetString("smtp.password")
 	c.Notify.FromAddr = viper.GetString("smtp.from")
+}
+
+// configSync provides configuration for the outgoing sync settings
+func (c *Config) configSync() {
+	c.Sync = SyncConf{}
+	c.Sync.Host = viper.GetString("sync.host")
+	if viper.IsSet("sync.port") {
+		c.Sync.Port = viper.GetInt("sync.port")
+	}
+	c.Sync.Password = viper.GetString("sync.password")
+	c.Sync.User = viper.GetString("sync.user")
 }
 
 // GetC4GHKey reads and decrypts and returns the c4gh key

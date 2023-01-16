@@ -41,8 +41,20 @@ type Finalize struct {
 	DecryptedChecksums []Checksums `json:"decrypted_checksums"`
 }
 
+type Ingest struct {
+	Type     string `json:"type"`
+	User     string `json:"user"`
+	FilePath string `json:"filepath"`
+}
+
 type InfoError struct {
 	Error           string      `json:"error"`
 	Reason          string      `json:"reason"`
 	OriginalMessage interface{} `json:"original-message"`
+}
+
+type Mappings struct {
+	Type         string   `json:"type"`
+	DatasetID    string   `json:"dataset_id"`
+	AccessionIDs []string `json:"accession_ids"`
 }

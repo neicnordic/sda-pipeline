@@ -81,3 +81,8 @@ inbox:
 log:
   level: "debug"
   format: "json"
+
+sync:
+  host: "http://localhost:8080"
+  password: "pass"
+  user: "dummy"

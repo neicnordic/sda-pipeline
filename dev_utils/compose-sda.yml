@@ -23,6 +23,7 @@ services:
     depends_on: 
       - certfixer
     environment:
+      - POSTGRES_PASSWORD=postgres
       - DB_LEGA_IN_PASSWORD=lega_in
       - DB_LEGA_OUT_PASSWORD=lega_out
       - PKI_VOLUME_PATH=/certs/

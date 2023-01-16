@@ -740,3 +740,29 @@ func (suite *TestSuite) TestNotifyConfiguration() {
 	assert.NotNil(suite.T(), config)
 
 }
+
+func (suite *TestSuite) TestSyncConfiguration() {
+	// At this point we should fail because we lack configuration
+	viper.Reset()
+	config, err := NewConfig("sync")
+	assert.Error(suite.T(), err)
+	assert.Nil(suite.T(), config)
+
+	suite.SetupTest()
+	viper.Set("broker.host", "test")
+	viper.Set("broker.port", 123)
+	viper.Set("broker.user", "test")
+	viper.Set("broker.password", "test")
+	viper.Set("broker.queue", "test")
+	viper.Set("broker.routingkey", "test")
+	viper.Set("broker.exchange", "test")
+
+	viper.Set("sync.host", "test")
+	viper.Set("sync.port", 456)
+	viper.Set("sync.password", "test")
+	viper.Set("sync.user", "dummy")
+
+	config, err = NewConfig("sync")
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), config)
+}

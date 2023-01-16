@@ -46,33 +46,8 @@ for file in dummy_data.c4gh largefile.c4gh; do
 
 	curl -vvv -u test:test 'http://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
-		--data-binary "$(echo '{
-						"vhost":"test",
-						"name":"sda",
-						"properties":{
-							"delivery_mode":2,
-							"correlation_id":"CORRID",
-							"content_encoding":"UTF-8",
-							"content_type":"application/json"
-						},
-						"routing_key":"files",
-						"payload_encoding":"string",
-						"payload":"{
-							\"type\":\"ingest\",
-							\"user\":\"test\",
-							\"filepath\":\"FILENAME\",
-							\"encrypted_checksums\":[
-								{
-									\"type\":\"sha256\",
-									\"value\":\"SHA256SUM\"
-								},
-								{
-									\"type\":\"md5\",
-									\"value\":\"MD5SUM\"
-								}
-							]
-						}"
-						}' | sed -e "s/FILENAME/$file/" -e "s/MD5SUM/${md5sum}/" -e "s/SHA256SUM/${sha256sum}/" -e "s/CORRID/$count/")"
+		--data-binary "$(echo '{"vhost":"test","name":"sda","properties":{"delivery_mode":2,"correlation_id":"CORRID","content_encoding":"UTF-8","content_type":"application/json"},"routing_key":"files","payload_encoding":"string","payload":"{\"type\":\"ingest\",\"user\":\"test\",\"filepath\":\"FILENAME\",\"encrypted_checksums\":[{\"type\":\"sha256\",\"value\":\"SHA256SUM\"},{\"type\":\"md5\",\"value\":\"MD5SUM\"}]}"}' | sed -e "s/FILENAME/$file/" -e "s/MD5SUM/${md5sum}/" -e "s/SHA256SUM/${sha256sum}/" -e "s/CORRID/$count/")"
+
 
 	RETRY_TIMES=0
 	until docker logs ingest --since="$now" 2>&1 | grep "File marked as archived"; do
@@ -145,34 +120,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 	# Publish accession id
 	curl -vvv -u test:test 'http://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
-		--data-binary "$(echo '{
-						"vhost":"test",
-						"name":"sda",
-						"properties":{
-							"delivery_mode":2,
-							"correlation_id":"CORRID",
-							"content_encoding":"UTF-8",
-							"content_type":"application/json"
-						},
-						"routing_key":"files",
-						"payload_encoding":"string",
-						"payload":"{
-							\"type\":\"accession\",
-							\"user\":\"test\",
-							\"filepath\":\"FILENAME\",
-							\"accession_id\":\"ACCESSIONID\",
-							\"decrypted_checksums\":[
-								{
-									\"type\":\"sha256\",
-									\"value\":\"DECSHA256SUM\"
-								},
-								{
-									\"type\":\"md5\",
-									\"value\":\"DECMD5SUM\"
-								}
-							]
-						}"
-						}' | sed -e "s/FILENAME/$filepath/" -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/${access}/" -e "s/CORRID/$count/")"
+		--data-binary "$(echo '{"vhost":"test","name":"sda","properties":{"delivery_mode":2,"correlation_id":"CORRID","content_encoding":"UTF-8","content_type":"application/json"},"routing_key":"files","payload_encoding":"string","payload":"{\"type\":\"accession\",\"user\":\"test\",\"filepath\":\"FILENAME\",\"accession_id\":\"ACCESSIONID\",\"decrypted_checksums\":[{\"type\":\"sha256\",\"value\":\"DECSHA256SUM\"},{\"type\":\"md5\",\"value\":\"DECMD5SUM\"}]}"}' | sed -e "s/FILENAME/$filepath/" -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/${access}/" -e "s/CORRID/$count/")"
 
 	echo "Waiting for finalize/backup to complete"
 
@@ -249,22 +197,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 	# Map dataset ids
 	curl -vvv -u test:test 'http://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
-		--data-binary "$(echo '{
-						"vhost":"test",
-						"name":"sda",
-						"properties":{
-							"delivery_mode":2,
-							"correlation_id":"CORRID",
-							"content_encoding":"UTF-8",
-							"content_type":"application/json"
-						},
-						"routing_key":"files",
-						"payload_encoding":"string",
-						"payload":"{
-							\"type\":\"mapping\",
-							\"dataset_id\":\"DATASET\",
-							\"accession_ids\":[\"ACCESSIONID\"]}"
-						}' | sed -e "s/DATASET/$dataset/" -e "s/ACCESSIONID/$access/" -e "s/CORRID/$count/")"
+		--data-binary "$(echo '{"vhost":"test","name":"sda","properties":{"delivery_mode":2,"correlation_id":"CORRID","content_encoding":"UTF-8","content_type":"application/json"},"routing_key":"files","payload_encoding":"string","payload":"{\"type\":\"mapping\",\"dataset_id\":\"DATASET\",\"accession_ids\":[\"ACCESSIONID\"]}"}' | sed -e "s/DATASET/$dataset/" -e "s/ACCESSIONID/$access/" -e "s/CORRID/$count/")"
 
 	RETRY_TIMES=0
 	dbcheck=''

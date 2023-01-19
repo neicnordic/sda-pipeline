@@ -25,6 +25,7 @@ import (
 
 	"github.com/johannesboyne/gofakes3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -205,13 +206,7 @@ func TestPosixBackend(t *testing.T) {
 
 	reader, err := backend.NewFileReader(writable)
 	assert.Nil(t, err, "posix NewFileReader failed when it should work")
-	assert.NotNil(t, reader, "Got a nil reader for posix")
-
-	if reader == nil {
-		t.Error("reader that should be usable is not, bailing out")
-
-		return
-	}
+	require.NotNil(t, reader, "Reader that should be usable is not, bailing out")
 
 	var readBackBuffer [4096]byte
 	readBack, err := reader.Read(readBackBuffer[0:4096])
@@ -532,18 +527,12 @@ func TestS3Backend(t *testing.T) {
 
 	reader, err := s3back.NewFileReader(s3Creatable)
 	assert.Nil(t, err, "s3 NewFileReader failed when it should work")
-	assert.NotNil(t, reader, "Got a nil reader for s3")
+	require.NotNil(t, reader, "Reader that should be usable is not, bailing out")
 
 	size, err := s3back.GetFileSize(s3Creatable)
 	assert.Nil(t, err, "s3 GetFileSize failed when it should work")
 	assert.NotNil(t, size, "Got a nil size for s3")
 	assert.Equal(t, int64(len(writeData)), size, "Got an incorrect file size")
-
-	if reader == nil {
-		t.Error("reader that should be usable is not, bailing out")
-
-		return
-	}
 
 	err = s3back.RemoveFile(s3Creatable)
 	assert.Nil(t, err, "s3 RemoveFile failed when it should work")
@@ -609,18 +598,12 @@ func TestSftpBackend(t *testing.T) {
 
 	reader, err := sftpBack.NewFileReader(sftpCreatable)
 	assert.Nil(t, err, "sftp NewFileReader failed when it should work")
-	assert.NotNil(t, reader, "Got a nil reader for sftp")
+	require.NotNil(t, reader, "Reader that should be usable is not, bailing out")
 
 	size, err := sftpBack.GetFileSize(sftpCreatable)
 	assert.Nil(t, err, "sftp GetFileSize failed when it should work")
 	assert.NotNil(t, size, "Got a nil size for sftp")
 	assert.Equal(t, int64(len(writeData)), size, "Got an incorrect file size")
-
-	if reader == nil {
-		t.Error("reader that should be usable is not, bailing out")
-
-		return
-	}
 
 	err = sftpBack.RemoveFile(sftpCreatable)
 	assert.Nil(t, err, "sftp RemoveFile failed when it should work")

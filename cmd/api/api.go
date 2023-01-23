@@ -19,6 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Conf needs to be exported or the shutdown will not run properly
 var Conf *config.Config
 var err error
 

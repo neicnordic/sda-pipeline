@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"net/smtp"
 	"os"
+	"os/signal"
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/common"
 	"sda-pipeline/internal/config"
 	"strconv"
+	"syscall"
 
 	"github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
@@ -20,22 +22,33 @@ const err = "error"
 const ready = "ready"
 
 func main() {
+	sigc := make(chan os.Signal, 5)
+
 	conf, err := config.NewConfig("notify")
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
 	}
 	mq, err := broker.NewMQ(conf.Broker)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
 	}
 
-	defer mq.Channel.Close()
-	defer mq.Connection.Close()
+	signal.Notify(sigc, os.Interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	go func() {
+		<-sigc
+		mq.Channel.Close()
+		mq.Connection.Close()
+		os.Exit(1)
+	}()
 
 	go func() {
 		connError := mq.ConnectionWatcher()
-		log.Error(connError)
-		os.Exit(1)
+		if connError != nil {
+			log.Errorf("Broker connError: %v", connError)
+			sigc <- syscall.SIGINT
+		}
 	}()
 
 	forever := make(chan bool)

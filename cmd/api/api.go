@@ -23,25 +23,29 @@ var Conf *config.Config
 var err error
 
 func main() {
+	sigc := make(chan os.Signal, 5)
+
 	Conf, err = config.NewConfig("api")
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
 	}
 	Conf.API.MQ, err = broker.NewMQ(Conf.Broker)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
 	}
 	Conf.API.DB, err = database.NewDB(Conf.Database)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
 	}
 
-	sigc := make(chan os.Signal, 5)
 	signal.Notify(sigc, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	go func() {
 		<-sigc
 		shutdown()
-		os.Exit(0)
+		os.Exit(1)
 	}()
 
 	srv := setup(Conf)

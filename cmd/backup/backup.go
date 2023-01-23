@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
@@ -35,25 +37,32 @@ type checksums struct {
 }
 
 func main() {
+	sigc := make(chan os.Signal, 5)
+
 	conf, err := config.NewConfig("backup")
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
 	}
 	mq, err := broker.NewMQ(conf.Broker)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
 	}
 	db, err := database.NewDB(conf.Database)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
 	}
 	backupStorage, err := storage.NewBackend(conf.Backup)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
 	}
 	archive, err := storage.NewBackend(conf.Archive)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
 	}
 
 	// we don't need crypt4gh keys if copyheader disabled
@@ -62,23 +71,32 @@ func main() {
 	if config.CopyHeader() {
 		key, err = config.GetC4GHKey()
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
+			sigc <- syscall.SIGINT
 		}
 
 		publicKey, err = config.GetC4GHPublicKey()
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
+			sigc <- syscall.SIGINT
 		}
 	}
 
-	defer mq.Channel.Close()
-	defer mq.Connection.Close()
-	defer db.Close()
+	signal.Notify(sigc, os.Interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	go func() {
+		<-sigc
+		mq.Channel.Close()
+		mq.Connection.Close()
+		db.Close()
+		os.Exit(1)
+	}()
 
 	go func() {
 		connError := mq.ConnectionWatcher()
-		log.Error(connError)
-		os.Exit(1)
+		if connError != nil {
+			log.Errorf("Broker connError: %v", connError)
+			sigc <- syscall.SIGINT
+		}
 	}()
 
 	forever := make(chan bool)
@@ -94,7 +112,8 @@ func main() {
 	go func() {
 		messages, err := mq.GetMessages(conf.Broker.Queue)
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
+			sigc <- syscall.SIGINT
 		}
 		for delivered := range messages {
 			log.Debugf("Received a message (corr-id: %s, message: %s)",

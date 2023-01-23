@@ -5,6 +5,8 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
@@ -37,27 +39,39 @@ type completed struct {
 }
 
 func main() {
+	sigc := make(chan os.Signal, 5)
+
 	conf, err := config.NewConfig("finalize")
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
 	}
 	mq, err := broker.NewMQ(conf.Broker)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
 	}
 	db, err := database.NewDB(conf.Database)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
 	}
 
-	defer mq.Channel.Close()
-	defer mq.Connection.Close()
-	defer db.Close()
+	signal.Notify(sigc, os.Interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	go func() {
+		<-sigc
+		mq.Channel.Close()
+		mq.Connection.Close()
+		db.Close()
+		os.Exit(1)
+	}()
 
 	go func() {
 		connError := mq.ConnectionWatcher()
-		log.Error(connError)
-		os.Exit(1)
+		if connError != nil {
+			log.Errorf("Broker connError: %v", connError)
+			sigc <- syscall.SIGINT
+		}
 	}()
 
 	forever := make(chan bool)
@@ -68,7 +82,8 @@ func main() {
 	go func() {
 		messages, err := mq.GetMessages(conf.Broker.Queue)
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
+			sigc <- syscall.SIGINT
 		}
 		for delivered := range messages {
 			log.Debugf("Received a message (corr-id: %s, message: %s)",

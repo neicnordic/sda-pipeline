@@ -4,8 +4,10 @@ package storage
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -19,11 +21,13 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/pkg/sftp"
+	"golang.org/x/crypto/ssh"
 
 	log "github.com/sirupsen/logrus"
 )
 
-// Backend defines methods to be implemented by PosixBackend and S3Backend
+// Backend defines methods to be implemented by PosixBackend, S3Backend and sftpBackend
 type Backend interface {
 	GetFileSize(filePath string) (int64, error)
 	RemoveFile(filePath string) error
@@ -36,6 +40,7 @@ type Conf struct {
 	Type  string
 	S3    S3Conf
 	Posix posixConf
+	SFTP  SftpConf
 }
 
 type posixBackend struct {
@@ -53,6 +58,8 @@ func NewBackend(config Conf) (Backend, error) {
 	switch config.Type {
 	case "s3":
 		return newS3Backend(config.S3)
+	case "sftp":
+		return newSftpBackend(config.SFTP)
 	default:
 		return newPosixBackend(config.Posix)
 	}
@@ -81,6 +88,7 @@ func (pb *posixBackend) NewFileReader(filePath string) (io.ReadCloser, error) {
 	file, err := os.Open(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 
@@ -96,6 +104,7 @@ func (pb *posixBackend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 	file, err := os.OpenFile(filepath.Join(filepath.Clean(pb.Location), filePath), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0640)
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 
@@ -111,13 +120,14 @@ func (pb *posixBackend) GetFileSize(filePath string) (int64, error) {
 	stat, err := os.Stat(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
+
 		return 0, err
 	}
 
 	return stat.Size(), nil
 }
 
-// RemoveFile removes a file from a give path
+// RemoveFile removes a file from a given path
 func (pb *posixBackend) RemoveFile(filePath string) error {
 	if pb == nil {
 		return fmt.Errorf("Invalid posixBackend")
@@ -126,6 +136,7 @@ func (pb *posixBackend) RemoveFile(filePath string) error {
 	err := os.Remove(filepath.Join(filepath.Clean(pb.Location), filePath))
 	if err != nil {
 		log.Error(err)
+
 		return err
 	}
 
@@ -229,6 +240,7 @@ func (sb *s3Backend) NewFileReader(filePath string) (io.ReadCloser, error) {
 
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 
@@ -255,6 +267,7 @@ func (sb *s3Backend) NewFileWriter(filePath string) (io.WriteCloser, error) {
 			_ = reader.CloseWithError(err)
 		}
 	}()
+
 	return writer, nil
 }
 
@@ -288,6 +301,7 @@ func (sb *s3Backend) GetFileSize(filePath string) (int64, error) {
 
 	if err != nil {
 		log.Errorln(err)
+
 		return 0, err
 	}
 
@@ -305,6 +319,7 @@ func (sb *s3Backend) RemoveFile(filePath string) error {
 		Key:    aws.String(filePath)})
 	if err != nil {
 		log.Error(err)
+
 		return err
 	}
 
@@ -348,4 +363,152 @@ func transportConfigS3(config S3Conf) http.RoundTripper {
 		ForceAttemptHTTP2: true}
 
 	return trConfig
+}
+
+type sftpBackend struct {
+	Connection *ssh.Client
+	Client     *sftp.Client
+	Conf       *SftpConf
+}
+
+// sftpConf stores information about the sftp storage backend
+type SftpConf struct {
+	Host       string
+	Port       string
+	UserName   string
+	PemKeyPath string
+	PemKeyPass string
+	HostKey    string
+}
+
+func newSftpBackend(config SftpConf) (*sftpBackend, error) {
+	// read in and parse pem key
+	key, err := os.ReadFile(config.PemKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read from key file, %v", err)
+	}
+
+	var signer ssh.Signer
+	if config.PemKeyPass == "" {
+		signer, err = ssh.ParsePrivateKey(key)
+	} else {
+		signer, err = ssh.ParsePrivateKeyWithPassphrase(key, []byte(config.PemKeyPass))
+	}
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse private key, %v", err)
+	}
+
+	// connect
+	conn, err := ssh.Dial("tcp", config.Host+":"+config.Port,
+		&ssh.ClientConfig{
+			User:            config.UserName,
+			Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
+			HostKeyCallback: TrustedHostKeyCallback(config.HostKey),
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to start ssh connection, %v", err)
+	}
+
+	// create new SFTP client
+	client, err := sftp.NewClient(conn)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to start sftp client, %v", err)
+	}
+
+	sfb := &sftpBackend{
+		Connection: conn,
+		Client:     client,
+		Conf:       &config,
+	}
+
+	_, err = client.ReadDir("./")
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to list files with sftp, %v", err)
+	}
+
+	return sfb, nil
+}
+
+// NewFileWriter returns an io.Writer instance for the sftp remote
+func (sfb *sftpBackend) NewFileWriter(filePath string) (io.WriteCloser, error) {
+	if sfb == nil {
+		return nil, fmt.Errorf("Invalid sftpBackend")
+	}
+	// Make remote directories
+	parent := filepath.Dir(filePath)
+	err := sfb.Client.MkdirAll(parent)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create dir with sftp, %v", err)
+	}
+
+	file, err := sfb.Client.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create file with sftp, %v", err)
+	}
+
+	return file, nil
+}
+
+// GetFileSize returns the size of the file
+func (sfb *sftpBackend) GetFileSize(filePath string) (int64, error) {
+	if sfb == nil {
+		return 0, fmt.Errorf("Invalid sftpBackend")
+	}
+
+	stat, err := sfb.Client.Lstat(filePath)
+	if err != nil {
+		return 0, fmt.Errorf("Failed to get file size with sftp, %v", err)
+	}
+
+	return stat.Size(), nil
+}
+
+// NewFileReader returns an io.Reader instance
+func (sfb *sftpBackend) NewFileReader(filePath string) (io.ReadCloser, error) {
+	if sfb == nil {
+		return nil, fmt.Errorf("Invalid sftpBackend")
+	}
+
+	file, err := sfb.Client.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open file with sftp, %v", err)
+	}
+
+	return file, nil
+}
+
+// RemoveFile removes a file or an empty directory.
+func (sfb *sftpBackend) RemoveFile(filePath string) error {
+	if sfb == nil {
+		return fmt.Errorf("Invalid sftpBackend")
+	}
+
+	err := sfb.Client.Remove(filePath)
+	if err != nil {
+		return fmt.Errorf("Failed to remove file with sftp, %v", err)
+	}
+
+	return nil
+}
+
+func TrustedHostKeyCallback(key string) ssh.HostKeyCallback {
+	if key == "" {
+		return func(_ string, _ net.Addr, k ssh.PublicKey) error {
+			keyString := k.Type() + " " + base64.StdEncoding.EncodeToString(k.Marshal())
+			log.Warningf("host key verification is not in effect (Fix by adding trustedKey: %q)", keyString)
+
+			return nil
+		}
+	}
+
+	return func(_ string, _ net.Addr, k ssh.PublicKey) error {
+		keyString := k.Type() + " " + base64.StdEncoding.EncodeToString(k.Marshal())
+		if ks := keyString; key != ks {
+			return fmt.Errorf("host key verification expected %q but got %q", key, ks)
+		}
+
+		return nil
+	}
 }

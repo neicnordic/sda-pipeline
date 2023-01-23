@@ -47,7 +47,15 @@ for aid in $accessids; do
 	rm -f "tmp/$apath"
 
 	# Check checksum for backuped copy as well
-	s3cmd -c s3cmd.conf get "s3://backup/$apath" "tmp/$apath"
+	chmod 700 "$PWD/certs/sftp-key.pem"
+	/usr/bin/expect <<EOD
+	spawn sftp -i "$PWD/certs/sftp-key.pem" -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -P 6222 user@localhost:"$apath" "tmp/$apath"
+	match_max 100000
+	expect -exact "Warning: Permanently added '\[localhost\]:6222' (ECDSA) to the list of known hosts.\r
+	Enter passphrase for key '$PWD/dev_utils/certs/sftp-key.pem': "
+	send -- "test\r"
+	expect eof
+EOD
 
 	if [ "${achecktype,,*}" = 'md5sum' ]; then
 		filecheck=$(md5sum "tmp/$apath" | cut -d' ' -f1)
@@ -60,7 +68,7 @@ for aid in $accessids; do
 		exit 1
 	fi
 
-	rm -f "tmp/$apath"
+	rm -r "tmp/$apath"
 done
 
-echo "Passed check for archive and backup (s3)"
+echo "Passed check for archive (s3) and backup (sftp)"

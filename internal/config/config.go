@@ -21,6 +21,7 @@ import (
 
 const POSIX = "posix"
 const S3 = "s3"
+const SFTP = "sftp"
 
 var requiredConfVars []string
 
@@ -124,10 +125,13 @@ func NewConfig(app string) (*Config, error) {
 		requiredConfVars = append(requiredConfVars, []string{"inbox.location"}...)
 	}
 
-	if viper.GetString("backup.type") == S3 {
+	switch viper.GetString("backup.type") {
+	case S3:
 		requiredConfVars = append(requiredConfVars, []string{"backup.url", "backup.accesskey", "backup.secretkey", "backup.bucket"}...)
-	} else if viper.GetString("backup.type") == POSIX {
+	case POSIX:
 		requiredConfVars = append(requiredConfVars, []string{"backup.location"}...)
+	case SFTP:
+		requiredConfVars = append(requiredConfVars, []string{"backup.sftp.host", "backup.sftp.port", "backup.sftp.userName", "backup.sftp.pemKeyPath", "backup.sftp.pemKeyPass"}...)
 	}
 
 	for _, s := range requiredConfVars {
@@ -270,6 +274,24 @@ func configS3Storage(prefix string) storage.S3Conf {
 	return s3
 }
 
+// configSFTP populates and returns a sftpConf with sftp backend configuration
+func configSFTP(prefix string) storage.SftpConf {
+	sftpConf := storage.SftpConf{}
+	if viper.IsSet(prefix + ".sftp.hostKey") {
+		sftpConf.HostKey = viper.GetString(prefix + ".sftp.hostKey")
+	} else {
+		sftpConf.HostKey = ""
+	}
+	// All these are required
+	sftpConf.Host = viper.GetString(prefix + ".sftp.host")
+	sftpConf.Port = viper.GetString(prefix + ".sftp.port")
+	sftpConf.UserName = viper.GetString(prefix + ".sftp.userName")
+	sftpConf.PemKeyPath = viper.GetString(prefix + ".sftp.pemKeyPath")
+	sftpConf.PemKeyPass = viper.GetString(prefix + ".sftp.pemKeyPass")
+
+	return sftpConf
+}
+
 // configArchive provides configuration for the archive storage
 func (c *Config) configArchive() {
 	if viper.GetString("archive.type") == S3 {
@@ -294,10 +316,14 @@ func (c *Config) configInbox() {
 
 // configBackup provides configuration for the backup storage
 func (c *Config) configBackup() {
-	if viper.GetString("backup.type") == S3 {
+	switch viper.GetString("backup.type") {
+	case S3:
 		c.Backup.Type = S3
 		c.Backup.S3 = configS3Storage("backup")
-	} else {
+	case SFTP:
+		c.Backup.Type = SFTP
+		c.Backup.SFTP = configSFTP("backup")
+	default:
 		c.Backup.Type = POSIX
 		c.Backup.Posix.Location = viper.GetString("backup.location")
 	}

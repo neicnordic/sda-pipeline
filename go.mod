@@ -11,11 +11,18 @@ require (
 	github.com/mocktools/go-smtp-mock v1.10.0
 	github.com/neicnordic/crypt4gh v1.6.2
 	github.com/pkg/errors v0.9.1
+	github.com/pkg/sftp v1.13.1
 	github.com/rabbitmq/amqp091-go v1.5.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/viper v1.14.0
 	github.com/stretchr/testify v1.8.1
 	github.com/xeipuuv/gojsonschema v1.2.0
+)
+
+require (
+	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
+	github.com/gliderlabs/ssh v0.3.5 // indirect
+	github.com/kr/fs v0.1.0 // indirect
 )
 
 require (

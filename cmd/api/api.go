@@ -93,9 +93,13 @@ func setup(config *config.Config) *http.Server {
 }
 
 func shutdown() {
-	defer Conf.API.MQ.Channel.Close()
-	defer Conf.API.MQ.Connection.Close()
-	defer Conf.API.DB.Close()
+	if Conf.API.MQ != nil {
+		Conf.API.MQ.Channel.Close()
+		Conf.API.MQ.Connection.Close()
+	}
+	if Conf.API.DB != nil {
+		Conf.API.DB.Close()
+	}
 }
 
 func readinessResponse(w http.ResponseWriter, r *http.Request) {

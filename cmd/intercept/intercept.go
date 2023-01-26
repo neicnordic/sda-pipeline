@@ -38,8 +38,8 @@ func main() {
 	signal.Notify(sigc, os.Interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	go func() {
 		<-sigc
-		mq.Channel.Close()
-		mq.Connection.Close()
+		defer mq.Channel.Close()
+		defer mq.Connection.Close()
 		os.Exit(1)
 	}()
 

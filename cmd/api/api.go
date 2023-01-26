@@ -28,8 +28,7 @@ func main() {
 
 	Conf, err = config.NewConfig("api")
 	if err != nil {
-		log.Error(err)
-		sigc <- syscall.SIGINT
+		log.Fatal(err)
 	}
 	Conf.API.MQ, err = broker.NewMQ(Conf.Broker)
 	if err != nil {

@@ -26,8 +26,7 @@ func main() {
 
 	conf, err := config.NewConfig("mapper")
 	if err != nil {
-		log.Error(err)
-		sigc <- syscall.SIGINT
+		log.Fatal(err)
 	}
 	mq, err := broker.NewMQ(conf.Broker)
 	if err != nil {

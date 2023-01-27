@@ -22,44 +22,51 @@ const err = "error"
 const ready = "ready"
 
 func main() {
-	sigc := make(chan os.Signal, 5)
+	forever := make(chan bool, 1)
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc, os.Interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Infoln("Recovered")
+		}
+	}()
+
+	go func() {
+		<-sigc
+		forever <- true
+	}()
 
 	conf, err := config.NewConfig("notify")
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
+		panic(err)
 	}
 	mq, err := broker.NewMQ(conf.Broker)
 	if err != nil {
 		log.Error(err)
 		sigc <- syscall.SIGINT
+		panic(err)
 	}
-
-	signal.Notify(sigc, os.Interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	go func() {
-		<-sigc
-		if mq != nil {
-			defer mq.Channel.Close()
-			defer mq.Connection.Close()
-		}
-		os.Exit(1)
-	}()
 
 	go func() {
 		connError := mq.ConnectionWatcher()
 		if connError != nil {
 			log.Errorf("Broker connError: %v", connError)
-			sigc <- syscall.SIGINT
+			sigc <- syscall.SIGTERM
+			panic(connError)
 		}
 	}()
-
-	forever := make(chan bool)
 
 	log.Infof("Starting %s notify service", conf.Broker.Queue)
 
 	go func() {
 		messages, err := mq.GetMessages(conf.Broker.Queue)
 		if err != nil {
-			log.Fatalf("Failed to get message from mq (error: %v)", err)
+			log.Errorf("Failed to get message from mq (error: %v)", err)
+			sigc <- syscall.SIGINT
+			panic(err)
 		}
 
 		for d := range messages {
@@ -94,6 +101,12 @@ func main() {
 	}()
 
 	<-forever
+	if mq != nil {
+		mq.Channel.Close()
+		mq.Connection.Close()
+	}
+	log.Infoln("exiting")
+	os.Exit(1)
 }
 
 func getUser(queue string, orgMsg []byte) string {

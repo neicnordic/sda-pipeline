@@ -37,31 +37,55 @@ type checksums struct {
 }
 
 func main() {
-	sigc := make(chan os.Signal, 5)
+	forever := make(chan bool, 1)
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc, os.Interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Infoln("Recovered")
+		}
+	}()
+
+	go func() {
+		<-sigc
+		forever <- false
+	}()
 
 	conf, err := config.NewConfig("backup")
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		sigc <- syscall.SIGINT
+		panic(err)
 	}
 	mq, err := broker.NewMQ(conf.Broker)
 	if err != nil {
 		log.Error(err)
 		sigc <- syscall.SIGINT
+		panic(err)
 	}
+	defer mq.Channel.Close()
+	defer mq.Connection.Close()
+
 	db, err := database.NewDB(conf.Database)
 	if err != nil {
 		log.Error(err)
 		sigc <- syscall.SIGINT
+		panic(err)
 	}
+	defer db.Close()
+
 	backupStorage, err := storage.NewBackend(conf.Backup)
 	if err != nil {
 		log.Error(err)
 		sigc <- syscall.SIGINT
+		panic(err)
 	}
 	archive, err := storage.NewBackend(conf.Archive)
 	if err != nil {
 		log.Error(err)
 		sigc <- syscall.SIGINT
+		panic(err)
 	}
 
 	// we don't need crypt4gh keys if copyheader disabled
@@ -72,37 +96,25 @@ func main() {
 		if err != nil {
 			log.Error(err)
 			sigc <- syscall.SIGINT
+			panic(err)
 		}
 
 		publicKey, err = config.GetC4GHPublicKey()
 		if err != nil {
 			log.Error(err)
 			sigc <- syscall.SIGINT
+			panic(err)
 		}
 	}
-
-	signal.Notify(sigc, os.Interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	go func() {
-		<-sigc
-		if mq != nil {
-			defer mq.Channel.Close()
-			defer mq.Connection.Close()
-		}
-		if db != nil {
-			defer db.Close()
-		}
-		os.Exit(1)
-	}()
 
 	go func() {
 		connError := mq.ConnectionWatcher()
 		if connError != nil {
 			log.Errorf("Broker connError: %v", connError)
-			sigc <- syscall.SIGINT
+			sigc <- syscall.SIGTERM
+			panic(connError)
 		}
 	}()
-
-	forever := make(chan bool)
 
 	log.Info("Starting backup service")
 	var message backup
@@ -117,6 +129,7 @@ func main() {
 		if err != nil {
 			log.Error(err)
 			sigc <- syscall.SIGINT
+			panic(err)
 		}
 		for delivered := range messages {
 			log.Debugf("Received a message (corr-id: %s, message: %s)",

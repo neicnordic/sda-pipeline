@@ -28,7 +28,7 @@ These settings control which crypt4gh keyfile is loaded.
 
 ### RabbitMQ broker settings
 
-These settings control how ingest connects to the RabbitMQ message broker.
+These settings control how verify connects to the RabbitMQ message broker.
 
  - `BROKER_HOST`: hostname of the rabbitmq server
 
@@ -36,7 +36,8 @@ These settings control how ingest connects to the RabbitMQ message broker.
 
  - `BROKER_QUEUE`: message queue to read messages from (commonly `archived`)
 
- - `BROKER_ROUTINGKEY`: message queue to write success messages to (commonly `archived`)
+ - `BROKER_ROUTINGKEY`: message queue to write success messages to (commonly `verified`)
+ # if `backup` is deployed the routing key should be `backup`
 
  - `BROKER_USER`: username to connect to rabbitmq
 
@@ -66,7 +67,7 @@ These settings control how ingest connects to the RabbitMQ message broker.
    More information is available
    [in the postgresql documentation](https://www.postgresql.org/docs/current/libpq-ssl.html#LIBPQ-SSL-PROTECTION)
 
-   Note that if `DB_SSLMODE` is set to anything by `disable`, then `DB_CACERT` needs to be set,
+   Note that if `DB_SSLMODE` is set to anything but `disable`, then `DB_CACERT` needs to be set,
    and if set to `verify-full`, then `DB_CLIENTCERT`, and `DB_CLIENTKEY` must also be set
 
  - `DB_CLIENTKEY`: key-file for the database client certificate
@@ -94,6 +95,7 @@ if `*_TYPE` is `S3` then the following variables are available:
  - `*_PORT`: S3 connection port (default: `443`)
  - `*_REGION`: S3 region (default: `us-east-1`)
  - `*_CHUNKSIZE`: S3 chunk size for multipart uploads.
+# CA certificate is only needed if the S3 server has a certificate signed by a private entity
  - `*_CACERT`: Certificate Authority (CA) certificate for the storage system
 
 and if `*_TYPE` is `POSIX`:

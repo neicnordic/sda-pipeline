@@ -4,7 +4,7 @@ The intercept service relays messages between Central EGA and Federated EGA node
 
 ## Configuration
 
-There are a number of options that can be set for the verify service.
+There are a number of options that can be set for the intercept service.
 These settings can be set by mounting a yaml-file at `/config.yaml` with settings.
 
 ex.
@@ -21,7 +21,7 @@ export LOG_FORMAT="json"
 
 ### RabbitMQ broker settings
 
-These settings control how ingest connects to the RabbitMQ message broker.
+These settings control how intercept connects to the RabbitMQ message broker.
 
  - `BROKER_HOST`: hostname of the rabbitmq server
 
@@ -57,7 +57,7 @@ These settings control how ingest connects to the RabbitMQ message broker.
    More information is available
    [in the postgresql documentation](https://www.postgresql.org/docs/current/libpq-ssl.html#LIBPQ-SSL-PROTECTION)
 
-   Note that if `DB_SSLMODE` is set to anything by `disable`, then `DB_CACERT` needs to be set,
+   Note that if `DB_SSLMODE` is set to anything but `disable`, then `DB_CACERT` needs to be set,
    and if set to `verify-full`, then `DB_CLIENTCERT`, and `DB_CLIENTKEY` must also be set
 
  - `DB_CLIENTKEY`: key-file for the database client certificate

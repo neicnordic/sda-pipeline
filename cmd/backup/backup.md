@@ -4,7 +4,7 @@ Moves data to backup storage and optionally merges it with the encryption header
 
 ## Configuration
 
-There are a number of options that can be set for the verify service.
+There are a number of options that can be set for the backup service.
 These settings can be set by mounting a yaml-file at `/config.yaml` with settings.
 
 ex.
@@ -34,7 +34,7 @@ These settings are only needed is `copyheader` is `true`.
 
 ### RabbitMQ broker settings
 
-These settings control how ingest connects to the RabbitMQ message broker.
+These settings control how backup connects to the RabbitMQ message broker.
 
  - `BROKER_HOST`: hostname of the rabbitmq server
 
@@ -42,7 +42,7 @@ These settings control how ingest connects to the RabbitMQ message broker.
 
  - `BROKER_QUEUE`: message queue to read messages from (commonly `backup`)
 
- - `BROKER_ROUTINGKEY`: message queue to write success messages to (commonly `archived`)
+ - `BROKER_ROUTINGKEY`: message queue to write success messages to (commonly `verified`)
 
  - `BROKER_USER`: username to connect to rabbitmq
 
@@ -72,7 +72,7 @@ These settings control how ingest connects to the RabbitMQ message broker.
    More information is available
    [in the postgresql documentation](https://www.postgresql.org/docs/current/libpq-ssl.html#LIBPQ-SSL-PROTECTION)
 
-   Note that if `DB_SSLMODE` is set to anything by `disable`, then `DB_CACERT` needs to be set,
+   Note that if `DB_SSLMODE` is set to anything but `disable`, then `DB_CACERT` needs to be set,
    and if set to `verify-full`, then `DB_CLIENTCERT`, and `DB_CLIENTKEY` must also be set
 
  - `DB_CLIENTKEY`: key-file for the database client certificate
@@ -87,7 +87,7 @@ Storage backend is defined by the `ARCHIVE_TYPE`, and `BACKUP_TYPE` variables.
 Valid values for these options are `S3` or `POSIX`
 (Defaults to `POSIX` on unknown values).
 
-The value of these variables define what other varaibles are read.
+The value of these variables define what other variables are read.
 The same variables are available for all storage types, differing by prefix (`ARCHIVE_`, or  `BACKUP_`)
 
 if `*_TYPE` is `S3` then the following variables are available:
@@ -100,6 +100,7 @@ if `*_TYPE` is `S3` then the following variables are available:
  - `*_PORT`: S3 connection port (default: `443`)
  - `*_REGION`: S3 region (default: `us-east-1`)
  - `*_CHUNKSIZE`: S3 chunk size for multipart uploads.
+# CA certificate is only needed if the S3 server has a certificate signed by a private entity
  - `*_CACERT`: Certificate Authority (CA) certificate for the storage system
 
 and if `*_TYPE` is `POSIX`:

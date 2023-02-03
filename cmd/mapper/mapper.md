@@ -100,4 +100,4 @@ On error the service sleeps for up to 5 minutes to allow for database recovery, 
 
  - Mapper reads messages from one rabbitmq queue (default `mappings`).
 
- - Mapper maps files to datasets in the database using thre `MapFilesToDataset` function.
+ - Mapper maps files to datasets in the database using the `MapFilesToDataset` function.

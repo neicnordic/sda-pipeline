@@ -37,7 +37,6 @@ These settings control how verify connects to the RabbitMQ message broker.
  - `BROKER_QUEUE`: message queue to read messages from (commonly `archived`)
 
  - `BROKER_ROUTINGKEY`: message queue to write success messages to (commonly `verified`)
- # if `backup` is deployed the routing key should be `backup`
 
  - `BROKER_USER`: username to connect to rabbitmq
 

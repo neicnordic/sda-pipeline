@@ -30,7 +30,7 @@ These settings control how finalize connects to the RabbitMQ message broker.
 
  - `BROKER_QUEUE`: message queue to read messages from (commonly `accessionIDs`)
 
- - `BROKER_ROUTINGKEY`: message queue to write success messages to (commonly `completed`)
+ - `BROKER_ROUTINGKEY`: message queue to write success messages to (commonly `backup`)
 
  - `BROKER_USER`: username to connect to rabbitmq
 

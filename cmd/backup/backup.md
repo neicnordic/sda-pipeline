@@ -42,7 +42,7 @@ These settings control how backup connects to the RabbitMQ message broker.
 
  - `BROKER_QUEUE`: message queue to read messages from (commonly `backup`)
 
- - `BROKER_ROUTINGKEY`: message queue to write success messages to (commonly `verified`)
+ - `BROKER_ROUTINGKEY`: message queue to write success messages to (commonly `completed`)
 
  - `BROKER_USER`: username to connect to rabbitmq
 

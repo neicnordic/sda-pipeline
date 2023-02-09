@@ -7,12 +7,13 @@ services:
       - DB_LEGA_IN_PASSWORD=lega_in
       - DB_LEGA_OUT_PASSWORD=lega_out
       - NOTLS=true
+      - POSTGRES_PASSWORD=rootpassword
     healthcheck:
       test: ["CMD", "pg_isready", "-h", "localhost", "-U", "lega_out"]
       interval: 5s
       timeout: 20s
       retries: 3
-    image: neicnordic/sda-db:v1.4.0
+    image: neicnordic/sda-db:v2.0.10
     ports:
       - "5432:5432"
     volumes:

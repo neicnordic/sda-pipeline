@@ -50,7 +50,7 @@ sha256sum=$(sha256sum wrongly_encrypted.c4gh | cut -d' ' -f 1)
 
 curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
-     --data-binary "$( echo '{
+     --data-binary "$(echo '{
     	                       "vhost":"test",
                                "name":"sda",
     	                       "properties":{
@@ -74,7 +74,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
     	                                                            }
     	                                                           ]
     	                                  }"
-    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
+    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" | tr -d '[:space:]' )"
 
 # Verify that message is moved to the error queue
 
@@ -84,7 +84,7 @@ check_move_to_error_queue "decryption failed"
 
 curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
-     --data-binary '{
+     --data-binary "$(echo '{
     	                       "vhost":"test",
                                "name":"sda",
     	                       "properties":{
@@ -108,7 +108,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
     	                                                            }
     	                                                           ]
     	                                  }"
-    	                      }'
+    	                      }' | tr -d '[:space:]' )"
 
 
 # Verify that message is moved to the error queue (takes a few mins).
@@ -191,7 +191,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
     	                                                            }
     	                                                           ]
     	                                  }"
-    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
+    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" | tr -d '[:space:]' )"
 
 # Verify that message is moved to the error queue.
 
@@ -228,7 +228,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
     	                                                            }
     	                                                           ]
     	                                  }"
-    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
+    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" | tr -d '[:space:]' )"
 
 # Verify that message is moved to the error queue.
 
@@ -269,7 +269,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
     	                                                            }
     	                                                           ]
     	                                  }"
-    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
+    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" | tr -d '[:space:]' )"
 
 RETRY_TIMES=0
 echo

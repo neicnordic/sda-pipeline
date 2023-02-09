@@ -81,7 +81,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 								}
 							]
 						}"
-						}' | sed -e "s/FILENAME/$file/" -e "s/MD5SUM/${md5sum}/" -e "s/SHA256SUM/${sha256sum}/" -e "s/CORRID/$count/")"
+						}' | sed -e "s/FILENAME/$file/" -e "s/MD5SUM/${md5sum}/" -e "s/SHA256SUM/${sha256sum}/" -e "s/CORRID/$count/" | tr -d '[:space:]' )"
 
 	RETRY_TIMES=0
 	until docker logs ingest --since="$now" 2>&1 | grep "File marked as archived"; do
@@ -181,7 +181,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 								}
 							]
 						}"
-						}' | sed -e "s/FILENAME/$filepath/" -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/${access}/" -e "s/CORRID/$count/")"
+						}' | sed -e "s/FILENAME/$filepath/" -e "s/DECMD5SUM/${decmd5sum}/" -e "s/DECSHA256SUM/${decsha256sum}/" -e "s/ACCESSIONID/${access}/" -e "s/CORRID/$count/" | tr -d '[:space:]' )"
 
 	echo "Waiting for finalize/backup to complete"
 
@@ -274,7 +274,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 							\"type\":\"mapping\",
 							\"dataset_id\":\"DATASET\",
 							\"accession_ids\":[\"ACCESSIONID\"]}"
-						}' | sed -e "s/DATASET/$dataset/" -e "s/ACCESSIONID/$access/" -e "s/CORRID/$count/")"
+						}' | sed -e "s/DATASET/$dataset/" -e "s/ACCESSIONID/$access/" -e "s/CORRID/$count/" | tr -d '[:space:]' )"
 
 	RETRY_TIMES=0
 	dbcheck=''

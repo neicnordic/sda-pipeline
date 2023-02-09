@@ -293,7 +293,6 @@ docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs"
 			-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 			neicnordic/pg-client:latest postgresql://postgres:rootpassword@db:5432/lega \
 			-t -A -c "update local_ega.main_to_files set main_id = main_id + 100"
-# 			-t -A -c "insert into sda.file_event_log(file_id, event, user_id) values ((select id from sda.files where submission_file_path = '/test_db_file.c4gh'), 'error' , 'fake_user');"
 
 docker unpause verify &> /dev/null
 

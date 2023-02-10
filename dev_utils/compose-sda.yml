@@ -29,12 +29,13 @@ services:
       - PG_CA=/var/lib/postgresql/tls/ca.pem
       - PG_SERVER_CERT=/var/lib/postgresql/tls/db.pem
       - PG_SERVER_KEY=/var/lib/postgresql/tls/db-key.pem
+      - POSTGRES_PASSWORD=rootpassword
     healthcheck:
       test: ["CMD", "pg_isready", "-h", "localhost", "-U", "lega_out"]
       interval: 5s
       timeout: 20s
       retries: 3
-    image: ghcr.io/neicnordic/sda-db:v1.4.0
+    image: ghcr.io/neicnordic/sda-db:v2.0.10
     ports:
       - "5432:5432"
     volumes:

@@ -3,8 +3,8 @@
 cd dev_utils || exit 1
 
 touch largefile.raw
-size=$(echo "$RANDOM" '*' "$RANDOM" '*' 5 + "$RANDOM" | bc)
-shred -n 1 -s "$size" largefile.raw
+size=$(shuf -i 300-600 -n 1)
+shred -n 1 -s "$size"M largefile.raw
 
 md5sum largefile.raw > largefile.raw.md5
 sha256sum largefile.raw > largefile.raw.sha256

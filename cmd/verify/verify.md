@@ -81,7 +81,7 @@ Storage backend is defined by the `ARCHIVE_TYPE`, and `INBOX_TYPE` variables.
 Valid values for these options are `S3` or `POSIX`
 (Defaults to `POSIX` on unknown values).
 
-The value of these variables define what other varaibles are read.
+The value of these variables define what other variables are read.
 The same variables are available for all storage types, differing by prefix (`ARCHIVE_`, or  `INBOX_`)
 
 if `*_TYPE` is `S3` then the following variables are available:

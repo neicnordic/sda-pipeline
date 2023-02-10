@@ -26,6 +26,7 @@ type AMQPChannel interface {
 	Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error
 	Close() error
 	IsClosed() bool
+	NotifyClose(c chan *amqp.Error) chan *amqp.Error
 }
 
 // AMQPBroker is a Broker that reads messages from an AMQP broker
@@ -240,9 +241,27 @@ func TLSConfigBroker(config MQConf) (*tls.Config, error) {
 
 // ConnectionWatcher listens to events from the server
 func (broker *AMQPBroker) ConnectionWatcher() *amqp.Error {
-	amqpError := <-broker.Connection.NotifyClose(make(chan *amqp.Error))
+	notifyChanClose := broker.Channel.NotifyClose(make(chan *amqp.Error))
+	notifyConnClose := broker.Connection.NotifyClose(make(chan *amqp.Error))
 
-	return amqpError
+	for notifyConnClose != nil || notifyChanClose != nil {
+		select {
+		case err, ok := <-notifyConnClose:
+			if !ok {
+				notifyConnClose = nil
+			} else {
+				return err
+			}
+		case err, ok := <-notifyChanClose:
+			if !ok {
+				notifyChanClose = nil
+			} else {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // SendJSONError sends message on JSON error

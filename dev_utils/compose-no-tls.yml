@@ -19,7 +19,7 @@ services:
     volumes:
       - /tmp/data:/data
   mq:
-    image: neicnordic/sda-mq:v1.4.24
+    image: ghcr.io/neicnordic/sda-mq:v1.4.24
     container_name: mq
     environment:
       - MQ_USER=test

@@ -19,18 +19,24 @@ services:
     volumes:
       - /tmp/data:/data
   mq:
-    image: neicnordic/sda-mq:v1.4.0
+    image: ghcr.io/neicnordic/sda-mq:v1.4.24
     container_name: mq
     environment:
-     - MQ_USER=test
-     - MQ_PASSWORD_HASH=C5ufXbYlww6ZBcEqDUB04YdUptO81s+ozI3Ll5GCHTnv8NAm
-     - MQ_VHOST=test
-     - NOTLS=true
+      - MQ_USER=test
+      - MQ_PASSWORD_HASH=C5ufXbYlww6ZBcEqDUB04YdUptO81s+ozI3Ll5GCHTnv8NAm
+      - MQ_VHOST=test
+      - NOTLS=true
     ports:
       - "15672:15672"
       - "5672:5672"
     healthcheck:
-      test: [ "CMD", "bash", "-c", "rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_local_alarms"]
+      test:
+        [
+          "CMD",
+          "bash",
+          "-c",
+          "rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_local_alarms",
+        ]
       interval: 5s
       timeout: 20s
       retries: 3
@@ -206,6 +212,6 @@ services:
     volumes:
       - ./config-notls.yaml:/config.yaml
 volumes:
-     archive:
-     backup:
-     inbox:
+  archive:
+  backup:
+  inbox:

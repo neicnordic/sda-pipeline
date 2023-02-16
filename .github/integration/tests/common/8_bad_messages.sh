@@ -53,8 +53,7 @@ for routingkey in files ingest archived accessionIDs backup mappings; do
 						},
 						"routing_key":"'"$routingkey"'",
 						"payload_encoding":"string",
-						"payload":"{
-						I give you bad json!}"
+						"payload":"{I give you bad json!}"
 					}'
 
 check_move_to_error_queue "I give you bad json"

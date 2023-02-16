@@ -55,7 +55,7 @@ broker:
   clientKey: "./dev_utils/certs/client-key.pem"
 # If the FQDN and hostname of the broker differ
 # serverName can be set to the SAN name in the certificate
-  #  serverName: ""
+#  serverName: ""
 
 c4gh:
   passphrase: "oaagCP1YgAZeEyl2eJAkHv9lkcWXWFgm"

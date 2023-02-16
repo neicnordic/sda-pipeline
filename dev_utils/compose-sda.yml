@@ -29,12 +29,13 @@ services:
       - PG_CA=/var/lib/postgresql/tls/ca.pem
       - PG_SERVER_CERT=/var/lib/postgresql/tls/db.pem
       - PG_SERVER_KEY=/var/lib/postgresql/tls/db-key.pem
+      - POSTGRES_PASSWORD=rootpassword
     healthcheck:
       test: ["CMD", "pg_isready", "-h", "localhost", "-U", "lega_out"]
       interval: 5s
       timeout: 20s
       retries: 3
-    image: ghcr.io/neicnordic/sda-db:v1.4.0
+    image: ghcr.io/neicnordic/sda-db:v2.0.10
     ports:
       - "5432:5432"
     volumes:
@@ -42,15 +43,15 @@ services:
       - certs:/var/lib/postgresql/tls/
   mq:
     container_name: mq
-    image: ghcr.io/neicnordic/sda-mq:v1.4.0
+    image: ghcr.io/neicnordic/sda-mq:v1.4.24
     environment:
-     - MQ_SERVER_CERT=/etc/rabbitmq/ssl/mq.pem
-     - MQ_SERVER_KEY=/etc/rabbitmq/ssl/mq.key
-     - MQ_CA=/etc/rabbitmq/ssl/ca.pem
-     - MQ_USER=test
-     - MQ_PASSWORD_HASH=C5ufXbYlww6ZBcEqDUB04YdUptO81s+ozI3Ll5GCHTnv8NAm
-     - MQ_VHOST=test
-     - MQ_VERIFY=verify_none
+      - MQ_SERVER_CERT=/etc/rabbitmq/ssl/mq.pem
+      - MQ_SERVER_KEY=/etc/rabbitmq/ssl/mq.key
+      - MQ_CA=/etc/rabbitmq/ssl/ca.pem
+      - MQ_USER=test
+      - MQ_PASSWORD_HASH=C5ufXbYlww6ZBcEqDUB04YdUptO81s+ozI3Ll5GCHTnv8NAm
+      - MQ_VHOST=test
+      - MQ_VERIFY=verify_none
     ports:
       - "15672:15672"
       - "5672:5672"
@@ -60,7 +61,13 @@ services:
       - ./certs/mq.pem:/etc/rabbitmq/ssl/mq.pem
       - ./certs/mq-key.pem:/etc/rabbitmq/ssl/mq.key
     healthcheck:
-      test: [ "CMD", "bash", "-c", "rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_local_alarms"]
+      test:
+        [
+          "CMD",
+          "bash",
+          "-c",
+          "rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_local_alarms",
+        ]
       interval: 5s
       timeout: 20s
       retries: 3
@@ -214,7 +221,7 @@ services:
 
   sftp-server:
     build:
-        context: sftp-server
+      context: sftp-server
     hostname: sftp-serv
     depends_on:
       certfixer:
@@ -225,14 +232,14 @@ services:
       - SFTP_USER_PUB_KEY=/keys/sftp-key.pub
     container_name: sftp-server-local
     ports:
-        - "6222:22"
+      - "6222:22"
     volumes:
-        - uploads:/uploads
-        - ./certs:/keys
+      - uploads:/uploads
+      - ./certs:/keys
 
 volumes:
-     archive:
-     certs:
-     backup:
-     inbox:
-     uploads:
+  archive:
+  certs:
+  backup:
+  inbox:
+  uploads:

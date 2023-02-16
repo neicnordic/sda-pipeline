@@ -50,7 +50,7 @@ sha256sum=$(sha256sum wrongly_encrypted.c4gh | cut -d' ' -f 1)
 
 curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
-     --data-binary "$( echo '{
+     --data-binary "$(echo '{
     	                       "vhost":"test",
                                "name":"sda",
     	                       "properties":{
@@ -74,7 +74,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
     	                                                            }
     	                                                           ]
     	                                  }"
-    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
+    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" | tr -d '[:space:]' )"
 
 # Verify that message is moved to the error queue
 
@@ -84,7 +84,7 @@ check_move_to_error_queue "decryption failed"
 
 curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
      -H 'Content-Type: application/json;charset=UTF-8' \
-     --data-binary '{
+     --data-binary "$(echo '{
     	                       "vhost":"test",
                                "name":"sda",
     	                       "properties":{
@@ -108,7 +108,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
     	                                                            }
     	                                                           ]
     	                                  }"
-    	                      }'
+    	                      }' | tr -d '[:space:]' )"
 
 
 # Verify that message is moved to the error queue (takes a few mins).
@@ -191,7 +191,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
     	                                                            }
     	                                                           ]
     	                                  }"
-    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
+    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" | tr -d '[:space:]' )"
 
 # Verify that message is moved to the error queue.
 
@@ -228,7 +228,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
     	                                                            }
     	                                                           ]
     	                                  }"
-    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
+    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" | tr -d '[:space:]' )"
 
 # Verify that message is moved to the error queue.
 
@@ -269,7 +269,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
     	                                                            }
     	                                                           ]
     	                                  }"
-    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" )"
+    	                      }' | sed -e "s/SHA256SUM/${sha256sum}/" -e "s/MD5SUM/${md5sum}/" | tr -d '[:space:]' )"
 
 RETRY_TIMES=0
 echo
@@ -291,8 +291,8 @@ echo "Waiting for ingest to confirm delivery."
 chmod 600 certs/client-key.pem
 docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
 			-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
-			neicnordic/pg-client:latest postgresql://lega_in:lega_in@db:5432/lega \
-			-t -A -c "update local_ega.files set id = 100 where inbox_path = '/test_db_file.c4gh';"
+			neicnordic/pg-client:latest postgresql://postgres:rootpassword@db:5432/lega \
+			-t -A -c "update local_ega.main_to_files set main_id = main_id + 100"
 
 docker unpause verify &> /dev/null
 

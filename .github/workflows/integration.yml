@@ -1,7 +1,12 @@
----
-
 name: integration tests
-on: [pull_request]
+
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - '**.go'
+      - 'go.*'
+      - 'schemas/**'
 
 jobs:
   integrationtests:

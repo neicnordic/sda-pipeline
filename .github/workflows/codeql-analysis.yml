@@ -6,6 +6,8 @@ on:
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [master]
+    paths:
+      - '**.go'
   schedule:
     - cron: '0 15 * * 4'
 
@@ -13,11 +15,6 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ['go']
 
     steps:
     - name: Checkout repository
@@ -31,7 +28,7 @@ jobs:
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
       with:
-        languages: ${{ matrix.language }}
+        languages: go
     - name: Autobuild
       uses: github/codeql-action/autobuild@v2
 

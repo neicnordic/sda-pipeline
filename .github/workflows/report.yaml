@@ -2,6 +2,9 @@ name: Multilinters
 
 on:
   push:
+    paths:
+      - '**.go'
+      - 'go.*'
 
 jobs:
 

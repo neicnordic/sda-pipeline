@@ -5,6 +5,9 @@ on:
     branches:
       - '**'        # matches every branch
       - '!master'   # excludes master
+    paths:
+      - '**.sh'
+
 
 
 jobs:

@@ -1,11 +1,16 @@
-name: Go
+name: Go test
 
-on: [push]
+on:
+  push:
+    paths:
+      - '**.go'
+      - 'go.*'
+      - 'schemas/**'
 
 jobs:
 
   build:
-    name: Build
+    name: Build and test
     runs-on: ubuntu-latest
     strategy:
       matrix:

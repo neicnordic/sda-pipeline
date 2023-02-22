@@ -268,8 +268,19 @@ func (dbs *SQLdb) insertFile(filename, user string) (int64, error) {
 		"status, " +
 		"encryption_method) " +
 		"VALUES($1, $2, $3,'INIT', 'CRYPT4GH') RETURNING id;"
+
 	var fileID int64
+
 	err := db.QueryRow(query, filename, strings.ReplaceAll(filepath.Ext(filename), ".", ""), user).Scan(&fileID)
+	if err == nil {
+		return fileID, nil
+	}
+	// We can only handle the duplicate key error for now
+	if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+		return 0, err
+	}
+	const updateQuery = "UPDATE local_ega.main SET status = 'IN_INGESTION' WHERE local_ega.main.submission_file_path = $1 AND local_ega.main.submission_user = $2 AND local_ega.main.status = $3 RETURNING id;"
+	err = db.QueryRow(updateQuery, filename, user, "INIT").Scan(&fileID)
 	if err != nil {
 		return 0, err
 	}

@@ -171,6 +171,7 @@ func main() {
 						message.ReVerify,
 						e)
 				}
+
 				continue
 			}
 
@@ -238,6 +239,7 @@ func main() {
 						e)
 
 				}
+
 				// Restart on new message
 				continue
 			}
@@ -386,6 +388,7 @@ func main() {
 						message.EncryptedChecksums,
 						message.ReVerify,
 						err)
+
 					continue
 				}
 

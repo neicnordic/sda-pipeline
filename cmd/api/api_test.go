@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"testing"
 	"time"
 
@@ -53,4 +54,23 @@ func TestDatabasePingCheck(t *testing.T) {
 	database.DB, _, err = sqlmock.New()
 	assert.NoError(t, err)
 	assert.NoError(t, checkDB(&database, 1*time.Second), "ping should succeed")
+}
+
+func TestGetToken(t *testing.T) {
+	authHeader := "Bearer sometoken"
+	_, err := getToken(authHeader)
+	assert.NoError(t, err)
+
+	authHeader = "Bearer "
+	_, err = getToken(authHeader)
+	log.Print(err)
+	assert.EqualError(t, err, "token string is missing from authorization header")
+
+	authHeader = "Beare"
+	_, err = getToken(authHeader)
+	assert.EqualError(t, err, "authorization scheme must be bearer")
+
+	authHeader = ""
+	_, err = getToken(authHeader)
+	assert.EqualError(t, err, "access token must be provided")
 }

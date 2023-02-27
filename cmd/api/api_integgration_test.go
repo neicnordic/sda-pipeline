@@ -9,7 +9,7 @@ import (
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/database"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,8 +51,8 @@ func TestShutdown(t *testing.T) {
 }
 
 func TestReadinessResponse(t *testing.T) {
-	r := mux.NewRouter()
-	r.HandleFunc("/ready", readinessResponse)
+	r := gin.Default()
+	r.GET("/ready", readinessResponse)
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 

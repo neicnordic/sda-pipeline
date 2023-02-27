@@ -14,7 +14,8 @@ import (
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/database"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -62,9 +63,11 @@ func main() {
 }
 
 func setup(config *config.Config) *http.Server {
-	r := mux.NewRouter().SkipClean(true)
 
-	r.HandleFunc("/ready", readinessResponse).Methods("GET")
+	r := gin.Default()
+
+	r.GET("/ready", readinessResponse)
+	r.GET("/files", getFiles)
 
 	cfg := &tls.Config{
 		MinVersion:               tls.VersionTLS12,
@@ -94,7 +97,7 @@ func shutdown() {
 	defer Conf.API.DB.Close()
 }
 
-func readinessResponse(w http.ResponseWriter, r *http.Request) {
+func readinessResponse(c *gin.Context) {
 	statusCocde := http.StatusOK
 
 	if Conf.API.MQ.Connection.IsClosed() {
@@ -124,7 +127,7 @@ func readinessResponse(w http.ResponseWriter, r *http.Request) {
 		statusCocde = http.StatusServiceUnavailable
 	}
 
-	w.WriteHeader(statusCocde)
+	c.JSON(statusCocde, "")
 }
 
 func checkDB(database *database.SQLdb, timeout time.Duration) error {

@@ -112,6 +112,7 @@ func NewMQ(config MQConf) (*AMQPBroker, error) {
 
 	if e := Channel.Confirm(false); e != nil {
 		fmt.Printf("channel could not be put into confirm mode: %s", e)
+
 		return nil, fmt.Errorf("channel could not be put into confirm mode: %s", e)
 	}
 
@@ -123,6 +124,7 @@ func NewMQ(config MQConf) (*AMQPBroker, error) {
 // GetMessages reads messages from the queue
 func (broker *AMQPBroker) GetMessages(queue string) (<-chan amqp.Delivery, error) {
 	ch := broker.Channel
+
 	return ch.Consume(
 		queue, // queue
 		"",    // consumer
@@ -161,6 +163,7 @@ func (broker *AMQPBroker) SendMessage(corrID, exchange, routingKey string, relia
 		return fmt.Errorf("failed delivery of delivery tag: %d", confirmed.DeliveryTag)
 	}
 	log.Debugf("confirmed delivery with delivery tag: %d", confirmed.DeliveryTag)
+
 	return nil
 }
 
@@ -172,6 +175,7 @@ func buildMQURI(mqHost, mqUser, mqPassword, mqVhost string, mqPort int, ssl bool
 	} else {
 		brokerURI = fmt.Sprintf("amqp://%s:%s@%s:%d%s", mqUser, mqPassword, mqHost, mqPort, mqVhost)
 	}
+
 	return brokerURI
 }
 
@@ -230,12 +234,14 @@ func TLSConfigBroker(config MQConf) (*tls.Config, error) {
 	if config.InsecureSkipVerify {
 		tlsConfig.InsecureSkipVerify = true
 	}
+
 	return &tlsConfig, nil
 }
 
 // ConnectionWatcher listens to events from the server
 func (broker *AMQPBroker) ConnectionWatcher() *amqp.Error {
 	amqpError := <-broker.Connection.NotifyClose(make(chan *amqp.Error))
+
 	return amqpError
 }
 
@@ -283,6 +289,7 @@ func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery,
 				delivered.CorrelationId,
 				e)
 		}
+
 		// Return error to restart on new message
 		return err
 	}
@@ -346,5 +353,6 @@ func validateJSON(messageType string, schemasPath string, body []byte) (*gojsons
 
 	schema := gojsonschema.NewReferenceLoader(schemasPath + "/" + messageType + ".json")
 	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
+
 	return res, err
 }

@@ -72,6 +72,7 @@ func main() {
 						"(corr-id: %s, reason: %v)",
 						delivered.CorrelationId, e)
 				}
+
 				// Restart on new message
 				continue
 			}
@@ -98,6 +99,7 @@ func main() {
 						"(corr-id: %s, reason: %v)",
 						delivered.CorrelationId, e)
 				}
+
 				// Restart on new message
 				continue
 			}

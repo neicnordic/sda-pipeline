@@ -16,9 +16,9 @@ import (
 	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
+	"github.com/google/uuid"
 	"github.com/neicnordic/crypt4gh/model/headers"
 	"github.com/neicnordic/crypt4gh/streaming"
-	"github.com/google/uuid"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -106,6 +106,7 @@ func main() {
 					"(corr-id: %s, error: %v)",
 					delivered.CorrelationId,
 					err)
+
 				continue
 			}
 
@@ -151,6 +152,7 @@ func main() {
 						message.Filepath,
 						e)
 				}
+
 				// Restart on new message
 				continue
 			}
@@ -188,6 +190,7 @@ func main() {
 						message.Filepath,
 						e)
 				}
+
 				// Restart on new message
 				continue
 			}
@@ -221,6 +224,7 @@ func main() {
 						archivedFile,
 						e)
 				}
+
 				continue
 			}
 
@@ -256,7 +260,7 @@ func main() {
 					readBuffer = readBuffer[:i]
 				}
 
-				bytesRead = bytesRead + int64(i)
+				bytesRead += int64(i)
 
 				h := bytes.NewReader(readBuffer)
 				if _, err = io.Copy(hash, h); err != nil {
@@ -267,6 +271,7 @@ func main() {
 						message.Filepath,
 						archivedFile,
 						err)
+
 					continue mainWorkLoop
 				}
 
@@ -320,6 +325,7 @@ func main() {
 							message.Filepath,
 							archivedFile,
 							err)
+
 						continue mainWorkLoop
 					}
 
@@ -331,6 +337,7 @@ func main() {
 							message.Filepath,
 							archivedFile,
 							err)
+
 						continue mainWorkLoop
 					}
 
@@ -344,6 +351,7 @@ func main() {
 							message.Filepath,
 							archivedFile,
 							err)
+
 						continue mainWorkLoop
 					}
 
@@ -359,6 +367,7 @@ func main() {
 							message.Filepath,
 							archivedFile,
 							err)
+
 						continue mainWorkLoop
 					}
 				}
@@ -372,6 +381,7 @@ func main() {
 						message.Filepath,
 						archivedFile,
 						err)
+
 					continue mainWorkLoop
 				}
 			}
@@ -392,6 +402,7 @@ func main() {
 					message.Filepath,
 					archivedFile,
 					err)
+
 				continue
 			}
 
@@ -447,6 +458,7 @@ func main() {
 					message.Filepath,
 					archivedFile,
 					err)
+
 				continue
 			}
 
@@ -486,12 +498,14 @@ func tryDecrypt(key *[32]byte, buf []byte) ([]byte, error) {
 	b, err := streaming.NewCrypt4GHReader(a, *key, nil)
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 
 	}
 	_, err = b.ReadByte()
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 
@@ -499,6 +513,7 @@ func tryDecrypt(key *[32]byte, buf []byte) ([]byte, error) {
 	header, err := headers.ReadHeader(f)
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 

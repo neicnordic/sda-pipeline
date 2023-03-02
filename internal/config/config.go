@@ -601,11 +601,9 @@ func CopyHeader() bool {
 
 // Function for reading the ega key in []byte
 func GetJwtKey(jwtpubkeypath string, jwtKeys map[string][]byte) error {
-
 	err := filepath.Walk(jwtpubkeypath,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				log.Print(err)
 				return err
 			}
 			if info.Mode().IsRegular() {

@@ -86,7 +86,7 @@ func TestReadinessResponse(t *testing.T) {
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 	defer res.Body.Close()
 
-	// close the connection to force a reconneciton
+	// close the connection to force a reconnection
 	Conf.API.MQ.Connection.Close()
 	res, err = http.Get(ts.URL + "/ready")
 	assert.NoError(t, err)

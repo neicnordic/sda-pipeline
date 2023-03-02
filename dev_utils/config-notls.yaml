@@ -1,5 +1,5 @@
 api:
-  jwtpubkeypath: "/tmp/keys"
+  jwtpubkeypath: "/keys"
 
 archive:
   type: ""

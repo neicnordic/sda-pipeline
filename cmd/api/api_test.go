@@ -107,13 +107,18 @@ func (suite *TestSuite) SetupTest() {
 
 // CreateKeys creates an RSA key pair for testing
 func (suite *TestSuite) CreateKeys(path string, keyName string) {
-	CreateFolder(path)
-	CreateRSAkeys(path, keyName)
+	err := CreateFolder(path)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	err = CreateRSAkeys(path, keyName)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
 	suite.PrivateKey, err = ParsePrivateRSAKey(path, keyName+".pem")
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
-
 }
 
 // CreateFolder where the keys will be stored
@@ -191,18 +196,19 @@ func CreateRSAkeys(keyPath string, keyName string) error {
 func CreateRSAToken(privateKey *rsa.PrivateKey, headerAlg, headerType string, tokenClaims map[string]interface{}) (string, error) {
 	var tok jwt.Token
 	tok, err := jwt.NewBuilder().Issuer(fmt.Sprintf("%v", tokenClaims["iss"])).Build()
-
 	if err != nil {
 		log.Error(err)
 	}
 
 	for key, element := range tokenClaims {
-		tok.Set(key, element)
+		err = tok.Set(key, element)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 
 	serialized, err := jwt.Sign(tok, jwt.WithKey(jwa.RS256, privateKey))
 	if err != nil {
-		fmt.Printf("failed to sign token: %s\n", err)
 		return "no-token", err
 	}
 
@@ -239,9 +245,9 @@ func TestGetToken(t *testing.T) {
 
 func (suite *TestSuite) TestGetUserFromToken() {
 	c := &config.Config{}
-	ApiConf := config.APIConf{}
-	ApiConf.JwtPubKeyPath = "/tmp/keys"
-	c.API = ApiConf
+	APIConf := config.APIConf{}
+	APIConf.JwtPubKeyPath = "/tmp/keys"
+	c.API = APIConf
 
 	Conf = c
 	Conf.API.JtwKeys = make(map[string][]byte)
@@ -256,7 +262,8 @@ func (suite *TestSuite) TestGetUserFromToken() {
 	method := "GET"
 	r, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		log.Println(err)
+		log.Fatalf("error: %v", err)
+
 		return
 	}
 
@@ -280,6 +287,9 @@ func (suite *TestSuite) TestGetUserFromToken() {
 
 	// Token without issuer
 	token, err = CreateRSAToken(suite.PrivateKey, "RS256", "JWT", NoIssuer)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
 	r.Header.Add("Authorization", "Bearer "+token)
 
 	user, err = getUserFromToken(w, r)

@@ -189,6 +189,9 @@ func getUserFromToken(w http.ResponseWriter, r *http.Request) (string, error) {
 	}
 
 	token, err := jwt.Parse([]byte(tokenStr), jwt.WithVerify(false))
+	if err != nil {
+		return "", fmt.Errorf("failed to get parse token: %v", err)
+	}
 	strIss := token.Issuer()
 
 	// Poor string unescaper for elixir

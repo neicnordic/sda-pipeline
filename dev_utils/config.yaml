@@ -2,6 +2,7 @@ api:
   cacert: "./dev_utils/certs/ca.pem"
   serverCert: "./dev_utils/certs/client.pem"
   serverKey: "./dev_utils/certs/client-key.pem"
+  jwtpubkeypath: "/keys"
 
 archive:
   type: ""

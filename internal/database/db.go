@@ -513,9 +513,11 @@ func (dbs *SQLdb) getUserFiles(userID string) ([]*SubmissionFileInfo, error) {
 	files := []*SubmissionFileInfo{}
 	db := dbs.DB
 
-	const query = "SELECT inbox_path, status, created_at " +
-		"FROM local_ega.files " +
-		"WHERE elixir_id = $1;"
+	const query = "SELECT f.submission_file_path, e.event, f.created_at FROM sda.files f " +
+		"LEFT JOIN (SELECT file_id, (ARRAY_AGG(event ORDER BY started_at DESC))[1] AS event " +
+		"FROM sda.file_event_log GROUP BY file_id) e " +
+		"ON f.id = e.file_id " +
+		"WHERE f.submission_user = $1;"
 
 	// nolint:rowserrcheck
 	rows, err := db.Query(query, userID)

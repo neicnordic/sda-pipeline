@@ -340,6 +340,11 @@ for file in dummy_data.c4gh largefile.c4gh; do
 		fi
 	done
 
+	# Test the API files endpoint
+	token="$(cat keys/token.jwt)"
+	response="$(curl --location "localhost:8080/files" --header "Authorization: Bearer $token")"
+	echo "$response"
+
 	RETRY_TIMES=0
 	decryptedsizedb=''
 

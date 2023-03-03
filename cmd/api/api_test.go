@@ -44,16 +44,6 @@ var (
 		"iat":   time.Now().Unix(),
 		"jti":   "6ad7aa42-3e9c-4833-bd16-765cb80c2102",
 	}
-
-	WrongTokenAlgClaims = map[string]interface{}{
-		"iss":       "Online JWT Builder",
-		"iat":       time.Now().Unix(),
-		"exp":       time.Now().Add(time.Hour * 2).Unix(),
-		"aud":       "4e9416a7-3515-447a-b848-d4ac7a57f",
-		"sub":       "pleasefix@snurre-in-the-house.org",
-		"auth_time": "1632207224",
-		"jti":       "cc847f9c-7608-4b4f-9c6f-6e734813355f",
-	}
 )
 
 type TestSuite struct {

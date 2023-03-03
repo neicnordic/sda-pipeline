@@ -79,7 +79,7 @@ else
 
     docker-compose -f compose-sda.yml up -d
 
-    for p in ingest verify finalize mapper intercept backup; do
+    for p in ingest verify finalize mapper intercept backup api; do
         RETRY_TIMES=0
         until docker ps -f name="$p" --format "{{.Status}}" | grep "Up"
         do echo "waiting for $p to become ready"

@@ -9,25 +9,23 @@ do
     fi
 done
 
-# we need this certificate to be of 600 to work with db connection
-chmod 600 certs/client-key.pem
-
-FILE="dummy_data.c4gh"
-SHA="5e9c767958cc3f6e8d16512b8b8dcab855ad1e04e05798b86f50ef600e137578"
-MD5="b60fa2486b121bed8d566bacec987e0d"
-
-if [ "$1" != "" ]; then
-    SHA=$(sha256sum "$1" | awk '{print $1;}')
-    MD5=$(md5sum "$1" | awk '{print $1;}')
-    FILE="$(realpath "$1")"
+infile=${1:-$(dirname "$0")/dummy_data.c4gh}
+if [ ! -f "$infile" ]; then
+    printf 'Unable to find regular file "%s"\n' "$infile" >&2
+    exit 1
 fi
-
-file=test/$(basename "$FILE")
+infile=$( realpath "$infile" )
 
 cd "$(dirname "$0")" || exit
 
-s3cmd -c s3cmd.conf put "$FILE" s3://inbox/"$file"
+# we need this certificate to be of 600 to work with db connection
+chmod 600 certs/client-key.pem
 
+SHA=$(openssl sha256 "$infile" | sed 's/.* //')
+MD5=$(openssl md5    "$infile" | sed 's/.* //')
+
+s3object=test/$(basename "$infile")
+s3cmd -c s3cmd.conf put "$infile" "s3://inbox/$s3object"
 
 # invoke ingestion for standalone (orchestrator)
 curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \

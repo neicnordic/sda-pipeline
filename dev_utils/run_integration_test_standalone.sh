@@ -38,7 +38,7 @@ payload_string=$( jq -c -n \
     --arg user test \
     --arg filepath "$s3object" \
     --argjson encrypted_checksums "$encrypted_checksums" \
-    '$ARGS.named|tostring'
+    '$ARGS.named|@base64'
 )
 
 properties=$( jq -c -n \
@@ -54,7 +54,7 @@ request_body=$( jq -c -n \
     --arg name sda \
     --argjson properties "$properties" \
     --arg routing_key inbox \
-    --arg payload_encoding string \
+    --arg payload_encoding base64 \
     --argjson payload "$payload_string" \
     '$ARGS.named'
 )

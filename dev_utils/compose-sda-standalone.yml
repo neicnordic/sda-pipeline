@@ -6,10 +6,10 @@ services:
       - -c
       - |
         cp /origcerts/* /certs
-        chown -R nobody.nobody /certs/*
+        chown -R nobody:nobody /certs/*
         chmod -R og-rw /certs/*-key.pem
-        chown -R 70.70 /certs/db*
-        chown -R 100.101 /certs/mq*
+        chown -R 70:70 /certs/db*
+        chown -R 100:101 /certs/mq*
         ls -la /certs/
 
     container_name: certfixer

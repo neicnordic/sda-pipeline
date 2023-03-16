@@ -35,7 +35,7 @@ encrypted_checksums=$( jq -c -n \
     '$ARGS.named|to_entries|map(with_entries(select(.key=="key").key="type"))'
 )
 
-payload_string=$( jq -c -n \
+payload_string=$( jq -r -c -n \
     --arg operation upload \
     --arg user test \
     --arg filepath "$s3object" \
@@ -57,7 +57,7 @@ request_body=$( jq -c -n \
     --argjson properties "$properties" \
     --arg routing_key inbox \
     --arg payload_encoding base64 \
-    --argjson payload "$payload_string" \
+    --arg payload "$payload_string" \
     '$ARGS.named'
 )
 

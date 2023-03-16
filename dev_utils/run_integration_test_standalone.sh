@@ -1,10 +1,10 @@
 #!/bin/sh
 
-for c in s3cmd jq
+for cmd in s3cmd jq openssl
 do
-    if ! command -v $c
+    if ! command -v "$cmd" >/dev/null 2>&1
     then
-        echo "$c could not be found"
+        printf '%s could not be found\n' "$cmd" >&2
         exit 1
     fi
 done

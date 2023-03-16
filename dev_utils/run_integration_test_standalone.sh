@@ -27,11 +27,43 @@ MD5=$(openssl md5    "$infile" | sed 's/.* //')
 s3object=test/$(basename "$infile")
 s3cmd -c s3cmd.conf put "$infile" "s3://inbox/$s3object"
 
-# invoke ingestion for standalone (orchestrator)
-curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
--H 'Content-Type: application/json;charset=UTF-8' \
---data-binary '{"vhost":"test","name":"sda","properties":{"delivery_mode":2,"correlation_id":"1","content_encoding":"UTF-8","content_type":"application/json"},"routing_key":"inbox","payload_encoding":"string","payload":"{\"operation\":\"upload\",\"user\":\"test\",\"filepath\":\"'"$file"'\",\"encrypted_checksums\":[{\"type\":\"sha256\",\"value\":\"'"$SHA"'\",\"type\":\"md5\",\"value\":\"'"$MD5"'\"}]}"}'
+encrypted_checksums=$( jq -c -n \
+    --arg sha256 "$SHA" \
+    --arg md5 "$MD5" \
+    '$ARGS.named|to_entries|map(with_entries(select(.key=="key").key="type"))'
+)
 
+payload_string=$( jq -c -n \
+    --arg operation upload \
+    --arg user test \
+    --arg filepath "$s3object" \
+    --argjson encrypted_checksums "$encrypted_checksums" \
+    '$ARGS.named|tostring'
+)
+
+properties=$( jq -c -n \
+    --argjson delivery_mode 2 \
+    --arg correlation_id 1 \
+    --arg content_encoding UTF-8 \
+    --arg content_type application/json \
+    '$ARGS.named'
+)
+
+request_body=$( jq -c -n \
+    --arg vhost test \
+    --arg name sda \
+    --argjson properties "$properties" \
+    --arg routing_key inbox \
+    --arg payload_encoding string \
+    --argjson payload "$payload_string" \
+    '$ARGS.named'
+)
+
+# invoke ingestion for standalone (orchestrator)
+curl -vvv --cacert certs/ca.pem --user test:test \
+    --header 'Content-Type: application/json;charset=UTF-8' \
+    --data-binary "$request_body" \
+    'https://localhost:15672/api/exchanges/test/sda/publish'
 
 RETRY_TIMES=0
 until docker logs mapper 2>&1 | grep "Mapped file to dataset"

@@ -67,16 +67,17 @@ curl -vvv --cacert certs/ca.pem --user test:test \
     --data-binary "$request_body" \
     'https://localhost:15672/api/exchanges/test/sda/publish'
 
-RETRY_TIMES=0
-until docker logs --since "$start_time" mapper 2>&1 | grep -F 'Mapped file to dataset'
+tries=6
+until docker logs --since "$start_time" mapper 2>&1 |
+      grep -q -F 'Mapped file to dataset'
 do
-    echo 'Waiting for mapper to complete'
-    RETRY_TIMES=$((RETRY_TIMES+1))
-    if [ $RETRY_TIMES -eq 30 ]; then
+    tries=$((tries - 1))
+    if [ "$tries" -eq 0 ]; then
         echo "Mapping failed"
         exit 1
     fi
-    sleep 10
+
+    sleep 5
 done
 
 # check that the file's dataset appeared in the db.

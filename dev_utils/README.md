@@ -46,6 +46,30 @@ For a complete test of the pipeline
 sh run_integration_test.sh
 ```
 
+## Starting the services in standalone mode
+
+In this case, the [sda-orchestrator](https://github.com/neicnordic/sda-orchestration) is used in place of `intercept` service.
+
+Create the necessary credentials.
+
+```command
+sh make_certs.sh
+```
+
+Start stack by running,
+
+```command
+docker-compose -f compose-sda-standalone.yml up -d
+```
+
+To see brief real-time logs at the terminal remove the -d flag.
+
+For a complete test of the ingestion cycle in standalone mode
+
+```command
+sh run_integration_test_standalone.sh
+```
+
 ## Manually run the integration test
 
 For step-by-step tests follow instructions below.

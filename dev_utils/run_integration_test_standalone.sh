@@ -1,5 +1,7 @@
 #!/bin/sh
 
+start_time=$( date -u +'%FT%TZ' )
+
 for cmd in s3cmd jq openssl
 do
     if ! command -v "$cmd" >/dev/null 2>&1
@@ -66,15 +68,15 @@ curl -vvv --cacert certs/ca.pem --user test:test \
     'https://localhost:15672/api/exchanges/test/sda/publish'
 
 RETRY_TIMES=0
-until docker logs mapper 2>&1 | grep "Mapped file to dataset"
+until docker logs --since "$start_time" mapper 2>&1 | grep -F 'Mapped file to dataset'
 do
-    echo "waiting for mapper to complete"
-    RETRY_TIMES=$((RETRY_TIMES+1));
+    echo 'Waiting for mapper to complete'
+    RETRY_TIMES=$((RETRY_TIMES+1))
     if [ $RETRY_TIMES -eq 30 ]; then
         echo "Mapping failed"
         exit 1
     fi
-    sleep 10;
+    sleep 10
 done
 
 # check that the file's dataset appeared in the db.

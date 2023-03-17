@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elixir-oslo/crypt4gh/keys"
+	"github.com/neicnordic/crypt4gh/keys"
 	log "github.com/sirupsen/logrus"
 
 	"sda-pipeline/internal/broker"
@@ -21,6 +21,7 @@ import (
 
 const POSIX = "posix"
 const S3 = "s3"
+const SFTP = "sftp"
 
 var requiredConfVars []string
 
@@ -31,6 +32,34 @@ type Config struct {
 	Inbox    storage.Conf
 	Backup   storage.Conf
 	Database database.DBConf
+	API      APIConf
+	Notify   SMTPConf
+}
+
+type APIConf struct {
+	CACert     string
+	ServerCert string
+	ServerKey  string
+	Host       string
+	Port       int
+	Session    SessionConfig
+	DB         *database.SQLdb
+	MQ         *broker.AMQPBroker
+}
+
+type SessionConfig struct {
+	Expiration time.Duration
+	Domain     string
+	Secure     bool
+	HTTPOnly   bool
+	Name       string
+}
+
+type SMTPConf struct {
+	Password string
+	FromAddr string
+	Host     string
+	Port     int
 }
 
 // NewConfig initializes and parses the config file and/or environment using
@@ -60,10 +89,9 @@ func NewConfig(app string) (*Config, error) {
 	}
 
 	switch app {
-	case "orchestrate":
-		// Orchestrate requires only broker connection and a series of queues
+	case "api":
 		requiredConfVars = []string{
-			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue",
+			"broker.host", "broker.port", "broker.user", "broker.password", "broker.routingkey", "db.host", "db.port", "db.user", "db.password", "db.database",
 		}
 	case "intercept":
 		// Intercept requires only broker connection
@@ -74,6 +102,15 @@ func NewConfig(app string) (*Config, error) {
 		// Mapper does not require broker.routingkey thus we remove it
 		requiredConfVars = []string{
 			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "db.host", "db.port", "db.user", "db.password", "db.database",
+		}
+	case "notify":
+		requiredConfVars = []string{
+			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "smtp.host", "smtp.port", "smtp.password", "smtp.from",
+		}
+	case "orchestrate":
+		// Orchestrate requires only broker connection and a series of queues
+		requiredConfVars = []string{
+			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue",
 		}
 	default:
 		requiredConfVars = []string{
@@ -93,15 +130,25 @@ func NewConfig(app string) (*Config, error) {
 		requiredConfVars = append(requiredConfVars, []string{"inbox.location"}...)
 	}
 
-	if viper.GetString("backup.type") == S3 {
+	switch viper.GetString("backup.type") {
+	case S3:
 		requiredConfVars = append(requiredConfVars, []string{"backup.url", "backup.accesskey", "backup.secretkey", "backup.bucket"}...)
-	} else if viper.GetString("backup.type") == POSIX {
+	case POSIX:
 		requiredConfVars = append(requiredConfVars, []string{"backup.location"}...)
+	case SFTP:
+		requiredConfVars = append(requiredConfVars, []string{"backup.sftp.host", "backup.sftp.port", "backup.sftp.userName", "backup.sftp.pemKeyPath", "backup.sftp.pemKeyPass"}...)
 	}
 
 	for _, s := range requiredConfVars {
 		if !viper.IsSet(s) {
 			return nil, fmt.Errorf("%s not set", s)
+		}
+	}
+
+	if viper.IsSet("log.format") {
+		if viper.GetString("log.format") == "json" {
+			log.SetFormatter(&log.JSONFormatter{})
+			log.Info("The logs format is set to JSON")
 		}
 	}
 
@@ -124,6 +171,18 @@ func NewConfig(app string) (*Config, error) {
 	viper.SetDefault("schema.type", "federated")
 	c.configSchemas()
 	switch app {
+	case "api":
+		err = c.configDatabase()
+		if err != nil {
+			return nil, err
+		}
+
+		err = c.configAPI()
+		if err != nil {
+			return nil, err
+		}
+
+		return c, nil
 	case "ingest":
 		c.configInbox()
 		c.configArchive()
@@ -132,24 +191,28 @@ func NewConfig(app string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		return c, nil
 	case "intercept":
 		return c, nil
 	case "verify":
+		c.configInbox()
 		c.configArchive()
 
 		err = c.configDatabase()
 		if err != nil {
 			return nil, err
 		}
+
 		return c, nil
 	case "finalize":
 		err = c.configDatabase()
 		if err != nil {
 			return nil, err
 		}
+
 		return c, nil
-	case "sync":
+	case "backup":
 		c.configArchive()
 		c.configBackup()
 
@@ -157,12 +220,18 @@ func NewConfig(app string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		return c, nil
 	case "mapper":
 		err = c.configDatabase()
 		if err != nil {
 			return nil, err
 		}
+
+		return c, nil
+	case "notify":
+		c.configSMTP()
+
 		return c, nil
 	case "orchestrate":
 		return c, nil
@@ -216,6 +285,24 @@ func configS3Storage(prefix string) storage.S3Conf {
 	return s3
 }
 
+// configSFTP populates and returns a sftpConf with sftp backend configuration
+func configSFTP(prefix string) storage.SftpConf {
+	sftpConf := storage.SftpConf{}
+	if viper.IsSet(prefix + ".sftp.hostKey") {
+		sftpConf.HostKey = viper.GetString(prefix + ".sftp.hostKey")
+	} else {
+		sftpConf.HostKey = ""
+	}
+	// All these are required
+	sftpConf.Host = viper.GetString(prefix + ".sftp.host")
+	sftpConf.Port = viper.GetString(prefix + ".sftp.port")
+	sftpConf.UserName = viper.GetString(prefix + ".sftp.userName")
+	sftpConf.PemKeyPath = viper.GetString(prefix + ".sftp.pemKeyPath")
+	sftpConf.PemKeyPass = viper.GetString(prefix + ".sftp.pemKeyPass")
+
+	return sftpConf
+}
+
 // configArchive provides configuration for the archive storage
 func (c *Config) configArchive() {
 	if viper.GetString("archive.type") == S3 {
@@ -240,10 +327,14 @@ func (c *Config) configInbox() {
 
 // configBackup provides configuration for the backup storage
 func (c *Config) configBackup() {
-	if viper.GetString("backup.type") == S3 {
+	switch viper.GetString("backup.type") {
+	case S3:
 		c.Backup.Type = S3
 		c.Backup.S3 = configS3Storage("backup")
-	} else {
+	case SFTP:
+		c.Backup.Type = SFTP
+		c.Backup.SFTP = configSFTP("backup")
+	default:
 		c.Backup.Type = POSIX
 		c.Backup.Posix.Location = viper.GetString("backup.location")
 	}
@@ -264,6 +355,10 @@ func (c *Config) configBroker() error {
 
 	if viper.IsSet("broker.routingkey") {
 		broker.RoutingKey = viper.GetString("broker.routingkey")
+	}
+
+	if viper.IsSet("broker.exchange") {
+		broker.Exchange = viper.GetString("broker.exchange")
 	}
 
 	if viper.IsSet("broker.durable") {
@@ -336,7 +431,49 @@ func (c *Config) configDatabase() error {
 	}
 
 	c.Database = db
+
 	return nil
+}
+
+// configDatabase provides configuration for the database
+func (c *Config) configAPI() error {
+	c.apiDefaults()
+	api := APIConf{}
+
+	api.Session.Expiration = time.Duration(viper.GetInt("api.session.expiration")) * time.Second
+	api.Session.Domain = viper.GetString("api.session.domain")
+	api.Session.Secure = viper.GetBool("api.session.secure")
+	api.Session.HTTPOnly = viper.GetBool("api.session.httponly")
+	api.Session.Name = viper.GetString("api.session.name")
+
+	api.Host = viper.GetString("api.host")
+	api.Port = viper.GetInt("api.port")
+	api.ServerKey = viper.GetString("api.serverKey")
+	api.ServerCert = viper.GetString("api.serverCert")
+	api.CACert = viper.GetString("api.CACert")
+
+	c.API = api
+
+	return nil
+}
+
+// apiDefaults set default values for web server and session
+func (c *Config) apiDefaults() {
+	viper.SetDefault("api.host", "0.0.0.0")
+	viper.SetDefault("api.port", 8080)
+	viper.SetDefault("api.session.expiration", -1)
+	viper.SetDefault("api.session.secure", true)
+	viper.SetDefault("api.session.httponly", true)
+	viper.SetDefault("api.session.name", "api_session_key")
+}
+
+// configNotify provides configuration for the backup storage
+func (c *Config) configSMTP() {
+	c.Notify = SMTPConf{}
+	c.Notify.Host = viper.GetString("smtp.host")
+	c.Notify.Port = viper.GetInt("smtp.port")
+	c.Notify.Password = viper.GetString("smtp.password")
+	c.Notify.FromAddr = viper.GetString("smtp.from")
 }
 
 // GetC4GHKey reads and decrypts and returns the c4gh key
@@ -356,5 +493,35 @@ func GetC4GHKey() (*[32]byte, error) {
 	}
 
 	keyFile.Close()
+
 	return &key, nil
+}
+
+// GetC4GHPublicKey reads the c4gh public key
+func GetC4GHPublicKey() (*[32]byte, error) {
+	keyPath := viper.GetString("c4gh.backupPubKey")
+
+	// Make sure the key path and passphrase is valid
+	keyFile, err := os.Open(keyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	key, err := keys.ReadPublicKey(keyFile)
+	if err != nil {
+		return nil, err
+	}
+
+	keyFile.Close()
+
+	return &key, nil
+}
+
+// CopyHeader reads the config and returns if the header will be copied
+func CopyHeader() bool {
+	if viper.IsSet("backup.copyHeader") {
+		return viper.GetBool("backup.copyHeader")
+	}
+
+	return false
 }

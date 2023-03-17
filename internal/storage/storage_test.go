@@ -2,10 +2,14 @@ package storage
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"io"
-	"io/ioutil"
 	"net/http/httptest"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -14,10 +18,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/gliderlabs/ssh"
 	"github.com/johannesboyne/gofakes3/backend/s3mem"
+	"github.com/pkg/sftp"
+	cryptossh "golang.org/x/crypto/ssh"
 
 	"github.com/johannesboyne/gofakes3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -25,8 +33,11 @@ import (
 // posixType is the configuration type used for posix backends
 const posixType = "posix"
 
-// s3Type is the configuration type used for posix backends
+// s3Type is the configuration type used for s3 backends
 const s3Type = "s3"
+
+// sftpType is the configuration type used for sftp backends
+const sftpType = "sftp"
 
 var testS3Conf = S3Conf{
 	"http://127.0.0.1",
@@ -40,7 +51,7 @@ var testS3Conf = S3Conf{
 	"../../dev_utils/certs/ca.pem",
 	2 * time.Second}
 
-var testConf = Conf{posixType, testS3Conf, testPosixConf}
+var testConf = Conf{posixType, testS3Conf, testPosixConf, testSftpConf}
 
 var posixDoesNotExist = "/this/does/not/exist"
 var posixNotCreatable = posixDoesNotExist
@@ -53,13 +64,29 @@ var s3Creatable = "somename"
 var writeData = []byte("this is a test")
 
 var cleanupFilesBack [1000]string
-var cleanupFiles []string = cleanupFilesBack[0:0]
+var cleanupFiles = cleanupFilesBack[0:0]
 
 var testPosixConf = posixConf{
 	"/"}
 
+var testSftpConf = SftpConf{
+	"localhost",
+	"6222",
+	"user",
+	"to/be/updated",
+	"test",
+	"",
+}
+
+// HoneyPot encapsulates the initialized mock sftp server struct
+type HoneyPot struct {
+	server *ssh.Server
+}
+
+var hp *HoneyPot
+
 func writeName() (name string, err error) {
-	f, err := ioutil.TempFile("", "writablefile")
+	f, err := os.CreateTemp("", "writablefile")
 
 	if err != nil {
 		return "", err
@@ -69,6 +96,7 @@ func writeName() (name string, err error) {
 
 	// Add to cleanup
 	cleanupFiles = append(cleanupFiles, name)
+
 	return name, err
 }
 
@@ -85,12 +113,26 @@ func TestNewBackend(t *testing.T) {
 	p, err := NewBackend(testConf)
 	assert.Nil(t, err, "Backend posix failed")
 
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+
+	testConf.Type = sftpType
+	sf, err := NewBackend(testConf)
+	assert.Nil(t, err, "Backend sftp failed")
+	assert.NotZero(t, buf.Len(), "Expected warning missing")
+
+	// update host key from server for later use
+	rgx := regexp.MustCompile(`\\\"(.*?)\\"`)
+	testConf.SFTP.HostKey = strings.Trim(rgx.FindString(buf.String()), "\\\"")
+	buf.Reset()
+
 	testConf.Type = s3Type
 	s, err := NewBackend(testConf)
 	assert.Nil(t, err, "Backend s3 failed")
 
 	assert.IsType(t, p, &posixBackend{}, "Wrong type from NewBackend with posix")
 	assert.IsType(t, s, &s3Backend{}, "Wrong type from NewBackend with S3")
+	assert.IsType(t, sf, &sftpBackend{}, "Wrong type from NewBackend with SFTP")
 
 	// test some extra ssl handling
 	testConf.S3.Cacert = "/dev/null"
@@ -104,14 +146,24 @@ func TestMain(m *testing.M) {
 	err := setupFakeS3()
 
 	if err != nil {
-		log.Error("Setup of fake s3 failed, bailing out")
+		log.Errorf("Setup of fake s3 failed, bailing out: %v", err)
+		os.Exit(1)
+	}
+
+	err = setupMockSFTP()
+
+	if err != nil {
+		log.Errorf("Setup of mock sftp failed, bailing out: %v", err)
 		os.Exit(1)
 	}
 
 	ret := m.Run()
 	ts.Close()
+	hp.server.Close()
+	os.Remove(testConf.SFTP.PemKeyPath)
 	os.Exit(ret)
 }
+
 func TestPosixBackend(t *testing.T) {
 
 	defer doCleanup()
@@ -128,6 +180,7 @@ func TestPosixBackend(t *testing.T) {
 	writable, err := writeName()
 	if err != nil {
 		t.Error("could not find a writable name, bailing out from test")
+
 		return
 	}
 
@@ -153,12 +206,7 @@ func TestPosixBackend(t *testing.T) {
 
 	reader, err := backend.NewFileReader(writable)
 	assert.Nil(t, err, "posix NewFileReader failed when it should work")
-	assert.NotNil(t, reader, "Got a nil reader for posix")
-
-	if reader == nil {
-		t.Error("reader that should be usable is not, bailing out")
-		return
-	}
+	require.NotNil(t, reader, "Reader that should be usable is not, bailing out")
 
 	var readBackBuffer [4096]byte
 	readBack, err := reader.Read(readBackBuffer[0:4096])
@@ -170,6 +218,9 @@ func TestPosixBackend(t *testing.T) {
 	size, err := backend.GetFileSize(writable)
 	assert.Nil(t, err, "posix NewFileReader failed when it should work")
 	assert.NotNil(t, size, "Got a nil size for posix")
+
+	err = backend.RemoveFile(writable)
+	assert.Nil(t, err, "posix RemoveFile failed when it should work")
 
 	log.SetOutput(&buf)
 
@@ -208,6 +259,7 @@ func setupFakeS3() (err error) {
 
 	if err != nil {
 		log.Error("Unexpected error while setting up fake s3")
+
 		return err
 	}
 
@@ -259,6 +311,9 @@ func TestS3Fail(t *testing.T) {
 
 	_, err = dummyBackend.GetFileSize("/")
 	assert.NotNil(t, err, "GetFileSize worked when it should not")
+
+	err = dummyBackend.RemoveFile("/")
+	assert.NotNil(t, err, "RemoveFile worked when it should not")
 }
 
 func TestPOSIXFail(t *testing.T) {
@@ -290,6 +345,161 @@ func TestPOSIXFail(t *testing.T) {
 
 	_, err = dummyBackend.GetFileSize("/")
 	assert.NotNil(t, err, "GetFileSize worked when it should not")
+
+	err = dummyBackend.RemoveFile("/")
+	assert.NotNil(t, err, "RemoveFile worked when it should not")
+}
+
+// Initializes a mock sftp server instance
+func setupMockSFTP() error {
+
+	password := testConf.SFTP.PemKeyPass
+	addr := testConf.SFTP.Host + ":" + testConf.SFTP.Port
+
+	// Key-pair generation
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return err
+	}
+	publicRsaKey, err := cryptossh.NewPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return err
+	}
+	// pem.Block
+	privBlock := pem.Block{
+		Type:    "RSA PRIVATE KEY",
+		Headers: nil,
+		Bytes:   x509.MarshalPKCS1PrivateKey(privateKey),
+	}
+	block, err := x509.EncryptPEMBlock(rand.Reader, privBlock.Type, privBlock.Bytes, []byte(password), x509.PEMCipherAES256) //nolint:staticcheck
+	if err != nil {
+		return err
+	}
+
+	// Private key file in PEM format
+	privateKeyBytes := pem.EncodeToMemory(block)
+
+	// Create temp key file and update config
+	fi, err := os.CreateTemp("", "sftp-key")
+	testConf.SFTP.PemKeyPath = fi.Name()
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(testConf.SFTP.PemKeyPath, privateKeyBytes, 0600)
+	if err != nil {
+		return err
+	}
+
+	// Initialize a sftp honeypot instance
+	hp = NewHoneyPot(addr, publicRsaKey)
+
+	// Start the server in the background
+	go func() {
+		if err := hp.server.ListenAndServe(); err != nil {
+			log.Panic(err)
+		}
+	}()
+
+	return err
+}
+
+// NewHoneyPot takes in IP address to be used for sftp honeypot
+func NewHoneyPot(addr string, key ssh.PublicKey) *HoneyPot {
+	return &HoneyPot{
+		server: &ssh.Server{
+			Addr: addr,
+			SubsystemHandlers: map[string]ssh.SubsystemHandler{
+				"sftp": func(sess ssh.Session) {
+					debugStream := io.Discard
+					serverOptions := []sftp.ServerOption{
+						sftp.WithDebug(debugStream),
+					}
+					server, err := sftp.NewServer(
+						sess,
+						serverOptions...,
+					)
+					if err != nil {
+						log.Errorf("sftp server init error: %v\n", err)
+
+						return
+					}
+					if err := server.Serve(); err != io.EOF {
+						log.Errorf("sftp server completed with error: %v\n", err)
+					}
+				},
+			},
+			PublicKeyHandler: func(ctx ssh.Context, key ssh.PublicKey) bool {
+				return true
+			},
+		},
+	}
+}
+
+func TestSftpFail(t *testing.T) {
+
+	testConf.Type = sftpType
+
+	// test connection
+	tmpHost := testConf.SFTP.Host
+
+	testConf.SFTP.Host = "nonexistenthost"
+	_, err := NewBackend(testConf)
+	assert.NotNil(t, err, "Backend worked when it should not")
+
+	var dummyBackend *sftpBackend
+	reader, err := dummyBackend.NewFileReader("/")
+	assert.NotNil(t, err, "NewFileReader worked when it should not")
+	assert.Nil(t, reader, "Got a Reader when expected not to")
+
+	writer, err := dummyBackend.NewFileWriter("/")
+	assert.NotNil(t, err, "NewFileWriter worked when it should not")
+	assert.Nil(t, writer, "Got a Writer when expected not to")
+
+	_, err = dummyBackend.GetFileSize("/")
+	assert.NotNil(t, err, "GetFileSize worked when it should not")
+
+	err = dummyBackend.RemoveFile("/")
+	assert.NotNil(t, err, "RemoveFile worked when it should not")
+	assert.EqualError(t, err, "Invalid sftpBackend")
+	testConf.SFTP.Host = tmpHost
+
+	// wrong key password
+	tmpKeyPass := testConf.SFTP.PemKeyPass
+	testConf.SFTP.PemKeyPass = "wrongkey"
+	_, err = NewBackend(testConf)
+	assert.EqualError(t, err, "Failed to parse private key, x509: decryption password incorrect")
+
+	// missing key password
+	testConf.SFTP.PemKeyPass = ""
+	_, err = NewBackend(testConf)
+	assert.EqualError(t, err, "Failed to parse private key, ssh: this private key is passphrase protected")
+	testConf.SFTP.PemKeyPass = tmpKeyPass
+
+	// wrong key
+	tmpKeyPath := testConf.SFTP.PemKeyPath
+	testConf.SFTP.PemKeyPath = "nonexistentkey"
+	_, err = NewBackend(testConf)
+	testConf.SFTP.PemKeyPath = tmpKeyPath
+	assert.EqualError(t, err, "Failed to read from key file, open nonexistentkey: no such file or directory")
+
+	defer doCleanup()
+	dummyKeyFile, err := writeName()
+	if err != nil {
+		t.Error("could not find a writable name, bailing out from test")
+
+		return
+	}
+	testConf.SFTP.PemKeyPath = dummyKeyFile
+	_, err = NewBackend(testConf)
+	assert.EqualError(t, err, "Failed to parse private key, ssh: no key found")
+	testConf.SFTP.PemKeyPath = tmpKeyPath
+
+	// wrong host key
+	tmpHostKey := testConf.SFTP.HostKey
+	testConf.SFTP.HostKey = "wronghostkey"
+	_, err = NewBackend(testConf)
+	assert.ErrorContains(t, err, "Failed to start ssh connection, ssh: handshake failed: host key verification expected")
+	testConf.SFTP.HostKey = tmpHostKey
 }
 
 func TestS3Backend(t *testing.T) {
@@ -307,7 +517,7 @@ func TestS3Backend(t *testing.T) {
 	writer, err := s3back.NewFileWriter(s3Creatable)
 
 	assert.NotNil(t, writer, "Got a nil reader for writer from s3")
-	assert.Nil(t, err, "posix NewFileWriter failed when it shouldn't")
+	assert.Nil(t, err, "s3 NewFileWriter failed when it shouldn't")
 
 	written, err := writer.Write(writeData)
 
@@ -317,16 +527,15 @@ func TestS3Backend(t *testing.T) {
 
 	reader, err := s3back.NewFileReader(s3Creatable)
 	assert.Nil(t, err, "s3 NewFileReader failed when it should work")
-	assert.NotNil(t, reader, "Got a nil reader for s3")
+	require.NotNil(t, reader, "Reader that should be usable is not, bailing out")
 
 	size, err := s3back.GetFileSize(s3Creatable)
 	assert.Nil(t, err, "s3 GetFileSize failed when it should work")
+	assert.NotNil(t, size, "Got a nil size for s3")
 	assert.Equal(t, int64(len(writeData)), size, "Got an incorrect file size")
 
-	if reader == nil {
-		t.Error("reader that should be usable is not, bailing out")
-		return
-	}
+	err = s3back.RemoveFile(s3Creatable)
+	assert.Nil(t, err, "s3 RemoveFile failed when it should work")
 
 	var readBackBuffer [4096]byte
 	readBack, err := reader.Read(readBackBuffer[0:4096])
@@ -356,5 +565,69 @@ func TestS3Backend(t *testing.T) {
 	}
 
 	log.SetOutput(os.Stdout)
+
+}
+
+func TestSftpBackend(t *testing.T) {
+
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+
+	testConf.Type = sftpType
+	backend, err := NewBackend(testConf)
+	assert.Nil(t, err, "Backend failed")
+
+	assert.Zero(t, buf.Len(), "Got warning when not expected")
+	buf.Reset()
+
+	sftpBack := backend.(*sftpBackend)
+
+	assert.IsType(t, sftpBack, &sftpBackend{}, "Wrong type from NewBackend with sftp")
+
+	var sftpDoesNotExist = "nonexistent/file"
+	var sftpCreatable = os.TempDir() + "/this/file/exists"
+
+	writer, err := sftpBack.NewFileWriter(sftpCreatable)
+	assert.NotNil(t, writer, "Got a nil reader for writer from sftp")
+	assert.Nil(t, err, "sftp NewFileWriter failed when it shouldn't")
+
+	written, err := writer.Write(writeData)
+	assert.Nil(t, err, "Failure when writing to sftp writer")
+	assert.Equal(t, len(writeData), written, "Did not write all writeData")
+	writer.Close()
+
+	reader, err := sftpBack.NewFileReader(sftpCreatable)
+	assert.Nil(t, err, "sftp NewFileReader failed when it should work")
+	require.NotNil(t, reader, "Reader that should be usable is not, bailing out")
+
+	size, err := sftpBack.GetFileSize(sftpCreatable)
+	assert.Nil(t, err, "sftp GetFileSize failed when it should work")
+	assert.NotNil(t, size, "Got a nil size for sftp")
+	assert.Equal(t, int64(len(writeData)), size, "Got an incorrect file size")
+
+	err = sftpBack.RemoveFile(sftpCreatable)
+	assert.Nil(t, err, "sftp RemoveFile failed when it should work")
+
+	err = sftpBack.RemoveFile(sftpDoesNotExist)
+	assert.EqualError(t, err, "Failed to remove file with sftp, file does not exist")
+
+	var readBackBuffer [4096]byte
+	readBack, err := reader.Read(readBackBuffer[0:4096])
+
+	assert.Equal(t, len(writeData), readBack, "did not read back data as expected")
+	assert.Equal(t, writeData, readBackBuffer[:readBack], "did not read back data as expected")
+
+	if err != nil && err != io.EOF {
+		assert.Nil(t, err, "unexpected error when reading back data")
+	}
+
+	if !testing.Short() {
+		_, err = backend.GetFileSize(sftpDoesNotExist)
+		assert.EqualError(t, err, "Failed to get file size with sftp, file does not exist")
+
+		reader, err = backend.NewFileReader(sftpDoesNotExist)
+		assert.EqualError(t, err, "Failed to open file with sftp, file does not exist")
+		assert.Nil(t, reader, "Got a non-nil reader for sftp")
+	}
 
 }

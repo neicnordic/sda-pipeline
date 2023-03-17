@@ -7,12 +7,12 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
 
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 // This is an internal helper variable to make testing easier
@@ -25,13 +25,15 @@ type AMQPChannel interface {
 	NotifyPublish(confirm chan amqp.Confirmation) chan amqp.Confirmation
 	Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error
 	Close() error
+	IsClosed() bool
 }
 
 // AMQPBroker is a Broker that reads messages from an AMQP broker
 type AMQPBroker struct {
-	Connection *amqp.Connection
-	Channel    AMQPChannel
-	Conf       MQConf
+	Connection   *amqp.Connection
+	Channel      AMQPChannel
+	Conf         MQConf
+	confirmsChan <-chan amqp.Confirmation
 }
 
 // MQConf stores information about the message broker
@@ -56,18 +58,13 @@ type MQConf struct {
 	SchemasPath        string
 }
 
-// jsonError struct for sending broken messages to analysis
-type jsonError struct {
-	Error          string `json:"error"`
-	Reason         string `json:"reason"`
-	OrginalMessage []byte `json:"orginal-message"`
-}
-
-// FileError struct for sending file error messages to analysis
-type FileError struct {
-	User     string `json:"user"`
-	FilePath string `json:"filepath"`
-	Reason   string `json:"reason"`
+// InfoError struct for sending detailed error messages to analysis.
+// The empty interface allows for appending various json msgs but also broken json msgs as strings.
+// It is ok as long as we do not need to access fields in the msg, which we don't.
+type InfoError struct {
+	Error           string      `json:"error"`
+	Reason          string      `json:"reason"`
+	OriginalMessage interface{} `json:"original-message"`
 }
 
 // NewMQ creates a new Broker that can communicate with a backend
@@ -98,26 +95,36 @@ func NewMQ(config MQConf) (*AMQPBroker, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// The queues already exists so we can safely do a passive declaration
-	_, err = Channel.QueueDeclarePassive(
-		config.Queue, // name
-		true,         // durable
-		false,        // auto-deleted
-		false,        // internal
-		false,        // noWait
-		nil,          // arguments
-	)
-	if err != nil {
-		return nil, err
+	if config.Queue != "" {
+		// The queues already exists so we can safely do a passive declaration
+		_, err = Channel.QueueDeclarePassive(
+			config.Queue, // name
+			true,         // durable
+			false,        // auto-deleted
+			false,        // internal
+			false,        // noWait
+			nil,          // arguments
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return &AMQPBroker{Connection, Channel, config}, nil
+	if e := Channel.Confirm(false); e != nil {
+		fmt.Printf("channel could not be put into confirm mode: %s", e)
+
+		return nil, fmt.Errorf("channel could not be put into confirm mode: %s", e)
+	}
+
+	confirms := Channel.NotifyPublish(make(chan amqp.Confirmation, 1))
+
+	return &AMQPBroker{Connection, Channel, config, confirms}, nil
 }
 
 // GetMessages reads messages from the queue
 func (broker *AMQPBroker) GetMessages(queue string) (<-chan amqp.Delivery, error) {
 	ch := broker.Channel
+
 	return ch.Consume(
 		queue, // queue
 		"",    // consumer
@@ -131,15 +138,6 @@ func (broker *AMQPBroker) GetMessages(queue string) (<-chan amqp.Delivery, error
 
 // SendMessage sends a message to RabbitMQ
 func (broker *AMQPBroker) SendMessage(corrID, exchange, routingKey string, reliable bool, body []byte) error {
-	if reliable {
-		// Set channel
-		if e := broker.Channel.Confirm(false); e != nil {
-			logFatalf("channel could not be put into confirm mode: %s", e)
-		}
-		// Shouldn't this be setup once and for all?
-		confirms := broker.Channel.NotifyPublish(make(chan amqp.Confirmation, 100))
-		defer confirmOne(confirms)
-	}
 	err := broker.Channel.Publish(
 		exchange,
 		routingKey,
@@ -156,7 +154,17 @@ func (broker *AMQPBroker) SendMessage(corrID, exchange, routingKey string, relia
 			// a bunch of application/implementation-specific fields
 		},
 	)
-	return err
+	if err != nil {
+		return err
+	}
+
+	confirmed := <-broker.confirmsChan
+	if !confirmed.Ack {
+		return fmt.Errorf("failed delivery of delivery tag: %d", confirmed.DeliveryTag)
+	}
+	log.Debugf("confirmed delivery with delivery tag: %d", confirmed.DeliveryTag)
+
+	return nil
 }
 
 // buildMQURI builds the MQ connection URI
@@ -167,6 +175,7 @@ func buildMQURI(mqHost, mqUser, mqPassword, mqVhost string, mqPort int, ssl bool
 	} else {
 		brokerURI = fmt.Sprintf("amqp://%s:%s@%s:%d%s", mqUser, mqPassword, mqHost, mqPort, mqVhost)
 	}
+
 	return brokerURI
 }
 
@@ -188,7 +197,7 @@ func TLSConfigBroker(config MQConf) (*tls.Config, error) {
 		if cacert == "" {
 			continue
 		}
-		cacert, err := ioutil.ReadFile(cacert) // #nosec this file comes from our config
+		cacert, err := os.ReadFile(cacert) // #nosec this file comes from our config
 		if err != nil {
 			return nil, err
 		}
@@ -205,11 +214,11 @@ func TLSConfigBroker(config MQConf) (*tls.Config, error) {
 	//nolint:nestif
 	if config.VerifyPeer {
 		if config.ClientCert != "" && config.ClientKey != "" {
-			cert, err := ioutil.ReadFile(config.ClientCert)
+			cert, err := os.ReadFile(config.ClientCert)
 			if err != nil {
 				return nil, err
 			}
-			key, err := ioutil.ReadFile(config.ClientKey)
+			key, err := os.ReadFile(config.ClientKey)
 			if err != nil {
 				return nil, err
 			}
@@ -225,35 +234,24 @@ func TLSConfigBroker(config MQConf) (*tls.Config, error) {
 	if config.InsecureSkipVerify {
 		tlsConfig.InsecureSkipVerify = true
 	}
-	return &tlsConfig, nil
-}
 
-// confirmOne accepts confirmation for a message sent with reliable.
-//
-// One would typically keep a channel of publishings, a sequence number, and a
-// set of unacknowledged sequence numbers and loop until the publishing channel
-// is closed.
-func confirmOne(confirms <-chan amqp.Confirmation) {
-	confirmed := <-confirms
-	if !confirmed.Ack {
-		log.Errorf("failed delivery of delivery tag: %d", confirmed.DeliveryTag)
-	}
-	log.Debugf("confirmed delivery with delivery tag: %d", confirmed.DeliveryTag)
+	return &tlsConfig, nil
 }
 
 // ConnectionWatcher listens to events from the server
 func (broker *AMQPBroker) ConnectionWatcher() *amqp.Error {
 	amqpError := <-broker.Connection.NotifyClose(make(chan *amqp.Error))
+
 	return amqpError
 }
 
 // SendJSONError sends message on JSON error
-func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody []byte, reason string, conf MQConf) error {
+func (broker *AMQPBroker) SendJSONError(delivered *amqp.Delivery, originalBody []byte, conf MQConf, reason, errorMsg string) error {
 
-	jsonErrorMessage := jsonError{
-		Error:          "Validation of JSON message failed",
-		Reason:         fmt.Sprintf("%v", reason),
-		OrginalMessage: originalBody,
+	jsonErrorMessage := InfoError{
+		Error:           errorMsg,
+		Reason:          fmt.Sprintf("%v", reason),
+		OriginalMessage: string(originalBody),
 	}
 
 	body, _ := json.Marshal(jsonErrorMessage)
@@ -279,16 +277,19 @@ func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery,
 
 		// Nack message so the server gets notified that something is wrong but don't requeue the message
 		if e := delivered.Nack(false, false); e != nil {
-			log.Errorln("Failed to Nack message "+
-				"(corr-id: %s, errror: %v) ", e)
+			log.Errorf("Failed to Nack message "+
+				"(corr-id: %s, errror: %v) ",
+				delivered.CorrelationId,
+				e)
 		}
 		// Send the message to an error queue so it can be analyzed.
-		if e := broker.SendJSONError(delivered, body, err.Error(), broker.Conf); e != nil {
-			log.Error("Failed to publish JSON decode error message "+
+		if e := broker.SendJSONError(delivered, body, broker.Conf, err.Error(), "Validation of JSON message failed"); e != nil {
+			log.Errorf("Failed to publish JSON decode error message "+
 				"(corr-id: %s, error: %v)",
 				delivered.CorrelationId,
 				e)
 		}
+
 		// Return error to restart on new message
 		return err
 	}
@@ -308,14 +309,14 @@ func (broker *AMQPBroker) ValidateJSON(delivered *amqp.Delivery,
 		log.Error("Validation failed")
 		// Nack message so the server gets notified that something is wrong but don't requeue the message
 		if e := delivered.Nack(false, false); e != nil {
-			log.Errorln("Failed to Nack message "+
+			log.Errorf("Failed to Nack message "+
 				"(corr-id: %s, error: %v)",
 				delivered.CorrelationId,
 				e)
 		}
 		// Send the message to an error queue so it can be analyzed.
-		if e := broker.SendJSONError(delivered, body, errorString, broker.Conf); e != nil {
-			log.Error("Failed to publish JSON validity error message "+
+		if e := broker.SendJSONError(delivered, body, broker.Conf, errorString, "Validation of JSON message failed"); e != nil {
+			log.Errorf("Failed to publish JSON validity error message "+
 				"(corr-id: %s, error: %v)",
 				delivered.CorrelationId,
 				e)
@@ -352,5 +353,6 @@ func validateJSON(messageType string, schemasPath string, body []byte) (*gojsons
 
 	schema := gojsonschema.NewReferenceLoader(schemasPath + "/" + messageType + ".json")
 	res, err := gojsonschema.Validate(schema, gojsonschema.NewBytesLoader(body))
+
 	return res, err
 }

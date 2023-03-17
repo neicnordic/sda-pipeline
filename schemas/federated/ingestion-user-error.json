@@ -106,7 +106,7 @@
             "$id": "#/properties/reason",
             "type": "string",
             "title": "A user-related error",
-            "description": "The reason why the error occured",
+            "description": "The reason why the error occurred",
             "examples": [
                 "File not found in the inbox",
                 "Invalid file decryption"

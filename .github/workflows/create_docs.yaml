@@ -10,55 +10,38 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: code
 
       - name: Checkout gh-pages
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: gh-pages
           ref: gh-pages
 
-      - name: Set up Go 1.15
-        uses: actions/setup-go@v2
+      - name: Set up Go 1.20
+        uses: actions/setup-go@v3
         with:
-          go-version: 1.15
+          go-version: "1.20"
         id: go
 
       - name: Get godoc
+        run: go install golang.org/x/tools/cmd/godoc@latest
+      - name: Generate docs
         run: |
-             go get golang.org/x/tools/cmd/godoc 
-             go install golang.org/x/tools/cmd/godoc 
-      - name: Run server
-        run: |
-             cd "${GITHUB_WORKSPACE}/code"
-             nohup $HOME/go/bin/godoc -templates .github/workflows/godoc_templates &
-      - name: Fetch pages
-        run: |
-             cd /tmp
-             count=0
-             until wget -r -np -N -E -p -k http://localhost:6060/pkg/sda-pipeline/?m=all; do
-               if [ "$count" -eq 10 ] ; then
-                 exit 1
-               fi
-               sleep 10
-               count=$((count+1))
-             done
-             wget -r -np -N -E -p -k http://localhost:6060/lib/ || true
-             mv localhost:6060 localhost
-             find localhost -name index.html?m=all.html | while read p; do
-               mv "$p" "${p%?m=all.html}"
-             done
-             find localhost -type f | xargs sed -i -e 's/%3Fm=all.html//'
-             mkdir -p "${GITHUB_WORKSPACE}/gh-pages/pkg/sda-pipeline/"
-             rsync -av localhost/pkg/sda-pipeline/ "${GITHUB_WORKSPACE}/gh-pages/pkg/sda-pipeline/"
-             rsync -av localhost/lib/ "${GITHUB_WORKSPACE}/gh-pages/lib/"
+          cd "${GITHUB_WORKSPACE}/code"
+          .github/docs/generate_docs.sh
       - name: Commit updated pages
         run: |
-            cd "${GITHUB_WORKSPACE}/gh-pages"
-            git config user.name github-actions
-            git config user.email github-actions@github.com
+          cd "${GITHUB_WORKSPACE}/gh-pages"
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          if output=$(git status --untracked-files=no --porcelain) && [ -z "$output" ]; then
+            echo "Working directory clean. No changes detected, documentation up to date."
+          else 
+            echo "Changes detected"
             git add .
             git commit -m "Generated documentation"
             git push origin gh-pages
+          fi

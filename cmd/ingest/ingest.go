@@ -16,9 +16,9 @@ import (
 	"sda-pipeline/internal/database"
 	"sda-pipeline/internal/storage"
 
-	"github.com/elixir-oslo/crypt4gh/model/headers"
-	"github.com/elixir-oslo/crypt4gh/streaming"
 	"github.com/google/uuid"
+	"github.com/neicnordic/crypt4gh/model/headers"
+	"github.com/neicnordic/crypt4gh/streaming"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -59,22 +59,17 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	key, err := config.GetC4GHKey()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	archive, err := storage.NewBackend(conf.Archive)
 	if err != nil {
 		log.Fatal(err)
-
 	}
-
 	inbox, err := storage.NewBackend(conf.Inbox)
 	if err != nil {
 		log.Fatal(err)
-
 	}
 
 	defer mq.Channel.Close()
@@ -111,6 +106,7 @@ func main() {
 					"(corr-id: %s, error: %v)",
 					delivered.CorrelationId,
 					err)
+
 				continue
 			}
 
@@ -132,6 +128,32 @@ func main() {
 					message.User,
 					message.Filepath,
 					err)
+				// Nack message so the server gets notified that something is wrong. Do not requeue the message.
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorf("Failed to Nack message (failed to open file to ingest) "+
+						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
+						delivered.CorrelationId,
+						message.User,
+						message.Filepath,
+						e)
+				}
+				// Send the message to an error queue so it can be analyzed.
+				fileError := broker.InfoError{
+					Error:           "Failed to open file to ingest",
+					Reason:          err.Error(),
+					OriginalMessage: message,
+				}
+				body, _ := json.Marshal(fileError)
+				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
+					log.Errorf("Failed to publish message (open file to ingest error), to error queue "+
+						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
+						delivered.CorrelationId,
+						message.User,
+						message.Filepath,
+						e)
+				}
+
+				// Restart on new message
 				continue
 			}
 
@@ -143,9 +165,10 @@ func main() {
 					message.User,
 					message.Filepath,
 					err)
-				// Nack message so the server gets notified that something is wrong and requeue the message
+				// Nack message so the server gets notified that something is wrong and requeue the message.
+				// Since reading the file worked, this should eventually succeed so it is ok to requeue.
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorln("Failed to Nack message (failed get file size) "+
+					log.Errorf("Failed to Nack message (failed get file size) "+
 						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
@@ -153,20 +176,21 @@ func main() {
 						e)
 				}
 				// Send the message to an error queue so it can be analyzed.
-				fileError := broker.FileError{
-					User:     message.User,
-					FilePath: message.Filepath,
-					Reason:   err.Error(),
+				fileError := broker.InfoError{
+					Error:           "Failed to get file size of file to ingest",
+					Reason:          err.Error(),
+					OriginalMessage: message,
 				}
 				body, _ := json.Marshal(fileError)
 				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
-					log.Error("Failed to publish message (get file size error), to error queue "+
+					log.Errorf("Failed to publish message (get file size error), to error queue "+
 						"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
 						message.Filepath,
 						e)
 				}
+
 				// Restart on new message
 				continue
 			}
@@ -189,9 +213,10 @@ func main() {
 					message.Filepath,
 					archivedFile,
 					err)
-				// Nack message so the server gets notified that something is wrong and requeue the message
+				// Nack message so the server gets notified that something is wrong and requeue the message.
+				// NewFileWriter returns an error when the backend itself fails so this is reasonable to requeue.
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorln("Failed to Nack message (archive file crate error) "+
+					log.Errorf("Failed to Nack message (archive file create error) "+
 						"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 						delivered.CorrelationId,
 						message.User,
@@ -199,6 +224,7 @@ func main() {
 						archivedFile,
 						e)
 				}
+
 				continue
 			}
 
@@ -234,7 +260,7 @@ func main() {
 					readBuffer = readBuffer[:i]
 				}
 
-				bytesRead = bytesRead + int64(i)
+				bytesRead += int64(i)
 
 				h := bytes.NewReader(readBuffer)
 				if _, err = io.Copy(hash, h); err != nil {
@@ -245,6 +271,7 @@ func main() {
 						message.Filepath,
 						archivedFile,
 						err)
+
 					continue mainWorkLoop
 				}
 
@@ -252,24 +279,53 @@ func main() {
 				if bytesRead <= int64(len(readBuffer)) {
 					header, err := tryDecrypt(key, readBuffer)
 					if err != nil {
-						log.Errorln("Trying to decrypt start of file failed "+
+						log.Errorf("Trying to decrypt start of file failed "+
 							"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 							delivered.CorrelationId,
 							message.User,
 							message.Filepath,
 							archivedFile,
 							err)
+
+						// Nack message so the server gets notified that something is wrong. Do not requeue the message.
+						if e := delivered.Nack(false, false); e != nil {
+							log.Errorf("Failed to Nack message (failed decrypt file) "+
+								"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
+								delivered.CorrelationId,
+								message.User,
+								message.Filepath,
+								archivedFile,
+								e)
+						}
+
+						// Send the message to an error queue so it can be analyzed.
+						fileError := broker.InfoError{
+							Error:           "Trying to decrypt start of file failed",
+							Reason:          err.Error(),
+							OriginalMessage: message,
+						}
+						body, _ := json.Marshal(fileError)
+						if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
+							log.Errorf("Failed to publish message (decrypt file error), to error queue "+
+								"(corr-id: %s, user: %s, filepath: %s, reason: %v)",
+								delivered.CorrelationId,
+								message.User,
+								message.Filepath,
+								e)
+						}
+
 						continue mainWorkLoop
 					}
 					log.Debugln("store header")
 					if err := db.StoreHeader(header, fileID); err != nil {
-						log.Error("StoreHeader failed "+
+						log.Errorf("StoreHeader failed "+
 							"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 							delivered.CorrelationId,
 							message.User,
 							message.Filepath,
 							archivedFile,
 							err)
+
 						continue mainWorkLoop
 					}
 
@@ -281,6 +337,7 @@ func main() {
 							message.Filepath,
 							archivedFile,
 							err)
+
 						continue mainWorkLoop
 					}
 
@@ -294,6 +351,7 @@ func main() {
 							message.Filepath,
 							archivedFile,
 							err)
+
 						continue mainWorkLoop
 					}
 
@@ -309,6 +367,7 @@ func main() {
 							message.Filepath,
 							archivedFile,
 							err)
+
 						continue mainWorkLoop
 					}
 				}
@@ -322,6 +381,7 @@ func main() {
 						message.Filepath,
 						archivedFile,
 						err)
+
 					continue mainWorkLoop
 				}
 			}
@@ -335,13 +395,14 @@ func main() {
 			fileInfo.Size, err = archive.GetFileSize(archivedFile)
 
 			if err != nil {
-				log.Error("Couldn't get file size from archive for verification "+
+				log.Errorf("Couldn't get file size from archive for verification "+
 					"(corr-id: %s, user: %s, filepath: %s, archivepath: %s, reason: %v)",
 					delivered.CorrelationId,
 					message.User,
 					message.Filepath,
 					archivedFile,
 					err)
+
 				continue
 			}
 
@@ -397,6 +458,7 @@ func main() {
 					message.Filepath,
 					archivedFile,
 					err)
+
 				continue
 			}
 
@@ -436,12 +498,14 @@ func tryDecrypt(key *[32]byte, buf []byte) ([]byte, error) {
 	b, err := streaming.NewCrypt4GHReader(a, *key, nil)
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 
 	}
 	_, err = b.ReadByte()
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 
@@ -449,6 +513,7 @@ func tryDecrypt(key *[32]byte, buf []byte) ([]byte, error) {
 	header, err := headers.ReadHeader(f)
 	if err != nil {
 		log.Error(err)
+
 		return nil, err
 	}
 

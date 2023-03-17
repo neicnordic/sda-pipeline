@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" || exit
 
 docker-compose -f compose-sda.yml down -v --remove-orphans
 docker-compose -f compose-backend.yml down -v --remove-orphans
@@ -12,6 +12,7 @@ tmpdir=$(mktemp -d)
 
 # Set up a scratch python environment to not pollute anything else
 python3 -m venv "$tmpdir"
+# shellcheck disable=SC1091
 . "$tmpdir/bin/activate"
 
 export STORAGETYPE
@@ -20,7 +21,7 @@ for storage in s3 posix; do
 
     STORAGETYPE=$storage
 
-    for runscript in $(ls -1 .github/integration/setup/{common,${storage}}/*.sh 2>/dev/null | sort -t/ -k5 -n); do
+    for runscript in $(find . -maxdepth 1 -name ".github/integration/setup/{common,${storage}}/*.sh" 2>/dev/null | sort -t/ -k5 -n); do
 	echo "Executing setup script $runscript";
 	if bash -x "$runscript"; then
 	    :
@@ -31,7 +32,7 @@ for storage in s3 posix; do
 	fi
     done
     
-    for runscript in $(ls -1 .github/integration/tests/{common,${storage}}/*.sh 2>/dev/null | sort -t/ -k5 -n); do
+    for runscript in $(find . -maxdepth 1 -name ".github/integration/tests/{common,${storage}}/*.sh" 2>/dev/null | sort -t/ -k5 -n); do
 	echo "Executing test script $runscript";
 	if bash -x "$runscript"; then
 	    :

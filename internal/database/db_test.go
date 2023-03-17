@@ -38,7 +38,7 @@ const testConnInfo = "host=localhost port=42 user=user password=password dbname=
 func TestMain(m *testing.M) {
 	// Set up our helper doing panic instead of os.exit
 	logFatalf = testLogFatalf
-	dbRetryTimes = 0
+	dbRetryTimes = 1
 	dbReconnectTimeout = 200 * time.Millisecond
 	dbReconnectSleep = time.Millisecond
 	code := m.Run()
@@ -268,6 +268,7 @@ func TestInsertFile(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(5))
 
 		_, err := testDb.InsertFile("/tmp/file.c4gh", "nobody")
+
 		return err
 	})
 
@@ -297,6 +298,31 @@ func TestGetHeader(t *testing.T) {
 	})
 
 	assert.Nil(t, r, "GetHeader failed unexpectedly")
+
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+
+	buf.Reset()
+
+	log.SetOutput(os.Stdout)
+}
+
+func TestGetHeaderForStableID(t *testing.T) {
+	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+
+		header := "0f40"
+		mock.ExpectQuery("SELECT header from local_ega.files WHERE stable_id = \\$1").
+			WithArgs("42").
+			WillReturnRows(sqlmock.NewRows([]string{"header"}).AddRow("0f40"))
+
+		x, err := testDb.GetHeaderForStableID("42")
+
+		assert.Equal(t, x, header, "did not get expected header")
+
+		return err
+	})
+
+	assert.Nil(t, r, "GetHeaderForStableID failed unexpectedly")
 
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
@@ -503,6 +529,7 @@ func TestClose(t *testing.T) {
 
 		mock.ExpectClose()
 		testDb.Close()
+
 		return nil
 	})
 

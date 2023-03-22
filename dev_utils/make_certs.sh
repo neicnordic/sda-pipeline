@@ -5,7 +5,7 @@ mkdir -p certs || exit
 sslcnf=$(dirname "$0")/ssl.cnf
 
 if [ -e certs/serial.txt ]; then
-	read serial <certs/serial.txt
+	read -r serial <certs/serial.txt
 fi
 
 serial=$(( serial + 1 ))

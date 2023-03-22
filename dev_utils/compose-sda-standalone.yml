@@ -116,7 +116,8 @@ services:
       - mq
       - db
     env_file: ./env.ingest
-    image: neicnordic/sda-pipeline:latest
+    image: sda-pipeline
+    #image: neicnordic/sda-pipeline:latest
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
@@ -133,7 +134,8 @@ services:
       - mq
       - db
     env_file: ./env.verify
-    image: neicnordic/sda-pipeline:latest
+    image: sda-pipeline
+    #image: neicnordic/sda-pipeline:latest
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
@@ -152,7 +154,8 @@ services:
     env_file: ./env.finalize
     environment:
       - SCHEMA_TYPE="standalone"
-    image: neicnordic/sda-pipeline:latest
+    image: sda-pipeline
+    #image: neicnordic/sda-pipeline:latest
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
@@ -170,7 +173,8 @@ services:
     env_file: ./env.backup
     environment:
       - SCHEMA_TYPE="standalone"
-    image: neicnordic/sda-pipeline:latest
+    image: sda-pipeline
+    #image: neicnordic/sda-pipeline:latest
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
@@ -190,7 +194,8 @@ services:
     env_file: ./env.mapper
     environment:
       - SCHEMA_TYPE="standalone"
-    image: neicnordic/sda-pipeline:latest
+    image: sda-pipeline
+    #image: neicnordic/sda-pipeline:latest
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
@@ -205,7 +210,8 @@ services:
       - db
       - mq
     env_file: ./env.api
-    image: neicnordic/sda-pipeline:latest
+    image: sda-pipeline
+    #image: neicnordic/sda-pipeline:latest
     ports:
       - "8080:8080"
     restart: always
@@ -216,8 +222,9 @@ services:
   orchestrator:
     command: sda-orchestrate
     container_name: orchestrate
-    # env_file: ./env.orchestrate
-    image: neicnordic/sda-orch:latest
+    #env_file: ./env.orchestrate
+    image: sda-pipeline
+    #image: neicnordic/sda-pipeline:latest
     environment:
       - BROKER_EXCHANGE=sda
       - BROKER_HOST=mq

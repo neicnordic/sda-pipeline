@@ -222,12 +222,10 @@ services:
   orchestrator:
     command: sda-orchestrate
     container_name: orchestrate
-    #env_file: ./env.orchestrate
+    env_file: ./env.orchestrate
     image: sda-pipeline
     #image: neicnordic/sda-pipeline:latest
     environment:
-      - BROKER_EXCHANGE=sda
-      - BROKER_HOST=mq
       - BROKER_PORT=5671
       - BROKER_USER=test
       - BROKER_PASSWORD=test

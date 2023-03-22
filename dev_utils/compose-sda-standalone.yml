@@ -232,15 +232,14 @@ services:
       - ACCESSIONIDS_QUEUE=accessionIDs
       - INGEST_QUEUE=ingest
       - MAPPINGS_QUEUE=mappings
-      - SSL_CACERT=/tls/certs/ca.crt
-      - SSL_CLIENTCERT=/tls/certs/orch.crt
-      - SSL_CLIENTKEY=/tls/certs/orch.key
+      - SSL_CACERT=/dev_utils/certs/ca.pem
+      - SSL_CLIENTCERT=/dev_utils/certs/orch.pem
+      - SSL_CLIENTKEY=/dev_utils/certs/orch.key
     depends_on:
       - certfixer
     volumes:
-      - ./certs/ca.pem:/tls/certs/ca.crt
-      - ./certs/mq.pem:/tls/certs/orch.crt
-      - ./certs/mq-key.pem:/tls/certs/orch.key
+      - ./config.yaml:/config.yaml
+      - certs:/dev_utils/certs
     mem_limit: 256m
     restart: always
 

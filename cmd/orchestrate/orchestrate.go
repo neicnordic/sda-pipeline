@@ -120,7 +120,6 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, durabl
 		schema, err := schemaNameFromQueue(queue, delivered.Body)
 
 		if err != nil {
-
 			log.Errorf("Don't know schema for message type "+
 				"(corr-id: %s, queue: %s, error: %v, message: %s)",
 				delivered.CorrelationId,
@@ -150,7 +149,6 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, durabl
 		routingSchema, err := schemaNameFromQueue(routingKey, nil)
 
 		if err != nil {
-
 			log.Errorf("Don't know schema for routing key "+
 				"(corr-id: %s, routing-key: %s, error: %v)",
 				delivered.CorrelationId,
@@ -191,7 +189,8 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, durabl
 			routingKey,
 			publishMsg)
 
-		if err := mq.SendMessage(delivered.CorrelationId, queue, routingKey, durable, publishMsg); err != nil {
+		// FIXME: Use conf.Broker.Exchange below in place of "sda".
+		if err := mq.SendMessage(delivered.CorrelationId, "sda", routingKey, durable, publishMsg); err != nil {
 			// TODO fix resend mechanism
 			log.Errorln("We need to fix this resend stuff ...")
 		}
@@ -296,7 +295,6 @@ func finalizeMessage(body []byte) ([]byte, interface{}) {
 }
 
 func mappingMessage(datasetid string, accessionids []string) ([]byte, interface{}) {
-
 	msg := mapping{
 		Type:         "mapping",
 		DatasetID:    datasetid,

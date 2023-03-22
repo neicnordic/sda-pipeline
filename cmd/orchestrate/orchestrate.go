@@ -70,8 +70,6 @@ type checksums struct {
 }
 
 func main() {
-	queues := []string{queueInbox, queueVerify, queueComplete}
-
 	conf, err := config.NewConfig("orchestrate")
 	if err != nil {
 		log.Fatal(err)
@@ -83,6 +81,8 @@ func main() {
 
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
+
+	queues := []string{queueInbox, queueVerify, queueComplete}
 
 	go func() {
 		connError := mq.ConnectionWatcher()
@@ -99,12 +99,12 @@ func main() {
 	forever := make(chan bool)
 
 	log.Info("Starting orchestrate service")
+
 	for _, queue := range queues {
 		routingKey := routing[queue]
 		go processQueue(mq, queue, routingKey, conf.Broker.Durable)
 	}
 	<-forever
-
 }
 
 func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, durable bool) {

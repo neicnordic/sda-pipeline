@@ -32,7 +32,7 @@
                     "type": "string",
                     "const": "sha256",
                     "title": "The checksum type schema",
-                    "description": "We use sha256",
+                    "description": "We use sha256"
                 },
                 "value": {
                     "$id": "#/definitions/checksum-sha256/properties/value",

@@ -127,6 +127,7 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, durabl
 				queue,
 				err,
 				delivered.Body)
+
 			continue
 		}
 
@@ -156,6 +157,7 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, durabl
 				routingKey,
 				err,
 			)
+
 			continue
 		}
 
@@ -278,14 +280,14 @@ func finalizeMessage(body []byte) ([]byte, interface{}) {
 	if err != nil {
 		return nil, nil
 	}
-	accessionId := genUUID()
+	accessionID := genUUID()
 
 	msg := finalize{
 		Type:               "accession",
 		User:               message.User,
 		Filepath:           message.Filepath,
 		DecryptedChecksums: message.DecryptedChecksums,
-		AccessionID:        accessionId,
+		AccessionID:        accessionID,
 	}
 
 	publish, _ := json.Marshal(&msg)
@@ -309,5 +311,6 @@ func mappingMessage(datasetid string, accessionids []string) ([]byte, interface{
 func genUUID() string {
 	id := guuid.New().URN()
 	log.Infof("Generated Accession ID: %s", id)
+
 	return id
 }

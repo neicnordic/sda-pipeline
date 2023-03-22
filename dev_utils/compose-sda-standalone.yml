@@ -214,6 +214,7 @@ services:
       - ./:/dev_utils/
       - certs:/dev_utils/certs
   orchestrator:
+    command: sda-orchestrate
     container_name: orchestrate
     # env_file: ./env.orchestrate
     image: neicnordic/sda-orch:latest

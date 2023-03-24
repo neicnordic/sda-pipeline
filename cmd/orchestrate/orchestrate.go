@@ -165,7 +165,7 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, durabl
 		case queueIngest:
 			publishMsg, publishType = ingestMessage(delivered.Body)
 		case queueMapping:
-			publishMsg, publishType = mappingMessage("", []string{})
+			publishMsg, publishType = mappingMessage(delivered.Body)
 		}
 
 		err = mq.ValidateJSON(&delivered,
@@ -279,7 +279,7 @@ func finalizeMessage(body []byte) ([]byte, interface{}) {
 	if err != nil {
 		return nil, nil
 	}
-	accessionID := genUUID()
+	accessionID := fmt.Sprintf("urn:%s:%s", message.User, genUUID())
 
 	msg := finalize{
 		Type:               "accession",
@@ -294,11 +294,17 @@ func finalizeMessage(body []byte) ([]byte, interface{}) {
 	return publish, new(finalize)
 }
 
-func mappingMessage(datasetid string, accessionids []string) ([]byte, interface{}) {
+func mappingMessage(body []byte) ([]byte, interface{}) {
+	var message finalize
+	if err := json.Unmarshal(body, &message); err != nil {
+		return nil, nil
+	}
+	datasetID := fmt.Sprintf("urn:%s:%s", message.User, genUUID())
+
 	msg := mapping{
 		Type:         "mapping",
-		DatasetID:    datasetid,
-		AccessionIDs: accessionids,
+		DatasetID:    datasetID,
+		AccessionIDs: []string{message.AccessionID},
 	}
 
 	publish, _ := json.Marshal(&msg)
@@ -307,8 +313,8 @@ func mappingMessage(datasetid string, accessionids []string) ([]byte, interface{
 }
 
 func genUUID() string {
-	id := guuid.New().URN()
-	log.Infof("Generated Accession ID: %s", id)
+	id := guuid.New().String()
+	log.Infof("Generated String UUID: %s", id)
 
 	return id
 }

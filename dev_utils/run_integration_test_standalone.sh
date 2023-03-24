@@ -86,7 +86,10 @@ do
 done
 
 # check that the file's dataset appeared in the db.
-if docker run --rm \
+if printf '%s\n' \
+    'SELECT file_id FROM local_ega_ebi.file_dataset' \
+    "WHERE dataset_id = :'id'" |
+    docker run --rm --interactive \
     --name client \
     --network dev_utils_default \
     --volume "$PWD/certs:/certs" \
@@ -94,9 +97,8 @@ if docker run --rm \
     --env PGSSLKEY=/certs/client-key.pem \
     --env PGSSLROOTCERT=/certs/ca.pem \
     neicnordic/pg-client:latest \
-    postgresql://lega_out:lega_out@db:5432/lega -t -c "
-        SELECT file_id FROM local_ega_ebi.file_dataset
-        WHERE dataset_id = 'urn:neic:test'" | grep .
+    postgresql://lega_out:lega_out@db:5432/lega -t \
+        --variable=id="$datasetID" | grep .
 then
     echo 'Success'
 else

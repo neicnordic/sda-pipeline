@@ -68,8 +68,13 @@ curl -vvv --cacert certs/ca.pem --user test:test \
     'https://localhost:15672/api/exchanges/test/sda/publish'
 
 tries=6
-until docker logs --since "$start_time" mapper 2>&1 |
-      grep -q -F 'Mapped file to dataset'
+until datasetID=$(
+    docker logs --since "$start_time" mapper 2>&1 |
+    jq -r '
+        select(.msg | startswith("Mapped file to dataset")).msg |
+        capture("datasetid: (?<datasetid>[^,]+)").datasetid' |
+    grep .
+)
 do
     tries=$((tries - 1))
     if [ "$tries" -eq 0 ]; then

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	guuid "github.com/google/uuid"
+	uuid "github.com/google/uuid"
 
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
@@ -280,7 +280,9 @@ func finalizeMessage(body []byte, conf *config.Config) ([]byte, interface{}) {
 	if err != nil {
 		return nil, nil
 	}
-	accessionID := fmt.Sprintf("urn:%s:%s", message.User, genUUID())
+	accessionID := uuid.NewSHA1(
+		uuid.NewSHA1(uuid.NameSpaceDNS, []byte(conf.Orchestrator.ProjectFQDN)),
+		body).URN()
 
 	msg := finalize{
 		Type:               "accession",
@@ -300,7 +302,9 @@ func mappingMessage(body []byte, conf *config.Config) ([]byte, interface{}) {
 	if err := json.Unmarshal(body, &message); err != nil {
 		return nil, nil
 	}
-	datasetID := fmt.Sprintf("urn:%s:%s", message.User, genUUID())
+	datasetID := uuid.NewSHA1(
+		uuid.NewSHA1(uuid.NameSpaceDNS, []byte(conf.Orchestrator.ProjectFQDN)),
+		body).URN()
 
 	msg := mapping{
 		Type:         "mapping",
@@ -311,11 +315,4 @@ func mappingMessage(body []byte, conf *config.Config) ([]byte, interface{}) {
 	publish, _ := json.Marshal(&msg)
 
 	return publish, new(mapping)
-}
-
-func genUUID() string {
-	id := guuid.New().String()
-	log.Infof("Generated String UUID: %s", id)
-
-	return id
 }

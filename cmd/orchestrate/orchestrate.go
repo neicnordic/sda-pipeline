@@ -189,8 +189,7 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, durabl
 			routingKey,
 			publishMsg)
 
-		// FIXME: Use conf.Broker.Exchange below in place of "sda".
-		if err := mq.SendMessage(delivered.CorrelationId, "sda", routingKey, durable, publishMsg); err != nil {
+		if err := mq.SendMessage(delivered.CorrelationId, mq.Conf.Exchange, routingKey, durable, publishMsg); err != nil {
 			// TODO fix resend mechanism
 			log.Errorln("We need to fix this resend stuff ...")
 		}

@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
-	github.com/aws/aws-sdk-go v1.44.224
+	github.com/aws/aws-sdk-go v1.44.229
 	github.com/gliderlabs/ssh v0.3.5
 	github.com/google/uuid v1.3.0
 	github.com/johannesboyne/gofakes3 v0.0.0-20230129080941-f6a8a9ae6fd3
@@ -13,7 +13,7 @@ require (
 	github.com/neicnordic/crypt4gh v1.7.3
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.13.5
-	github.com/rabbitmq/amqp091-go v1.7.0
+	github.com/rabbitmq/amqp091-go v1.8.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.2

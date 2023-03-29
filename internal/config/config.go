@@ -27,13 +27,14 @@ var requiredConfVars []string
 
 // Config is a parent object for all the different configuration parts
 type Config struct {
-	Archive  storage.Conf
-	Broker   broker.MQConf
-	Inbox    storage.Conf
-	Backup   storage.Conf
-	Database database.DBConf
-	API      APIConf
-	Notify   SMTPConf
+	Archive      storage.Conf
+	Broker       broker.MQConf
+	Inbox        storage.Conf
+	Backup       storage.Conf
+	Database     database.DBConf
+	API          APIConf
+	Notify       SMTPConf
+	Orchestrator OrchestratorConf
 }
 
 type APIConf struct {
@@ -60,6 +61,10 @@ type SMTPConf struct {
 	FromAddr string
 	Host     string
 	Port     int
+}
+
+type OrchestratorConf struct {
+	ProjectFQDN string
 }
 
 // NewConfig initializes and parses the config file and/or environment using
@@ -108,9 +113,13 @@ func NewConfig(app string) (*Config, error) {
 			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue", "smtp.host", "smtp.port", "smtp.password", "smtp.from",
 		}
 	case "orchestrate":
-		// Orchestrate requires only broker connection and a series of queues
+		// Orchestrate requires broker connection, a series of
+		// queues, and the project FQDN.
 		requiredConfVars = []string{
-			"broker.host", "broker.port", "broker.user", "broker.password", "broker.queue",
+			"broker.host", "broker.port",
+			"broker.user", "broker.password",
+			"broker.queue",
+			"project.fqdn",
 		}
 	default:
 		requiredConfVars = []string{
@@ -234,6 +243,8 @@ func NewConfig(app string) (*Config, error) {
 
 		return c, nil
 	case "orchestrate":
+		c.configOrchestrator()
+
 		return c, nil
 	}
 
@@ -474,6 +485,12 @@ func (c *Config) configSMTP() {
 	c.Notify.Port = viper.GetInt("smtp.port")
 	c.Notify.Password = viper.GetString("smtp.password")
 	c.Notify.FromAddr = viper.GetString("smtp.from")
+}
+
+// configOrchestrator provides the configuration for the standalone orchestator.
+func (c *Config) configOrchestrator() {
+	c.Orchestrator = OrchestratorConf{}
+	c.Orchestrator.ProjectFQDN = viper.GetString("project.fqdn")
 }
 
 // GetC4GHKey reads and decrypts and returns the c4gh key

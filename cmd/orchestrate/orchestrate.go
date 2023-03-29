@@ -102,12 +102,14 @@ func main() {
 
 	for _, queue := range queues {
 		routingKey := routing[queue]
-		go processQueue(mq, queue, routingKey, conf.Broker.Durable)
+		go processQueue(mq, queue, routingKey, conf)
 	}
 	<-forever
 }
 
-func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, durable bool) {
+func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *config.Config) {
+	durable := conf.Broker.Durable
+
 	log.Infof("Monitoring queue: %s", queue)
 
 	messages, err := mq.GetMessages(queue)
@@ -161,11 +163,11 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, durabl
 
 		switch routingKey {
 		case queueAccession:
-			publishMsg, publishType = finalizeMessage(delivered.Body)
+			publishMsg, publishType = finalizeMessage(delivered.Body, conf)
 		case queueIngest:
 			publishMsg, publishType = ingestMessage(delivered.Body)
 		case queueMapping:
-			publishMsg, publishType = mappingMessage(delivered.Body)
+			publishMsg, publishType = mappingMessage(delivered.Body, conf)
 		}
 
 		err = mq.ValidateJSON(&delivered,
@@ -272,7 +274,7 @@ func ingestMessage(body []byte) ([]byte, interface{}) {
 	return publish, new(trigger)
 }
 
-func finalizeMessage(body []byte) ([]byte, interface{}) {
+func finalizeMessage(body []byte, conf *config.Config) ([]byte, interface{}) {
 	var message request
 	err := json.Unmarshal(body, &message)
 	if err != nil {
@@ -293,7 +295,7 @@ func finalizeMessage(body []byte) ([]byte, interface{}) {
 	return publish, new(finalize)
 }
 
-func mappingMessage(body []byte) ([]byte, interface{}) {
+func mappingMessage(body []byte, conf *config.Config) ([]byte, interface{}) {
 	var message finalize
 	if err := json.Unmarshal(body, &message); err != nil {
 		return nil, nil

@@ -182,11 +182,8 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 			continue
 		}
 
-		log.Infof("Routing message "+
-			"(corr-id: %s, routingkey: %s, message: %s)",
-			delivered.CorrelationId,
-			routingKey,
-			publishMsg)
+		log.Debugf("Routing message (corr-id: %s, routingkey: %s, message: %s)",
+			delivered.CorrelationId, routingKey, publishMsg)
 
 		if err := mq.SendMessage(delivered.CorrelationId, mq.Conf.Exchange, routingKey, durable, publishMsg); err != nil {
 			// TODO fix resend mechanism

@@ -170,10 +170,7 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 			publishMsg, publishType = mappingMessage(delivered.Body, conf)
 		}
 
-		err = mq.ValidateJSON(&delivered,
-			routingSchema,
-			publishMsg,
-			publishType)
+		err = mq.ValidateJSON(&delivered, routingSchema, publishMsg, publishType)
 
 		if err != nil {
 			log.Errorf("Validation of outgoing message failed "+

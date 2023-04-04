@@ -8,12 +8,11 @@ import (
 	"fmt"
 	"os"
 
-	uuid "github.com/google/uuid"
-
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
 
 	log "github.com/sirupsen/logrus"
+	uuid "github.com/google/uuid"
 )
 
 const (

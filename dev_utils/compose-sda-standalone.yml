@@ -120,8 +120,9 @@ services:
       db:
         condition: service_healthy
     env_file: ./env.ingest
-    image: sda-pipeline
-    #image: neicnordic/sda-pipeline:latest
+    image: neicnordic/sda-pipeline:latest
+    build:
+      context: ..
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
@@ -141,8 +142,9 @@ services:
       db:
         condition: service_healthy
     env_file: ./env.verify
-    image: sda-pipeline
-    #image: neicnordic/sda-pipeline:latest
+    image: neicnordic/sda-pipeline:latest
+    build:
+      context: ..
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
@@ -164,8 +166,9 @@ services:
     env_file: ./env.finalize
     environment:
       - SCHEMA_TYPE="standalone"
-    image: sda-pipeline
-    #image: neicnordic/sda-pipeline:latest
+    image: neicnordic/sda-pipeline:latest
+    build:
+      context: ..
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
@@ -187,8 +190,9 @@ services:
     env_file: ./env.backup
     environment:
       - SCHEMA_TYPE="standalone"
-    image: sda-pipeline
-    #image: neicnordic/sda-pipeline:latest
+    image: neicnordic/sda-pipeline:latest
+    build:
+      context: ..
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
@@ -211,8 +215,9 @@ services:
     env_file: ./env.mapper
     environment:
       - SCHEMA_TYPE="standalone"
-    image: sda-pipeline
-    #image: neicnordic/sda-pipeline:latest
+    image: neicnordic/sda-pipeline:latest
+    build:
+      context: ..
     volumes:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
@@ -230,8 +235,9 @@ services:
       db:
         condition: service_healthy
     env_file: ./env.api
-    image: sda-pipeline
-    #image: neicnordic/sda-pipeline:latest
+    image: neicnordic/sda-pipeline:latest
+    build:
+      context: ..
     ports:
       - "8080:8080"
     restart: always
@@ -243,8 +249,9 @@ services:
     command: sda-orchestrate
     container_name: orchestrate
     env_file: ./env.orchestrate
-    image: sda-pipeline
-    #image: neicnordic/sda-pipeline:latest
+    image: neicnordic/sda-pipeline:latest
+    build:
+      context: ..
     environment:
       - BROKER_PORT=5671
       - BROKER_USER=test

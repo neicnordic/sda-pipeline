@@ -48,7 +48,7 @@ sh run_integration_test.sh
 
 ## Starting the services in standalone mode
 
-In this case, the `orchestrator` service is used in place of the `intercept` service.  Note that the `orchestrator` service _currently_ uses a local `sda-pipeline` image as it is not yet available from `neicnordic/sda-pipeline:latest`.
+In this case, the `orchestrator` service is used in place of the `intercept` service.
 
 Create the necessary credentials.
 
@@ -60,6 +60,10 @@ Start stack by running,
 
 ```command
 docker-compose -f compose-sda-standalone.yml up -d
+```
+or, to rebuild the images,
+```command
+docker-compose -f compose-sda-standalone.yml up --build -d
 ```
 
 To see brief real-time logs at the terminal remove the `-d` option.

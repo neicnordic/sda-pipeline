@@ -99,10 +99,10 @@ services:
     entrypoint: >
       /bin/sh -c "
       sleep 10;
-      /usr/bin/mc config host add s3 https://s3:9000 access secretkey;
-      /usr/bin/mc mb s3/inbox;
-      /usr/bin/mc mb s3/archive;
-      /usr/bin/mc mb s3/backup;
+      mc config host add s3 https://s3:9000 access secretkey;
+      mc mb --ignore-existing s3/inbox;
+      mc mb --ignore-existing s3/archive;
+      mc mb --ignore-existing s3/backup;
       exit 0;
       "
     volumes:

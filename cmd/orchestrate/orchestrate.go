@@ -47,7 +47,6 @@ type trigger struct {
 	EncryptedChecksums []checksums `json:"encrypted_checksums"`
 }
 
-// finalize struct that holds the json message data
 type finalize struct {
 	Type               string      `json:"type"`
 	User               string      `json:"user"`
@@ -62,7 +61,6 @@ type mapping struct {
 	AccessionIDs []string `json:"accession_ids"`
 }
 
-// Checksums is struct for the checksum type and value
 type checksums struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`

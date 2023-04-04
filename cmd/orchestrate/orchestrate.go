@@ -159,7 +159,7 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 
 		if err != nil {
 			log.Errorf("Validation of outgoing message failed, error: %v", err)
-			if err := delivered.Nack(true); err != nil {
+			if err := delivered.Nack(false, true); err != nil {
 				log.Errorf("failed to nack message for reason: %v", err)
 			}
 

@@ -20,7 +20,8 @@ services:
     command: server /data
     container_name: db
     depends_on:
-      - certfixer
+      certfixer:
+        condition: service_completed_successfully
     environment:
       - DB_LEGA_IN_PASSWORD=lega_in
       - DB_LEGA_OUT_PASSWORD=lega_out
@@ -95,7 +96,8 @@ services:
     container_name: buckets
     image: minio/mc
     depends_on:
-      - s3
+      s3:
+        condition: service_healthy
     entrypoint: >
       /bin/sh -c "
       sleep 10;
@@ -111,9 +113,12 @@ services:
     command: sda-ingest
     container_name: ingest
     depends_on:
-      - certfixer
-      - mq
-      - db
+      certfixer:
+        condition: service_completed_successfully
+      mq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
     env_file: ./env.ingest
     image: sda-pipeline
     #image: neicnordic/sda-pipeline:latest
@@ -129,9 +134,12 @@ services:
     command: sda-verify
     container_name: verify
     depends_on:
-      - certfixer
-      - mq
-      - db
+      certfixer:
+        condition: service_completed_successfully
+      mq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
     env_file: ./env.verify
     image: sda-pipeline
     #image: neicnordic/sda-pipeline:latest
@@ -147,9 +155,12 @@ services:
     command: sda-finalize
     container_name: finalize
     depends_on:
-      - certfixer
-      - mq
-      - db
+      certfixer:
+        condition: service_completed_successfully
+      mq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
     env_file: ./env.finalize
     environment:
       - SCHEMA_TYPE="standalone"
@@ -165,10 +176,14 @@ services:
     command: sda-backup
     container_name: backup
     depends_on:
-      - certfixer
-      - mq
-      - db
-      - sftp-server
+      certfixer:
+        condition: service_completed_successfully
+      mq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      sftp-server:
+        condition: service_started
     env_file: ./env.backup
     environment:
       - SCHEMA_TYPE="standalone"
@@ -187,9 +202,12 @@ services:
     command: sda-mapper
     container_name: mapper
     depends_on:
-      - certfixer
-      - mq
-      - db
+      certfixer:
+        condition: service_completed_successfully
+      mq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
     env_file: ./env.mapper
     environment:
       - SCHEMA_TYPE="standalone"
@@ -205,9 +223,12 @@ services:
     command: sda-api
     container_name: api
     depends_on:
-      - certfixer
-      - db
-      - mq
+      certfixer:
+        condition: service_completed_successfully
+      mq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
     env_file: ./env.api
     image: sda-pipeline
     #image: neicnordic/sda-pipeline:latest
@@ -240,7 +261,12 @@ services:
       - SSL_CLIENTCERT=/dev_utils/certs/orch.pem
       - SSL_CLIENTKEY=/dev_utils/certs/orch.key
     depends_on:
-      - certfixer
+      certfixer:
+        condition: service_completed_successfully
+      mq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
     volumes:
       - ./config.yaml:/config.yaml
       - certs:/dev_utils/certs

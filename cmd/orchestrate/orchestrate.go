@@ -158,11 +158,10 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 		err = mq.ValidateJSON(&delivered, routingSchema, publishMsg, publishType)
 
 		if err != nil {
-			log.Errorf("Validation of outgoing message failed "+
-				"(corr-id: %s, "+
-				"error: %v)",
-				delivered.CorrelationId,
-				err)
+			log.Errorf("Validation of outgoing message failed, error: %v", err)
+			if err := delivered.Nack(true); err != nil {
+				log.Errorf("failed to nack message for reason: %v", err)
+			}
 
 			continue
 		}

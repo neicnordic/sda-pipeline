@@ -51,6 +51,12 @@ func (c *mockChannel) Confirm(noWait bool) error {
 	return nil
 }
 
+func (c *mockChannel) NotifyClose(ch chan *amqp.Error) chan *amqp.Error {
+	close(ch)
+
+	return ch
+}
+
 func (c *mockChannel) NotifyPublish(confirm chan amqp.Confirmation) chan amqp.Confirmation {
 
 	c.confirmChannel = confirm

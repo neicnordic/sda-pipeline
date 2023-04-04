@@ -1,4 +1,3 @@
-version: "2.4"
 services:
   certfixer:
     command:
@@ -21,7 +20,8 @@ services:
     command: server /data
     container_name: db
     depends_on:
-      - certfixer
+      certfixer:
+        condition: service_completed_successfully
     environment:
       - DB_LEGA_IN_PASSWORD=lega_in
       - DB_LEGA_OUT_PASSWORD=lega_out
@@ -35,7 +35,7 @@ services:
       interval: 5s
       timeout: 20s
       retries: 3
-    image: ghcr.io/neicnordic/sda-db:v2.0.10
+    image: ghcr.io/neicnordic/sda-db:v2.1.3
     ports:
       - "5432:5432"
     volumes:
@@ -43,7 +43,10 @@ services:
       - certs:/var/lib/postgresql/tls/
   mq:
     container_name: mq
-    image: ghcr.io/neicnordic/sda-mq:v1.4.25
+    depends_on:
+      certfixer:
+        condition: service_completed_successfully
+    image: ghcr.io/neicnordic/sda-mq:v1.4.30
     environment:
       - MQ_SERVER_CERT=/etc/rabbitmq/ssl/mq.pem
       - MQ_SERVER_KEY=/etc/rabbitmq/ssl/mq.key
@@ -74,6 +77,9 @@ services:
   s3:
     command: server /data --console-address ":9001"
     container_name: s3
+    depends_on:
+      certfixer:
+        condition: service_completed_successfully
     environment:
       - MINIO_ROOT_USER=access
       - MINIO_ROOT_PASSWORD=secretkey
@@ -95,7 +101,10 @@ services:
     container_name: buckets
     image: minio/mc
     depends_on:
-      - s3
+      certfixer:
+        condition: service_completed_successfully
+      s3:
+        condition: service_healthy
     entrypoint: >
       /bin/sh -c "
       sleep 10;
@@ -111,9 +120,12 @@ services:
     command: sda-ingest
     container_name: ingest
     depends_on:
-      - certfixer
-      - mq
-      - db
+      certfixer:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
     env_file: ./env.ingest
     image: neicnordic/sda-pipeline:latest
     volumes:
@@ -128,9 +140,12 @@ services:
     command: sda-verify
     container_name: verify
     depends_on:
-      - certfixer
-      - mq
-      - db
+      certfixer:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
     env_file: ./env.verify
     image: neicnordic/sda-pipeline:latest
     volumes:
@@ -145,9 +160,12 @@ services:
     command: sda-finalize
     container_name: finalize
     depends_on:
-      - certfixer
-      - mq
-      - db
+      certfixer:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
     env_file: ./env.finalize
     image: neicnordic/sda-pipeline:latest
     volumes:
@@ -160,10 +178,12 @@ services:
     command: sda-backup
     container_name: backup
     depends_on:
-      - certfixer
-      - mq
-      - db
-      - sftp-server
+      certfixer:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
     env_file: ./env.backup
     image: neicnordic/sda-pipeline:latest
     volumes:
@@ -179,9 +199,12 @@ services:
     command: sda-mapper
     container_name: mapper
     depends_on:
-      - certfixer
-      - mq
-      - db
+      certfixer:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
     env_file: ./env.mapper
     image: neicnordic/sda-pipeline:latest
     volumes:
@@ -208,9 +231,12 @@ services:
     command: sda-api
     container_name: api
     depends_on:
-      - certfixer
-      - db
-      - mq
+      certfixer:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      mq:
+        condition: service_healthy
     env_file: ./env.api
     image: neicnordic/sda-pipeline:latest
     ports:

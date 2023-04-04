@@ -141,12 +141,7 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 		routingSchema, err := schemaNameFromQueue(routingKey, nil)
 
 		if err != nil {
-			log.Errorf("Don't know schema for routing key "+
-				"(corr-id: %s, routing-key: %s, error: %v)",
-				delivered.CorrelationId,
-				routingKey,
-				err,
-			)
+			log.Errorf("Don't know schema for routing key: %v", routingKey)
 
 			continue
 		}

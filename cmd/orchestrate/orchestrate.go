@@ -130,12 +130,7 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 		err = mq.ValidateJSON(&delivered, schema, delivered.Body, nil)
 
 		if err != nil {
-			log.Errorf("Validation failed for message "+
-				"(corr-id: %s, error: %v, schema: %s, message: %s)",
-				delivered.CorrelationId,
-				err,
-				schema,
-				delivered.Body)
+			log.Errorf("Message validation failed (schema: %v, error: %v, message: %s)", schema, err, delivered.Body)
 
 			continue
 		}

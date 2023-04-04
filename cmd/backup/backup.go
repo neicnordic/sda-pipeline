@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io"
-	"os"
 	"strings"
 
 	"sda-pipeline/internal/broker"
@@ -35,6 +34,7 @@ type checksums struct {
 }
 
 func main() {
+	forever := make(chan bool)
 	conf, err := config.NewConfig("backup")
 	if err != nil {
 		log.Fatal(err)
@@ -78,10 +78,14 @@ func main() {
 	go func() {
 		connError := mq.ConnectionWatcher()
 		log.Error(connError)
-		os.Exit(1)
+		forever <- false
 	}()
 
-	forever := make(chan bool)
+	go func() {
+		connError := mq.ChannelWatcher()
+		log.Error(connError)
+		forever <- false
+	}()
 
 	log.Info("Starting backup service")
 	var message backup

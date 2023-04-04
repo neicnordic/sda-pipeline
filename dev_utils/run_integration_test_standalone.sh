@@ -20,6 +20,12 @@ infile=$( realpath "$infile" )
 
 cd "$(dirname "$0")" || exit
 
+if [ ! -f certs/client-key.pem ]; then
+    echo 'Not found: certs/client-key.pem'
+    echo 'Please run the "make_certs.sh" script'
+    exit 1
+fi >&2
+
 # we need this certificate to be of 600 to work with db connection
 chmod 600 certs/client-key.pem
 

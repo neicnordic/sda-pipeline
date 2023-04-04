@@ -124,6 +124,13 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 		if err != nil {
 			log.Errorf(err.Error())
 
+			if err := delivered.Ack(false); err != nil {
+				log.Errorf("failed to ack message: %v", err)
+			}
+			if err := mq.SendMessage(delivered.CorrelationId, mq.Conf.Exchange, "error", durable, delivered.Body); err != nil {
+				log.Errorf("failed to send error message: %v", err)
+			}
+
 			continue
 		}
 
@@ -131,6 +138,13 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 
 		if err != nil {
 			log.Errorf("Message validation failed (schema: %v, error: %v, message: %s)", schema, err, delivered.Body)
+
+			if err := delivered.Ack(false); err != nil {
+				log.Errorf("failed to ack message: %v", err)
+			}
+			if err := mq.SendMessage(delivered.CorrelationId, mq.Conf.Exchange, "error", durable, delivered.Body); err != nil {
+				log.Errorf("failed to send error message: %v", err)
+			}
 
 			continue
 		}
@@ -142,6 +156,13 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 
 		if err != nil {
 			log.Errorf("Don't know schema for routing key: %v", routingKey)
+
+			if err := delivered.Ack(false); err != nil {
+				log.Errorf("failed to ack message: %v", err)
+			}
+			if err := mq.SendMessage(delivered.CorrelationId, mq.Conf.Exchange, "error", durable, delivered.Body); err != nil {
+				log.Errorf("failed to send error message: %v", err)
+			}
 
 			continue
 		}

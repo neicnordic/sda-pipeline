@@ -1,5 +1,6 @@
 version: "2.4"
 services:
+
   certfixer:
     command:
       - /bin/sh
@@ -17,6 +18,7 @@ services:
     volumes:
       - ./certs:/origcerts
       - certs:/certs
+
   db:
     command: server /data
     container_name: db
@@ -41,6 +43,7 @@ services:
     volumes:
       - /tmp/data:/data
       - certs:/var/lib/postgresql/tls/
+
   mq:
     container_name: mq
     image: ghcr.io/neicnordic/sda-mq:v1.4.25
@@ -71,6 +74,7 @@ services:
       interval: 5s
       timeout: 20s
       retries: 3
+
   s3:
     command: server /data --console-address ":9001"
     container_name: s3
@@ -91,6 +95,7 @@ services:
       - ./certs/ca.pem:/root/.minio/certs/CAs/public.crt
       - ./certs/s3.pem:/root/.minio/certs/public.crt
       - ./certs/s3-key.pem:/root/.minio/certs/private.key
+
   createbucket:
     container_name: buckets
     image: minio/mc
@@ -107,6 +112,7 @@ services:
       "
     volumes:
       - ./certs/ca.pem:/etc/ssl/certs/public.crt
+
   ingest:
     command: sda-ingest
     container_name: ingest
@@ -124,6 +130,7 @@ services:
       - certs:/dev_utils/certs
     mem_limit: 1024m
     restart: always
+
   verify:
     command: sda-verify
     container_name: verify
@@ -141,6 +148,7 @@ services:
       - inbox:/inbox
     mem_limit: 256m
     restart: always
+
   finalize:
     command: sda-finalize
     container_name: finalize
@@ -156,6 +164,7 @@ services:
       - certs:/dev_utils/certs
     mem_limit: 64m
     restart: always
+
   backup:
     command: sda-backup
     container_name: backup
@@ -175,6 +184,7 @@ services:
       - ./keys:/keys/
     mem_limit: 64m
     restart: always
+
   mapper:
     command: sda-mapper
     container_name: mapper
@@ -190,6 +200,7 @@ services:
       - certs:/dev_utils/certs
     mem_limit: 64m
     restart: always
+
   interceptor:
     command: sda-intercept
     container_name: intercept
@@ -204,6 +215,7 @@ services:
       - certs:/dev_utils/certs
     mem_limit: 64m
     restart: always
+
   api:
     command: sda-api
     container_name: api

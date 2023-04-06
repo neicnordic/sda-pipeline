@@ -15,16 +15,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	queueVerify    string = "verified"
-	queueInbox     string = "inbox"
-	queueComplete  string = "completed"
-	queueBackup    string = "backup"
-	queueMapping   string = "mappings"
-	queueIngest    string = "ingest"
-	queueAccession string = "accessionIDs"
-)
-
 type upload struct {
 	Operation          string      `json:"operation"`
 	User               string      `json:"user"`
@@ -79,7 +69,7 @@ func main() {
 	defer mq.Channel.Close()
 	defer mq.Connection.Close()
 
-	queues := []string{queueInbox, queueVerify, queueComplete}
+	queues := []string{conf.Orchestrator.QueueInbox, conf.Orchestrator.QueueVerify, conf.Orchestrator.QueueComplete}
 
 	go func() {
 		connError := mq.ConnectionWatcher()
@@ -88,9 +78,9 @@ func main() {
 	}()
 
 	routing := map[string]string{
-		queueVerify:   queueAccession,
-		queueInbox:    queueIngest,
-		queueComplete: queueMapping,
+		conf.Orchestrator.QueueVerify:   conf.Orchestrator.QueueAccession,
+		conf.Orchestrator.QueueInbox:    conf.Orchestrator.QueueIngest,
+		conf.Orchestrator.QueueComplete: conf.Orchestrator.QueueMapping,
 	}
 
 	forever := make(chan bool)
@@ -116,7 +106,7 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 	for delivered := range messages {
 		log.Debugf("Received a message: %s", delivered.Body)
 
-		schema, err := schemaNameFromQueue(queue, delivered.Body)
+		schema, err := schemaNameFromQueue(queue, delivered.Body, conf)
 
 		if err != nil {
 			log.Errorf(err.Error())
@@ -149,7 +139,7 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 		var publishMsg []byte
 		var publishType interface{}
 
-		routingSchema, err := schemaNameFromQueue(routingKey, nil)
+		routingSchema, err := schemaNameFromQueue(routingKey, nil, conf)
 
 		if err != nil {
 			log.Errorf("Don't know schema for routing key: %v", routingKey)
@@ -165,11 +155,11 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 		}
 
 		switch routingKey {
-		case queueAccession:
+		case conf.Orchestrator.QueueAccession:
 			publishMsg, publishType = finalizeMessage(delivered.Body, conf)
-		case queueIngest:
+		case conf.Orchestrator.QueueIngest:
 			publishMsg, publishType = ingestMessage(delivered.Body)
-		case queueMapping:
+		case conf.Orchestrator.QueueMapping:
 			publishMsg, publishType = mappingMessage(delivered.Body, conf)
 		}
 
@@ -199,17 +189,17 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 
 // schemaNameFromQueue returns the schema to use for messages
 // determined by the queue
-func schemaNameFromQueue(queue string, body []byte) (string, error) {
-	if queue == queueInbox {
+func schemaNameFromQueue(queue string, body []byte, conf *config.Config) (string, error) {
+	if queue == conf.Orchestrator.QueueInbox {
 		return schemaFromInboxOperation(body)
 	}
 	m := map[string]string{
-		queueVerify:    "ingestion-accession-request",
-		queueComplete:  "ingestion-completion",
-		queueIngest:    "ingestion-trigger",
-		queueMapping:   "dataset-mapping",
-		queueAccession: "ingestion-accession",
-		queueBackup:    "ingestion-completion",
+		conf.Orchestrator.QueueVerify:    "ingestion-accession-request",
+		conf.Orchestrator.QueueComplete:  "ingestion-completion",
+		conf.Orchestrator.QueueIngest:    "ingestion-trigger",
+		conf.Orchestrator.QueueMapping:   "dataset-mapping",
+		conf.Orchestrator.QueueAccession: "ingestion-accession",
+		conf.Orchestrator.QueueBackup:    "ingestion-completion",
 	}
 
 	if m[queue] != "" {

@@ -22,6 +22,7 @@ var logFatalf = log.Fatalf
 type AMQPChannel interface {
 	Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error)
 	Confirm(noWait bool) error
+	NotifyClose(c chan *amqp.Error) chan *amqp.Error
 	NotifyPublish(confirm chan amqp.Confirmation) chan amqp.Confirmation
 	Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error
 	Close() error
@@ -241,6 +242,12 @@ func TLSConfigBroker(config MQConf) (*tls.Config, error) {
 // ConnectionWatcher listens to events from the server
 func (broker *AMQPBroker) ConnectionWatcher() *amqp.Error {
 	amqpError := <-broker.Connection.NotifyClose(make(chan *amqp.Error))
+
+	return amqpError
+}
+
+func (broker *AMQPBroker) ChannelWatcher() *amqp.Error {
+	amqpError := <-broker.Channel.NotifyClose(make(chan *amqp.Error))
 
 	return amqpError
 }

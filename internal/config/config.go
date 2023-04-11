@@ -64,7 +64,14 @@ type SMTPConf struct {
 }
 
 type OrchestratorConf struct {
-	ProjectFQDN string
+	ProjectFQDN    string
+	QueueVerify    string
+	QueueInbox     string
+	QueueComplete  string
+	QueueBackup    string
+	QueueMapping   string
+	QueueIngest    string
+	QueueAccession string
 }
 
 // NewConfig initializes and parses the config file and/or environment using
@@ -118,7 +125,6 @@ func NewConfig(app string) (*Config, error) {
 		requiredConfVars = []string{
 			"broker.host", "broker.port",
 			"broker.user", "broker.password",
-			"broker.queue",
 			"project.fqdn",
 		}
 	default:
@@ -491,6 +497,48 @@ func (c *Config) configSMTP() {
 func (c *Config) configOrchestrator() {
 	c.Orchestrator = OrchestratorConf{}
 	c.Orchestrator.ProjectFQDN = viper.GetString("project.fqdn")
+	if viper.IsSet("broker.queue.verified") {
+		c.Orchestrator.QueueVerify = viper.GetString("broker.queue.verified")
+	} else {
+		c.Orchestrator.QueueVerify = "verified"
+	}
+
+	if viper.IsSet("broker.queue.inbox") {
+		c.Orchestrator.QueueInbox = viper.GetString("broker.queue.inbox")
+	} else {
+		c.Orchestrator.QueueInbox = "inbox"
+	}
+
+	if viper.IsSet("broker.queue.completed") {
+		c.Orchestrator.QueueComplete = viper.GetString("broker.queue.completed")
+	} else {
+		c.Orchestrator.QueueComplete = "completed"
+	}
+
+	if viper.IsSet("broker.queue.backup") {
+		c.Orchestrator.QueueBackup = viper.GetString("broker.queue.backup")
+	} else {
+		c.Orchestrator.QueueBackup = "backup"
+	}
+
+	if viper.IsSet("broker.queue.mappings") {
+		c.Orchestrator.QueueMapping = viper.GetString("broker.queue.mappings")
+	} else {
+		c.Orchestrator.QueueMapping = "mappings"
+	}
+
+	if viper.IsSet("broker.queue.ingest") {
+		c.Orchestrator.QueueIngest = viper.GetString("broker.queue.ingest")
+	} else {
+		c.Orchestrator.QueueIngest = "ingest"
+	}
+
+	if viper.IsSet("broker.queue.accessionIDs") {
+		c.Orchestrator.QueueAccession = viper.GetString("broker.queue.accessionIDs")
+	} else {
+		c.Orchestrator.QueueAccession = "accessionIDs"
+	}
+
 }
 
 // GetC4GHKey reads and decrypts and returns the c4gh key

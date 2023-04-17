@@ -2,11 +2,11 @@
 
 # Create RSA keys
 cd dev_utils || exit 1
-mkdir -p keys || exit 1
+mkdir -p keys/pub || exit 1
 cd keys || exit 1
 
 ssh-keygen -t rsa -b 4096 -m PEM -f example.demo.pem -q -N ""
-openssl rsa -in example.demo.pem -pubout -outform PEM -out example.demo.pub
+openssl rsa -in example.demo.pem -pubout -outform PEM -out pub/example.demo.pub
 
 # Shared content to use as template
 header_template='{

@@ -247,7 +247,6 @@ func (suite *TestSuite) TestGetUserFromToken() {
 		log.Fatalf("error in GetJwtKey: %v", err)
 	}
 
-	var w http.ResponseWriter
 	url := "localhost:8080/files"
 	method := "GET"
 	r, err := http.NewRequest(method, url, nil)
@@ -264,14 +263,14 @@ func (suite *TestSuite) TestGetUserFromToken() {
 	}
 	r.Header.Add("Authorization", "Bearer "+token)
 
-	user, err := getUserFromToken(w, r)
+	user, err := getUserFromToken(r)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), "requester@demo.org", user)
 
 	// Token without authorization header
 	r.Header.Del("Authorization")
 
-	user, err = getUserFromToken(w, r)
+	user, err = getUserFromToken(r)
 	assert.EqualError(suite.T(), err, "could not get token from header: access token must be provided")
 	assert.Equal(suite.T(), "", user)
 
@@ -282,7 +281,7 @@ func (suite *TestSuite) TestGetUserFromToken() {
 	}
 	r.Header.Add("Authorization", "Bearer "+token)
 
-	user, err = getUserFromToken(w, r)
+	user, err = getUserFromToken(r)
 	assert.EqualError(suite.T(), err, "failed to get issuer from token (<nil>)")
 	assert.Equal(suite.T(), "", user)
 

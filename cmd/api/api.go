@@ -158,7 +158,7 @@ func getFiles(c *gin.Context) {
 	log.Debugf("request files in project")
 	c.Writer.Header().Set("Content-Type", "application/json")
 	// Get user ID to extract all files
-	userID, err := getUserFromToken(c.Writer, c.Request)
+	userID, err := getUserFromToken(c.Request)
 	if err != nil {
 		// something went wrong with user token
 		c.JSON(500, err.Error())
@@ -179,7 +179,7 @@ func getFiles(c *gin.Context) {
 }
 
 // getUserFromToken parses the token, validates it against the key and returns the key
-func getUserFromToken(w http.ResponseWriter, r *http.Request) (string, error) {
+func getUserFromToken(r *http.Request) (string, error) {
 	// Check that a token is provided
 	tokenStr, err := getToken(r.Header.Get("Authorization"))
 	if err != nil {

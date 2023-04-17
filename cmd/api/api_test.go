@@ -183,7 +183,7 @@ func CreateRSAkeys(keyPath string, keyName string) error {
 }
 
 // CreateRSAToken creates an RSA token
-func CreateRSAToken(privateKey *rsa.PrivateKey, headerAlg, headerType string, tokenClaims map[string]interface{}) (string, error) {
+func CreateRSAToken(privateKey *rsa.PrivateKey, headerAlg string, tokenClaims map[string]interface{}) (string, error) {
 	var tok jwt.Token
 	tok, err := jwt.NewBuilder().Issuer(fmt.Sprintf("%v", tokenClaims["iss"])).Build()
 	if err != nil {
@@ -197,7 +197,7 @@ func CreateRSAToken(privateKey *rsa.PrivateKey, headerAlg, headerType string, to
 		}
 	}
 
-	serialized, err := jwt.Sign(tok, jwt.WithKey(jwa.RS256, privateKey))
+	serialized, err := jwt.Sign(tok, jwt.WithKey(jwa.SignatureAlgorithm(headerAlg), privateKey))
 	if err != nil {
 		return "no-token", err
 	}
@@ -257,7 +257,7 @@ func (suite *TestSuite) TestGetUserFromToken() {
 	}
 
 	// Functional token
-	token, err := CreateRSAToken(suite.PrivateKey, "RS256", "JWT", CorrectToken)
+	token, err := CreateRSAToken(suite.PrivateKey, "RS256", CorrectToken)
 	if err != nil {
 		log.Fatalf("error in createToken: %v", err)
 	}
@@ -275,7 +275,7 @@ func (suite *TestSuite) TestGetUserFromToken() {
 	assert.Equal(suite.T(), "", user)
 
 	// Token without issuer
-	token, err = CreateRSAToken(suite.PrivateKey, "RS256", "JWT", NoIssuer)
+	token, err = CreateRSAToken(suite.PrivateKey, "RS256", NoIssuer)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}

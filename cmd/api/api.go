@@ -212,12 +212,12 @@ func getUserFromToken(r *http.Request) (string, error) {
 
 	verifiedToken, err := jwt.Parse([]byte(tokenStr), jwt.WithKey(jwa.RS256, key))
 	if err != nil {
-		log.Debugf("failed to verify token as RS256 signature of token %s, %s", tokenStr, err)
+		log.Debugf("failed to verify token as RS256 signature of token %s", err)
 		verifiedToken, err = jwt.Parse([]byte(tokenStr), jwt.WithKey(jwa.ES256, key))
 		if err != nil {
-			log.Errorf("failed to verify token as ES256 signature of token %s, %s", tokenStr, err)
+			log.Errorf("failed to verify token as ES256 signature of token %s", err)
 
-			return "", fmt.Errorf("failed to verify token as RSA256 or ES256 signature of token %s, %s", tokenStr, err)
+			return "", fmt.Errorf("failed to verify token as RSA256 or ES256 signature of token %s", err)
 		}
 	}
 

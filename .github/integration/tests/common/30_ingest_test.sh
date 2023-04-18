@@ -340,11 +340,6 @@ for file in dummy_data.c4gh largefile.c4gh; do
 		fi
 	done
 
-	# Test the API files endpoint
-	token="$(cat keys/token.jwt)"
-	response="$(curl --location "localhost:8080/files" --header "Authorization: Bearer $token")"
-	echo "$response"
-
 	RETRY_TIMES=0
 	decryptedsizedb=''
 
@@ -412,3 +407,11 @@ docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs"
 	-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 	neicnordic/pg-client:latest postgresql://postgres:rootpassword@db:5432/lega \
 	-t -c "SELECT id, status, stable_id, archive_path FROM local_ega.files ORDER BY id DESC"
+
+# Test the API files endpoint
+token="$(cat keys/token.jwt)"
+response="$(curl -k -L "https://localhost:8080/files" -H "Authorization: Bearer $token" | jq -r 'sort_by(.inboxPath)|.[-1].fileStatus')"
+if [ "$response" != "ready" ]; then
+	echo "API returned incorrect value, expected ready got: $response"
+	exit 1
+fi

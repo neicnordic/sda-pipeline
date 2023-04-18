@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -38,14 +39,16 @@ type Config struct {
 }
 
 type APIConf struct {
-	CACert     string
-	ServerCert string
-	ServerKey  string
-	Host       string
-	Port       int
-	Session    SessionConfig
-	DB         *database.SQLdb
-	MQ         *broker.AMQPBroker
+	CACert        string
+	ServerCert    string
+	ServerKey     string
+	Host          string
+	Port          int
+	Session       SessionConfig
+	DB            *database.SQLdb
+	MQ            *broker.AMQPBroker
+	JwtPubKeyPath string
+	JtwKeys       map[string][]byte
 }
 
 type SessionConfig struct {
@@ -452,7 +455,7 @@ func (c *Config) configDatabase() error {
 	return nil
 }
 
-// configDatabase provides configuration for the database
+// configAPI provides configuration for the API service
 func (c *Config) configAPI() error {
 	c.apiDefaults()
 	api := APIConf{}
@@ -468,6 +471,11 @@ func (c *Config) configAPI() error {
 	api.ServerKey = viper.GetString("api.serverKey")
 	api.ServerCert = viper.GetString("api.serverCert")
 	api.CACert = viper.GetString("api.CACert")
+
+	// Token authentication
+	if viper.IsSet("api.jwtpubkeypath") {
+		api.JwtPubKeyPath = viper.GetString("api.jwtpubkeypath")
+	}
 
 	c.API = api
 
@@ -589,4 +597,29 @@ func CopyHeader() bool {
 	}
 
 	return false
+}
+
+// Function for reading the ega key in []byte
+func GetJwtKey(jwtpubkeypath string, jwtKeys map[string][]byte) error {
+	err := filepath.Walk(jwtpubkeypath,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.Mode().IsRegular() {
+				log.Debug("Reading file: ", filepath.Join(filepath.Clean(jwtpubkeypath), info.Name()))
+				keyData, err := os.ReadFile(filepath.Join(filepath.Clean(jwtpubkeypath), info.Name()))
+				if err != nil {
+					return fmt.Errorf("token file error: %v", err)
+				}
+				jwtKeys[strings.TrimSuffix(info.Name(), filepath.Ext(info.Name()))] = keyData
+			}
+
+			return nil
+		})
+	if err != nil {
+		return fmt.Errorf("failed to get public key files (%v)", err)
+	}
+
+	return nil
 }

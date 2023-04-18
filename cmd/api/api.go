@@ -3,10 +3,14 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -14,7 +18,9 @@ import (
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/database"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
+	"github.com/lestrrat-go/jwx/v2/jwa"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -34,6 +40,13 @@ func main() {
 	Conf.API.DB, err = database.NewDB(Conf.Database)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	Conf.API.JtwKeys = make(map[string][]byte)
+	if Conf.API.JwtPubKeyPath != "" {
+		if err := config.GetJwtKey(Conf.API.JwtPubKeyPath, Conf.API.JtwKeys); err != nil {
+			log.Panicf("Error while getting key %s: %v", Conf.API.JwtPubKeyPath, err)
+		}
 	}
 
 	sigc := make(chan os.Signal, 5)
@@ -62,9 +75,11 @@ func main() {
 }
 
 func setup(config *config.Config) *http.Server {
-	r := mux.NewRouter().SkipClean(true)
 
-	r.HandleFunc("/ready", readinessResponse).Methods("GET")
+	r := gin.Default()
+
+	r.GET("/ready", readinessResponse)
+	r.GET("/files", getFiles)
 
 	cfg := &tls.Config{
 		MinVersion:               tls.VersionTLS12,
@@ -94,11 +109,11 @@ func shutdown() {
 	defer Conf.API.DB.Close()
 }
 
-func readinessResponse(w http.ResponseWriter, r *http.Request) {
-	statusCocde := http.StatusOK
+func readinessResponse(c *gin.Context) {
+	statusCode := http.StatusOK
 
 	if Conf.API.MQ.Connection.IsClosed() {
-		statusCocde = http.StatusServiceUnavailable
+		statusCode = http.StatusServiceUnavailable
 		newConn, err := broker.NewMQ(Conf.Broker)
 		if err != nil {
 			log.Errorf("failed to reconnect to MQ, reason: %v", err)
@@ -108,7 +123,7 @@ func readinessResponse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if Conf.API.MQ.Channel.IsClosed() {
-		statusCocde = http.StatusServiceUnavailable
+		statusCode = http.StatusServiceUnavailable
 		Conf.API.MQ.Connection.Close()
 		newConn, err := broker.NewMQ(Conf.Broker)
 		if err != nil {
@@ -121,10 +136,10 @@ func readinessResponse(w http.ResponseWriter, r *http.Request) {
 	if DBRes := checkDB(Conf.API.DB, 5*time.Millisecond); DBRes != nil {
 		log.Debugf("DB connection error :%v", DBRes)
 		Conf.API.DB.Reconnect()
-		statusCocde = http.StatusServiceUnavailable
+		statusCode = http.StatusServiceUnavailable
 	}
 
-	w.WriteHeader(statusCocde)
+	c.JSON(statusCode, "")
 }
 
 func checkDB(database *database.SQLdb, timeout time.Duration) error {
@@ -135,4 +150,115 @@ func checkDB(database *database.SQLdb, timeout time.Duration) error {
 	}
 
 	return database.DB.PingContext(ctx)
+}
+
+// getFiles returns the files from the database for a specific user
+func getFiles(c *gin.Context) {
+
+	log.Debugf("request files in project")
+	c.Writer.Header().Set("Content-Type", "application/json")
+	// Get user ID to extract all files
+	userID, err := getUserFromToken(c.Request)
+	if err != nil {
+		// something went wrong with user token
+		c.JSON(500, err.Error())
+
+		return
+	}
+
+	files, err := Conf.API.DB.GetUserFiles(userID)
+	if err != nil {
+		// something went wrong with querying or parsing rows
+		c.JSON(500, err.Error())
+
+		return
+	}
+
+	// Return response
+	c.JSON(200, files)
+}
+
+// getUserFromToken parses the token, validates it against the key and returns the key
+func getUserFromToken(r *http.Request) (string, error) {
+	// Check that a token is provided
+	tokenStr, err := getToken(r.Header.Get("Authorization"))
+	if err != nil {
+		log.Error("authorization header missing from request")
+
+		return "", fmt.Errorf("could not get token from header: %v", err)
+	}
+
+	token, err := jwt.Parse([]byte(tokenStr), jwt.WithVerify(false))
+	if err != nil {
+		return "", fmt.Errorf("failed to get parse token: %v", err)
+	}
+	strIss := token.Issuer()
+
+	// Poor string unescaper for elixir
+	strIss = strings.ReplaceAll(strIss, "\\", "")
+
+	log.Debugf("Looking for key for %s", strIss)
+
+	iss, err := url.ParseRequestURI(strIss)
+	if err != nil || iss.Hostname() == "" {
+		return "", fmt.Errorf("failed to get issuer from token (%v)", strIss)
+	}
+
+	block, _ := pem.Decode(Conf.API.JtwKeys[iss.Hostname()])
+	key, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse key (%v)", err)
+	}
+
+	verifiedToken, err := jwt.Parse([]byte(tokenStr), jwt.WithKey(jwa.RS256, key))
+	if err != nil {
+		log.Debugf("failed to verify token as RS256 signature of token %s, %s", tokenStr, err)
+		verifiedToken, err = jwt.Parse([]byte(tokenStr), jwt.WithKey(jwa.ES256, key))
+		if err != nil {
+			log.Errorf("failed to verify token as ES256 signature of token %s", err)
+
+			return "", fmt.Errorf("failed to verify token as RSA256 or ES256 signature of token %s", err)
+		}
+	}
+
+	return verifiedToken.Subject(), nil
+}
+
+// getToken parses the token string from header
+func getToken(header string) (string, error) {
+	log.Debug("parsing access token from header")
+
+	if len(header) == 0 {
+		log.Error("authorization check failed, empty header")
+
+		return "", fmt.Errorf("access token must be provided")
+	}
+
+	// Check that Bearer scheme is used
+	headerParts := strings.Split(header, " ")
+	if headerParts[0] != "Bearer" {
+		log.Error("authorization check failed, no Bearer on header")
+
+		return "", fmt.Errorf("authorization scheme must be bearer")
+	}
+
+	// Check that header contains a token string
+	var token string
+	if len(headerParts) == 2 {
+		token = headerParts[1]
+	} else {
+		log.Error("authorization check failed, no token on header")
+
+		return "", fmt.Errorf("token string is missing from authorization header")
+	}
+
+	if len(token) < 2 {
+		log.Error("authorization check failed, too small token")
+
+		return "", fmt.Errorf("token string is missing from authorization header")
+	}
+
+	log.Debug("access token found")
+
+	return token, nil
 }

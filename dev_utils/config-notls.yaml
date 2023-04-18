@@ -1,3 +1,6 @@
+api:
+  jwtpubkeypath: "/keys"
+
 archive:
   type: ""
   # S3 backend

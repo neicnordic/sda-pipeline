@@ -258,6 +258,7 @@ services:
       - ./config.yaml:/config.yaml
       - ./:/dev_utils/
       - certs:/dev_utils/certs
+      - ./keys/pub:/keys
 
   sftp-server:
     build:

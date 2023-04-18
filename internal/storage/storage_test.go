@@ -48,7 +48,7 @@ var testS3Conf = S3Conf{
 	"region",
 	10,
 	5 * 1024 * 1024,
-	"../../dev_utils/certs/ca.pem",
+	"",
 	2 * time.Second}
 
 var testConf = Conf{posixType, testS3Conf, testPosixConf, testSftpConf}

@@ -55,6 +55,7 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
+
   createbucket:
     image: minio/mc
     depends_on:
@@ -223,6 +224,7 @@ services:
     restart: always
     volumes:
       - ./config-notls.yaml:/config.yaml
+      - ./keys:/keys
 volumes:
   archive:
   backup:

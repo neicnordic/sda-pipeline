@@ -56,6 +56,12 @@ type FileInfo struct {
 	DecryptedSize     int64
 }
 
+type SubmissionFileInfo struct {
+	InboxPath string `json:"inboxPath"`
+	Status    string `json:"fileStatus"`
+	CreateAt  string `json:"createAt"`
+}
+
 // dbRetryTimes is the number of times to retry the same function if it fails
 var dbRetryTimes = 5
 
@@ -481,6 +487,64 @@ func (dbs *SQLdb) getArchived(user, filepath, checksum string) (string, int, err
 	}
 
 	return filePath, fileSize, nil
+}
+
+// GetUserFiles retrieves all the files a user submitted
+func (dbs *SQLdb) GetUserFiles(userID string) ([]*SubmissionFileInfo, error) {
+	var (
+		err   error = nil
+		count int   = 0
+	)
+
+	files := []*SubmissionFileInfo{}
+
+	for count == 0 || (err != nil && count < dbRetryTimes) {
+		files, err = dbs.getUserFiles(userID)
+		count++
+	}
+
+	return files, err
+}
+
+// getUserFiles is the actual function performing work for GetUserFiles
+func (dbs *SQLdb) getUserFiles(userID string) ([]*SubmissionFileInfo, error) {
+	dbs.checkAndReconnectIfNeeded()
+
+	files := []*SubmissionFileInfo{}
+	db := dbs.DB
+
+	const query = "SELECT f.submission_file_path, e.event, f.created_at FROM sda.files f " +
+		"LEFT JOIN (SELECT file_id, (ARRAY_AGG(event ORDER BY started_at DESC))[1] AS event " +
+		"FROM sda.file_event_log GROUP BY file_id) e " +
+		"ON f.id = e.file_id " +
+		"WHERE f.submission_user = $1;"
+
+	// nolint:rowserrcheck
+	rows, err := db.Query(query, userID)
+	if err != nil {
+		log.Error(err)
+
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Iterate rows
+	for rows.Next() {
+
+		// Read rows into struct
+		fi := &SubmissionFileInfo{}
+		err := rows.Scan(&fi.InboxPath, &fi.Status, &fi.CreateAt)
+		if err != nil {
+			log.Error(err)
+
+			return nil, err
+		}
+
+		// Add instance of struct (file) to array
+		files = append(files, fi)
+	}
+
+	return files, nil
 }
 
 // Close terminates the connection to the database

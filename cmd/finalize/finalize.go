@@ -146,6 +146,94 @@ func main() {
 				continue
 			}
 
+			accessionIDExists, err := db.CheckAccessionIDExists(message.AccessionID)
+			if err != nil {
+				log.Errorf("CheckAccessionIdExists failed "+
+					"(corr-id: %s, "+
+					"filepath: %s, "+
+					"user: %s, "+
+					"accessionid: %s, "+
+					"decryptedChecksums: %v, error: %v)",
+					delivered.CorrelationId,
+					message.Filepath,
+					message.User,
+					message.AccessionID,
+					message.DecryptedChecksums,
+					err)
+
+				if e := delivered.Nack(false, true); e != nil {
+					log.Errorf("Failed to NAck because of MarkReady failed "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						e)
+
+				}
+
+				continue
+			}
+
+			if accessionIDExists {
+
+				log.Infof("Seems accession ID already exists (corr-id: %s, "+
+					"filepath: %s, "+
+					"user: %s, "+
+					"accessionid: %s, "+
+					"decryptedChecksums: %v)",
+					delivered.CorrelationId,
+					message.Filepath,
+					message.User,
+					message.AccessionID,
+					message.DecryptedChecksums)
+
+				// Send the message to an error queue so it can be analyzed.
+				fileError := broker.InfoError{
+					Error:           "There is a conflict regarding the file accessionID",
+					Reason:          "The Accession ID already exists in the database, skipping marking it ready.",
+					OriginalMessage: message,
+				}
+				body, _ := json.Marshal(fileError)
+
+				// Send the message to an error queue so it can be analyzed.
+				if e := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingError, conf.Broker.Durable, body); e != nil {
+					log.Errorf("Failed to publish conflict in accessionID error message "+
+						"(corr-id: %s, user: %s, filepath: %s, accessionID: %s, decryptedchecksums: %v, reason: %v)",
+						delivered.CorrelationId,
+						message.User,
+						message.Filepath,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						e)
+				}
+
+				// Nack message so the server gets notified that something is wrong and don't requeue the message
+				if e := delivered.Nack(false, false); e != nil {
+					log.Errorf("Failed to NAck because of MarkReady failed "+
+						"(corr-id: %s, "+
+						"filepath: %s, "+
+						"user: %s, "+
+						"accessionid: %s, "+
+						"decryptedChecksums: %v, error: %v)",
+						delivered.CorrelationId,
+						message.Filepath,
+						message.User,
+						message.AccessionID,
+						message.DecryptedChecksums,
+						e)
+
+				}
+
+				continue
+
+			}
+
 			if err := db.MarkReady(message.AccessionID, message.User, message.Filepath, checksumSha256); err != nil {
 				log.Errorf("MarkReady failed "+
 					"(corr-id: %s, "+
@@ -160,7 +248,6 @@ func main() {
 					message.DecryptedChecksums,
 					err)
 
-				// Nack message so the server gets notified that something is wrong and requeue the message
 				if e := delivered.Nack(false, true); e != nil {
 					log.Errorf("Failed to NAck because of MarkReady failed "+
 						"(corr-id: %s, "+
@@ -174,6 +261,7 @@ func main() {
 						message.AccessionID,
 						message.DecryptedChecksums,
 						e)
+
 				}
 
 				continue
@@ -228,6 +316,7 @@ func main() {
 					err)
 
 			}
+
 		}
 	}()
 

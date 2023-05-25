@@ -33,6 +33,8 @@ These settings control how mapper connects to the RabbitMQ message broker.
 
  - `BROKER_PASSWORD`: password to connect to rabbitmq
 
+ - `BROKER_PREFETCHCOUNT`: Number of messagfes to pull from the message server at the time (default to 2)
+
 ### PostgreSQL Database settings:
 
  - `DB_HOST`: hostname for the postgresql database

@@ -413,6 +413,11 @@ func (c *Config) configBroker() error {
 		broker.CACert = viper.GetString("broker.cacert")
 	}
 
+	broker.PrefetchCount = 2
+	if viper.IsSet("broker.prefetchCount") {
+		broker.PrefetchCount = viper.GetInt("broker.prefetchCount")
+	}
+
 	c.Broker = broker
 
 	return nil

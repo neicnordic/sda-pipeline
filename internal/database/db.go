@@ -400,14 +400,14 @@ func (dbs *SQLdb) checkAccessionIDExists(accessionID string) (bool, error) {
 	return false, nil
 }
 
-// MarkReady marks the file as "READY"
-func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error {
+// SetAccessionID marks the file as "READY"
+func (dbs *SQLdb) SetAccessionID(accessionID, user, filepath, checksum string) error {
 
 	var err error
 
 	// 3, 9, 27, 81, 243 seconds between each retry event.
 	for count := 1; count <= dbRetryTimes; count++ {
-		err = dbs.markReady(accessionID, user, filepath, checksum)
+		err = dbs.setAccessionID(accessionID, user, filepath, checksum)
 		if err == nil {
 			break
 		}
@@ -418,12 +418,12 @@ func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error 
 }
 
 // MarkReady marks the file as "READY"
-func (dbs *SQLdb) markReady(accessionID, user, filepath, checksum string) error {
+func (dbs *SQLdb) setAccessionID(accessionID, user, filepath, checksum string) error {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB
 
-	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE " +
+	const ready = "UPDATE local_ega.files SET stable_id = $1 WHERE " +
 		"elixir_id = $2 and inbox_path = $3 and decrypted_file_checksum = $4 and status = 'COMPLETED';"
 	result, err := db.Exec(ready, accessionID, user, filepath, checksum)
 	if err != nil {

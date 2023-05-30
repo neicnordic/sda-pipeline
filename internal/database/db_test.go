@@ -402,12 +402,12 @@ func TestSetArchived(t *testing.T) {
 	log.SetOutput(os.Stdout)
 }
 
-func TestMarkReady(t *testing.T) {
+func TestSetAccessionID(t *testing.T) {
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
 		r := sqlmock.NewResult(10, 1)
 
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'READY', "+
+		mock.ExpectExec("UPDATE local_ega.files SET "+
 			"stable_id = \\$1 WHERE "+
 			"elixir_id = \\$2 and "+
 			"inbox_path = \\$3 and "+
@@ -416,17 +416,17 @@ func TestMarkReady(t *testing.T) {
 			WithArgs("accessionId", "nobody", "/tmp/file.c4gh", "checksum").
 			WillReturnResult(r)
 
-		return testDb.MarkReady("accessionId", "nobody", "/tmp/file.c4gh", "checksum")
+		return testDb.SetAccessionID("accessionId", "nobody", "/tmp/file.c4gh", "checksum")
 	})
 
-	assert.Nil(t, r, "MarkReady failed unexpectedly")
+	assert.Nil(t, r, "setAccessionID failed unexpectedly")
 
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
 
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'READY', "+
+		mock.ExpectExec("UPDATE local_ega.files SET "+
 			"stable_id = \\$1 WHERE "+
 			"elixir_id = \\$2 and "+
 			"inbox_path = \\$3 and "+
@@ -435,13 +435,14 @@ func TestMarkReady(t *testing.T) {
 			WithArgs("accessionId", "nobody", "/tmp/file.c4gh", "checksum").
 			WillReturnError(fmt.Errorf("error for testing"))
 
-		return testDb.MarkReady("accessionId", "nobody", "/tmp/file.c4gh", "checksum")
+		return testDb.SetAccessionID("accessionId", "nobody", "/tmp/file.c4gh", "checksum")
 	})
 
-	assert.NotNil(t, r, "MarkReady did not fail as expected")
+	assert.NotNil(t, r, "SetAccessionID did not fail as expected")
 
 	log.SetOutput(os.Stdout)
 }
+
 func TestMapFilesToDataset(t *testing.T) {
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 

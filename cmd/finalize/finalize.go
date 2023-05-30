@@ -162,7 +162,7 @@ func main() {
 					err)
 
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorf("Failed to NAck because of MarkReady failed "+
+					log.Errorf("Failed to NAck because of checking accession id exists failed "+
 						"(corr-id: %s, "+
 						"filepath: %s, "+
 						"user: %s, "+
@@ -215,7 +215,7 @@ func main() {
 
 				// Nack message so the server gets notified that something is wrong and don't requeue the message
 				if e := delivered.Nack(false, false); e != nil {
-					log.Errorf("Failed to NAck because of MarkReady failed "+
+					log.Errorf("Failed to NAck because of sending error failed "+
 						"(corr-id: %s, "+
 						"filepath: %s, "+
 						"user: %s, "+
@@ -234,8 +234,8 @@ func main() {
 
 			}
 
-			if err := db.MarkReady(message.AccessionID, message.User, message.Filepath, checksumSha256); err != nil {
-				log.Errorf("MarkReady failed "+
+			if err := db.SetAccessionID(message.AccessionID, message.User, message.Filepath, checksumSha256); err != nil {
+				log.Errorf("SetAccessionID failed "+
 					"(corr-id: %s, "+
 					"filepath: %s, "+
 					"user: %s, "+
@@ -249,7 +249,7 @@ func main() {
 					err)
 
 				if e := delivered.Nack(false, true); e != nil {
-					log.Errorf("Failed to NAck because of MarkReady failed "+
+					log.Errorf("Failed to NAck because of SetAccessionID failed "+
 						"(corr-id: %s, "+
 						"filepath: %s, "+
 						"user: %s, "+
@@ -278,8 +278,6 @@ func main() {
 				message.User,
 				message.AccessionID,
 				message.DecryptedChecksums)
-
-			log.Debug("Mark ready")
 
 			if err := mq.SendMessage(delivered.CorrelationId, conf.Broker.Exchange, conf.Broker.RoutingKey, conf.Broker.Durable, completeMsg); err != nil {
 				// TODO fix resend mechanism

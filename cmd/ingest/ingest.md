@@ -43,7 +43,7 @@ These settings control how ingest connects to the RabbitMQ message broker.
 
  - `BROKER_PASSWORD`: password to connect to rabbitmq
 
- - `BROKER_PREFETCHCOUNT`: Number of messagfes to pull from the message server at the time (default to 2)
+ - `BROKER_PREFETCHCOUNT`: Number of messages to pull from the message server at the time (default to 2)
 
 ### PostgreSQL Database settings:
 

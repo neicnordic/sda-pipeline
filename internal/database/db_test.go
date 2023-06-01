@@ -604,6 +604,20 @@ func TestGetFileStatus(t *testing.T) {
 	assert.NotNil(t, err, "SetFileStatus did not fail as expected")
 }
 
+func TestGetInboxPath(t *testing.T) {
+	err := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+
+		mock.ExpectQuery("SELECT submission_file_path from sda.files WHERE stable_id = \\$1;").
+			WithArgs("EGAF00000000001").
+			WillReturnRows(sqlmock.NewRows([]string{"submission_file_path"}).AddRow("test-user/file.c4gh"))
+
+		_, err := testDb.GetInboxPath("EGAF00000000001")
+
+		return err
+	})
+	assert.Nil(t, err, "GetInboxPath failed unexpectedly")
+}
+
 func TestClose(t *testing.T) {
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 

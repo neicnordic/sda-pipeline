@@ -646,6 +646,34 @@ func (dbs *SQLdb) getFileStatus(corrID string) (string, error) {
 	return status, nil
 }
 
+func (dbs *SQLdb) GetInboxPath(stableID string) (string, error) {
+	var (
+		err       error
+		count     int
+		inboxPath string
+	)
+
+	for count == 0 || (err != nil && count < dbRetryTimes) {
+		inboxPath, err = dbs.getInboxPath(stableID)
+		count++
+	}
+
+	return inboxPath, err
+}
+func (dbs *SQLdb) getInboxPath(stableID string) (string, error) {
+	dbs.checkAndReconnectIfNeeded()
+	db := dbs.DB
+	const getFileID = "SELECT submission_file_path from sda.files WHERE stable_id = $1;"
+
+	var inboxPath string
+	err := db.QueryRow(getFileID, stableID).Scan(&inboxPath)
+	if err != nil {
+		return "", err
+	}
+
+	return inboxPath, nil
+}
+
 // Close terminates the connection to the database
 func (dbs *SQLdb) Close() {
 	db := dbs.DB

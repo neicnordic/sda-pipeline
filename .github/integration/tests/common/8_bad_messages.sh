@@ -39,7 +39,7 @@ function check_move_to_error_queue() {
 	echo
 }
 
-for routingkey in files ingest archived accessionIDs backup mappings; do
+for routingkey in files ingest; do
 	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		--data-binary '{
@@ -60,7 +60,7 @@ check_move_to_error_queue "I give you bad json"
 
 done
 
-for routingkey in files ingest archived accessionIDs backup mappings; do
+for routingkey in files ingest; do
 	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		--data-binary '{

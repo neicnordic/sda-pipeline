@@ -212,7 +212,6 @@ func NewConfig(app string) (*Config, error) {
 	case "intercept":
 		return c, nil
 	case "verify":
-		c.configInbox()
 		c.configArchive()
 
 		err = c.configDatabase()

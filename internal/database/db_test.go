@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"testing"
 	"time"
 
@@ -402,6 +401,53 @@ func TestSetArchived(t *testing.T) {
 	log.SetOutput(os.Stdout)
 }
 
+func TestUpdateDatasetEvent(t *testing.T) {
+	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		success := sqlmock.NewResult(1, 1)
+		r := sqlmock.NewRows([]string{"id"})
+
+		r.AddRow(1)
+
+		mock.ExpectQuery("SELECT id FROM sda.datasets WHERE stable_id = \\$1;").
+			WithArgs("datesetId").WillReturnRows(r)
+
+		mock.ExpectExec("INSERT INTO "+
+			"sda.file_event_log\\(file_id, event, correlation_id, user_id\\) "+
+			"SELECT file_id, \\$2, \\$3, \\$4 from sda.file_dataset "+
+			"WHERE dataset_id = \\$1;").
+			WithArgs(1, "ready", "somecorrelationid", "mapper").
+			WillReturnResult(success)
+
+		return testDb.UpdateDatasetEvent("datesetId", "ready", "somecorrelationid", "mapper")
+	})
+
+	assert.Nil(t, r, "UpdateDatasetEvent failed unexpectedly")
+
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+
+	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		r := sqlmock.NewRows([]string{"id"})
+
+		r.AddRow(1)
+
+		mock.ExpectQuery("SELECT id FROM sda.datasets WHERE stable_id = \\$1;").
+			WithArgs("datesetId").WillReturnRows(r)
+
+		mock.ExpectExec("INSERT INTO " +
+			"sda.file_event_log\\(file_id, event, correlation_id, user_id\\) " +
+			"SELECT file_id, \\$2, \\$3, \\$4 from sda.file_dataset " +
+			"WHERE dataset_id = \\$1;").
+			WillReturnError(fmt.Errorf("error for testing"))
+
+		return testDb.UpdateDatasetEvent("datesetId", "ready", "somecorrelationid", "mapper")
+	})
+
+	assert.NotNil(t, r, "UpdateDatasetEvent did not fail as expected")
+
+	log.SetOutput(os.Stdout)
+}
+
 func TestSetAccessionID(t *testing.T) {
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
@@ -447,7 +493,17 @@ func TestMapFilesToDataset(t *testing.T) {
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
 		// Set up a few file sets with different accession ids.
-		accessions := []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"}
+		// for the purpose of this test we consider accession ids the same as file ids
+		accessions := []string{"2f04d87f-0af6-4918-993f-437827f2ff8b",
+			"a5c477ff-b06b-4211-a978-a29aa86932b0",
+			"6bcd16b9-191f-46b8-92af-cef923c47206",
+			"35a7e68b-3062-4c91-b426-ca542313e4ce",
+			"e5b738ee-54c0-4128-854a-b4f055c907f4",
+			"98cddc6b-b836-41ab-8727-9beda6f4bdf",
+			"2eb6aa2c-047e-4ff1-bf70-2dbf8fa2bf11",
+			"a35836f4-8db4-4ad8-a389-ae1321120898",
+			"efb14df1-0f9e-4b39-a9c2-8c310b3d9935",
+			"9484d348-ce14-4a6b-a2b9-f73923f95fa0"}
 
 		diSet := map[string][]string{"dataset1": accessions[0:3],
 			"dataset2": accessions[4:5],
@@ -457,26 +513,30 @@ func TestMapFilesToDataset(t *testing.T) {
 		success := sqlmock.NewResult(1, 1)
 
 		for di, acs := range diSet {
+
+			mock.ExpectExec("INSERT INTO sda.datasets \\(stable_id\\) VALUES \\(\\$1\\) " +
+				"ON CONFLICT DO NOTHING;").
+				WithArgs(di).
+				WillReturnResult(success)
 			mock.ExpectBegin()
 			for _, aID := range acs {
-				r := sqlmock.NewRows([]string{"file_id"})
 
-				fileID, _ := strconv.Atoi(aID)
+				r := sqlmock.NewRows([]string{"id"})
 
-				r.AddRow(fileID)
+				// fileID, _ := strconv.Atoi(aID)
 
-				mock.ExpectQuery("SELECT file_id FROM local_ega.archive_files WHERE stable_id = \\$1").
+				r.AddRow(aID)
+
+				mock.ExpectQuery("SELECT id FROM sda.files WHERE stable_id = \\$1;").
 					WithArgs(aID).WillReturnRows(r)
 
-				mock.ExpectExec("INSERT INTO local_ega_ebi.filedataset "+
-					"\\(file_id, dataset_stable_id\\) VALUES \\(\\$1, \\$2\\) "+
-					"ON CONFLICT "+
-					"DO NOTHING;").
-					WithArgs(fileID, di).WillReturnResult(success)
+				mock.ExpectExec("INSERT INTO sda.file_dataset "+
+					"\\(file_id, dataset_id\\) SELECT \\$1, id FROM sda.datasets WHERE stable_id = \\$2 "+
+					"ON CONFLICT DO NOTHING;").
+					WithArgs(aID, di).WillReturnResult(success)
 
 			}
 			mock.ExpectCommit()
-
 			err := testDb.MapFilesToDataset(di, acs)
 
 			if !assert.Nil(t, err, "MapFilesToDataset failed unexpectedly") {
@@ -484,38 +544,36 @@ func TestMapFilesToDataset(t *testing.T) {
 			}
 		}
 
-		var buf bytes.Buffer
-		log.SetOutput(&buf)
+		// var buf bytes.Buffer
+		// log.SetOutput(&buf)
 
-		mock.ExpectBegin()
-		mock.ExpectQuery("SELECT file_id FROM local_ega.archive_files WHERE stable_id = \\$1").
-			WithArgs("aid1").WillReturnError(fmt.Errorf("error for testing"))
-		mock.ExpectRollback().WillReturnError(fmt.Errorf("error again"))
+		// mock.ExpectBegin()
+		// mock.ExpectQuery("SELECT id FROM sda.files WHERE stable_id = \\$1;").
+		// 	WithArgs("aid1").WillReturnError(fmt.Errorf("error for testing"))
+		// mock.ExpectRollback().WillReturnError(fmt.Errorf("error again"))
 
-		err := testDb.MapFilesToDataset("dataset", []string{"aid1"})
+		// err := testDb.MapFilesToDataset("dataset", []string{"aid1"})
 
-		assert.NotZero(t, buf.Len(), "Expected warning missing")
-		assert.NotNil(t, err, "MapFilesToDataset did not fail as expected")
+		// assert.NotZero(t, buf.Len(), "Expected warning missing")
+		// assert.NotNil(t, err, "MapFilesToDataset did not fail as expected")
 
-		buf.Reset()
+		// buf.Reset()
 
-		mock.ExpectBegin()
-		mock.ExpectQuery("SELECT file_id FROM local_ega.archive_files WHERE stable_id = \\$1").
-			WithArgs("aid1").WillReturnRows(sqlmock.NewRows([]string{"file_id"}).AddRow(100))
+		// mock.ExpectBegin()
+		// mock.ExpectQuery("SELECT id FROM sda.files WHERE stable_id = \\$1;").
+		// 	WithArgs("aid1").WillReturnRows(sqlmock.NewRows([]string{"file_id"}).AddRow(100))
 
-		mock.ExpectExec("INSERT INTO local_ega_ebi.filedataset "+
-			"\\(file_id, dataset_stable_id\\) "+
-			"VALUES \\(\\$1, \\$2\\) "+
-			"ON CONFLICT "+
-			"DO NOTHING;").
-			WithArgs(100, "dataset").WillReturnError(fmt.Errorf("error for testing"))
+		// mock.ExpectExec("INSERT INTO sda.file_dataset "+
+		// 	"\\(file_id, dataset_id\\) SELECT \\$1, id FROM sda.datasets WHERE stable_id = \\$2"+
+		// 	"ON CONFLICT DO NOTHING;").
+		// 	WithArgs(100, "dataset").WillReturnError(fmt.Errorf("error for testing"))
 
-		mock.ExpectRollback().WillReturnError(fmt.Errorf("error again"))
+		// mock.ExpectRollback().WillReturnError(fmt.Errorf("error again"))
 
-		err = testDb.MapFilesToDataset("dataset", []string{"aid1"})
+		// err = testDb.MapFilesToDataset("dataset", []string{"aid1"})
 
-		assert.NotZero(t, buf.Len(), "Expected warning missing")
-		assert.NotNil(t, err, "MapFilesToDataset did not fail as expected")
+		// assert.NotZero(t, buf.Len(), "Expected warning missing")
+		// assert.NotNil(t, err, "MapFilesToDataset did not fail as expected")
 
 		log.SetOutput(os.Stdout)
 

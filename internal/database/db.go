@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"hash"
 	"math"
-	"path/filepath"
-	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -21,10 +19,14 @@ import (
 
 // Database defines methods to be implemented by SQLdb
 type Database interface {
+	GetArchived(user, filepath, checksum string) (string, int, error)
+	GetFileID(corrID string) (string, error)
 	GetHeader(fileID int) ([]byte, error)
 	MarkCompleted(checksum string, fileID int) error
 	MarkReady(accessionID, user, filepath, checksum string) error
-	GetArchived(user, filepath, checksum string) (string, int, error)
+	RegisterFile(filePath, user string) (string, error)
+	SetArchived(file FileInfo, id, corrID string) error
+	UpdateFileStatus(fileUUID, event, corrID, user, message string) error
 	Close()
 }
 
@@ -239,57 +241,65 @@ func (dbs *SQLdb) markCompleted(file FileInfo, fileID int) error {
 	return nil
 }
 
-// InsertFile inserts a file in the database
-func (dbs *SQLdb) InsertFile(filename, user string) (int64, error) {
+// RegisterFile inserts a file in the database
+func (dbs *SQLdb) RegisterFile(filePath, user string) (string, error) {
 	var (
 		err   error
-		r     int64
+		id    string
 		count int
 	)
 
 	for count == 0 || (err != nil && count < dbRetryTimes) {
-		r, err = dbs.insertFile(filename, user)
+		id, err = dbs.registerFile(filePath, user)
 		count++
 	}
 
-	return r, err
+	return id, err
+}
+func (dbs *SQLdb) registerFile(filePath, user string) (string, error) {
+	dbs.checkAndReconnectIfNeeded()
+	db := dbs.DB
+
+	const query = "SELECT sda.register_file($1, $2);"
+	var fileUUID string
+	err := db.QueryRow(query, filePath, user).Scan(&fileUUID)
+	if err != nil {
+		return "", err
+	}
+
+	return fileUUID, nil
 }
 
-// insertFile performs actual work for InsertFile
-func (dbs *SQLdb) insertFile(filename, user string) (int64, error) {
+func (dbs *SQLdb) GetFileID(corrID string) (string, error) {
+	var (
+		err   error
+		count int
+		ID    string
+	)
+
+	for count == 0 || (err != nil && count < dbRetryTimes) {
+		ID, err = dbs.getFileID(corrID)
+		count++
+	}
+
+	return ID, err
+}
+func (dbs *SQLdb) getFileID(corrID string) (string, error) {
 	dbs.checkAndReconnectIfNeeded()
-
-	// Not really idempotent, but close enough for us
-
 	db := dbs.DB
-	const query = "INSERT INTO local_ega.main(submission_file_path, " +
-		"submission_file_extension, " +
-		"submission_user, " +
-		"status, " +
-		"encryption_method) " +
-		"VALUES($1, $2, $3,'INIT', 'CRYPT4GH') RETURNING id;"
+	const getFileID = "SELECT DISTINCT file_id FROM sda.file_event_log where correlation_id = $1;"
 
-	var fileID int64
-
-	err := db.QueryRow(query, filename, strings.ReplaceAll(filepath.Ext(filename), ".", ""), user).Scan(&fileID)
-	if err == nil {
-		return fileID, nil
-	}
-	// We can only handle the duplicate key error for now
-	if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-		return 0, err
-	}
-	const updateQuery = "UPDATE local_ega.main SET status = 'IN_INGESTION' WHERE local_ega.main.submission_file_path = $1 AND local_ega.main.submission_user = $2 AND local_ega.main.status = $3 RETURNING id;"
-	err = db.QueryRow(updateQuery, filename, user, "INIT").Scan(&fileID)
+	var fileID string
+	err := db.QueryRow(getFileID, corrID).Scan(&fileID)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	return fileID, nil
 }
 
 // StoreHeader stores the file header in the database
-func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
+func (dbs *SQLdb) StoreHeader(header []byte, id string) error {
 	var (
 		err   error
 		count int
@@ -304,11 +314,11 @@ func (dbs *SQLdb) StoreHeader(header []byte, id int64) error {
 }
 
 // storeHeader performs actual work for StoreHeader
-func (dbs *SQLdb) storeHeader(header []byte, id int64) error {
+func (dbs *SQLdb) storeHeader(header []byte, id string) error {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB
-	const query = "UPDATE local_ega.files SET header = $1 WHERE id = $2;"
+	const query = "UPDATE sda.files SET header = $1 WHERE id = $2;"
 	result, err := db.Exec(query, hex.EncodeToString(header), id)
 	if err != nil {
 		return err
@@ -321,14 +331,14 @@ func (dbs *SQLdb) storeHeader(header []byte, id int64) error {
 }
 
 // SetArchived marks the file as 'ARCHIVED'
-func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
+func (dbs *SQLdb) SetArchived(file FileInfo, fileID, corrID string) error {
 	var (
 		err   error
 		count int
 	)
 
 	for count == 0 || (err != nil && count < dbRetryTimes) {
-		err = dbs.setArchived(file, id)
+		err = dbs.setArchived(file, fileID, corrID)
 		count++
 	}
 
@@ -336,22 +346,18 @@ func (dbs *SQLdb) SetArchived(file FileInfo, id int64) error {
 }
 
 // setArchived performs actual work for SetArchived
-func (dbs *SQLdb) setArchived(file FileInfo, id int64) error {
+func (dbs *SQLdb) setArchived(file FileInfo, fileID, corrID string) error {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB
-	const query = "UPDATE local_ega.files SET status = 'ARCHIVED', " +
-		"archive_path = $1, " +
-		"archive_filesize = $2, " +
-		"inbox_file_checksum = $3, " +
-		"inbox_file_checksum_type = $4 " +
-		"WHERE id = $5;"
+	const query = "SELECT sda.set_archived($1, $2, $3, $4, $5, $6);"
 	result, err := db.Exec(query,
+		fileID,
 		file.Path,
 		file.Size,
 		fmt.Sprintf("%x", file.Checksum.Sum(nil)),
-		hashType(file.Checksum),
-		id)
+		hashType(file.Checksum), corrID,
+	)
 	if err != nil {
 		return err
 	}
@@ -574,6 +580,75 @@ func (dbs *SQLdb) getArchived(user, filepath, checksum string) (string, int, err
 	}
 
 	return filePath, fileSize, nil
+}
+
+func (dbs *SQLdb) GetVersion() (int, error) {
+	dbs.checkAndReconnectIfNeeded()
+	log.Debug("Fetching database schema version")
+
+	query := "SELECT MAX(version) FROM sda.dbschema_version"
+	var dbVersion = -1
+	err := dbs.DB.QueryRow(query).Scan(&dbVersion)
+
+	return dbVersion, err
+}
+
+func (dbs *SQLdb) UpdateFileStatus(fileUUID, event, corrID, user, message string) error {
+	var (
+		err   error
+		count int
+	)
+
+	for count == 0 || (err != nil && count < dbRetryTimes) {
+		err = dbs.updateFileStatus(fileUUID, event, corrID, user, message)
+		count++
+	}
+
+	return err
+}
+func (dbs *SQLdb) updateFileStatus(fileUUID, event, corrID, user, message string) error {
+	dbs.checkAndReconnectIfNeeded()
+
+	db := dbs.DB
+	const query = "INSERT INTO sda.file_event_log(file_id, event, correlation_id, user_id, message) VALUES($1, $2, $3, $4, $5);"
+
+	result, err := db.Exec(query, fileUUID, event, corrID, user, message)
+	if err != nil {
+		return err
+	}
+	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
+		return errors.New("something went wrong with the query zero rows were changed")
+	}
+
+	return nil
+}
+
+func (dbs *SQLdb) GetFileStatus(corrID string) (string, error) {
+	var (
+		err    error
+		count  int
+		status string
+	)
+
+	for count == 0 || (err != nil && count < dbRetryTimes) {
+		status, err = dbs.getFileStatus(corrID)
+		count++
+	}
+
+	return status, err
+}
+func (dbs *SQLdb) getFileStatus(corrID string) (string, error) {
+	dbs.checkAndReconnectIfNeeded()
+	db := dbs.DB
+	const getFileID = "SELECT event from sda.file_event_log WHERE correlation_id = $1 ORDER BY id DESC LIMIT 1;"
+
+	var status string
+	err := db.QueryRow(getFileID, corrID).Scan(&status)
+	if err != nil {
+		return "", err
+	}
+
+	return status, nil
 }
 
 // Close terminates the connection to the database

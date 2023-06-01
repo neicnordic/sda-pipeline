@@ -259,26 +259,34 @@ func TestMarkCompleted(t *testing.T) {
 	log.SetOutput(os.Stdout)
 }
 
-func TestInsertFile(t *testing.T) {
+func TestRegisterFile(t *testing.T) {
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		mock.ExpectQuery("SELECT sda.register_file\\(\\$1, \\$2\\);").
+			WithArgs("tmp/file1.c4gh", "dummy").
+			WillReturnRows(sqlmock.NewRows([]string{"register_file"}).AddRow("074803cc-718e-4dc4-a48d-a4770aa9f93b"))
 
-		mock.ExpectQuery("INSERT INTO local_ega.main\\(submission_file_path, submission_file_extension, submission_user, status, encryption_method\\) VALUES\\(\\$1, \\$2, \\$3,'INIT', 'CRYPT4GH'\\) RETURNING id;").
-			WithArgs("/tmp/file.c4gh", "c4gh", "nobody").
-			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(5))
-
-		_, err := testDb.InsertFile("/tmp/file.c4gh", "nobody")
+		l, err := testDb.RegisterFile("tmp/file1.c4gh", "dummy")
+		assert.Equal(t, "074803cc-718e-4dc4-a48d-a4770aa9f93b", l)
 
 		return err
 	})
 
-	assert.Nil(t, r, "InsertFile failed unexpectedly")
+	assert.Nil(t, r, "RegisterFile returned unexpected error")
+}
 
-	var buf bytes.Buffer
-	log.SetOutput(&buf)
+func GetFileID(t *testing.T) {
+	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		mock.ExpectQuery("SELECT DISTINCT file_id FROM sda.file_event_log where correlation_id = \\$1;").
+			WithArgs("f7207667-7d2d-46f5-96af-bd11416475c0").
+			WillReturnRows(sqlmock.NewRows([]string{"file_id"}).AddRow("f83976fc-7e59-4a12-ad17-0154a36e36fc"))
 
-	buf.Reset()
+		i, err := testDb.GetFileID("f7207667-7d2d-46f5-96af-bd11416475c0")
+		assert.Equal(t, "0f83976fc-7e59-4a12-ad17-0154a36e36fc", i)
 
-	log.SetOutput(os.Stdout)
+		return err
+	})
+
+	assert.Nil(t, r, "GetMainID returned unexpected error")
 }
 
 func TestGetHeader(t *testing.T) {
@@ -336,11 +344,11 @@ func TestStoreHeader(t *testing.T) {
 		header := []byte{15, 45, 20, 40, 48}
 		r := sqlmock.NewResult(10, 1)
 
-		mock.ExpectExec("UPDATE local_ega.files SET header = \\$1 WHERE id = \\$2;").
-			WithArgs("0f2d142830", 42).
+		mock.ExpectExec("UPDATE sda.files SET header = \\$1 WHERE id = \\$2;").
+			WithArgs("0f2d142830", "fb140b10-1354-4266-879e-b34ad3e64c57").
 			WillReturnResult(r)
 
-		return testDb.StoreHeader(header, 42)
+		return testDb.StoreHeader(header, "fb140b10-1354-4266-879e-b34ad3e64c57")
 	})
 
 	assert.Nil(t, r, "StoreHeader failed unexpectedly")
@@ -363,42 +371,23 @@ func TestSetArchived(t *testing.T) {
 	}
 
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-
-		r := sqlmock.NewResult(10, 1)
-
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'ARCHIVED', archive_path = \\$1, archive_filesize = \\$2, inbox_file_checksum = \\$3, inbox_file_checksum_type = \\$4 WHERE id = \\$5;").
-			WithArgs(file.Path,
-				file.Size,
-				"96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b",
-				"SHA256",
-				42).
+		r := sqlmock.NewResult(0, 1)
+		mock.ExpectExec("SELECT sda.set_archived\\(\\$1, \\$2, \\$3, \\$4, \\$5, \\$6\\);").
+			WithArgs("108b842a-5d8e-4189-8e8a-9f54dc22576e", file.Path, file.Size, "96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b", "SHA256", "108b842a-5d8e-4189-8e8a-9f54dc22576e").
 			WillReturnResult(r)
 
-		return testDb.SetArchived(file, 42)
+		return testDb.SetArchived(file, "108b842a-5d8e-4189-8e8a-9f54dc22576e", "108b842a-5d8e-4189-8e8a-9f54dc22576e")
 	})
-
 	assert.Nil(t, r, "SetArchived failed unexpectedly")
 
-	var buf bytes.Buffer
-	log.SetOutput(&buf)
-
-	buf.Reset()
-
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'ARCHIVED', archive_path = \\$1, archive_filesize = \\$2, inbox_file_checksum = \\$3, inbox_file_checksum_type = \\$4 WHERE id = \\$5;").
-			WithArgs(file.Path,
-				file.Size,
-				"96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b",
-				"SHA256", 42).
+		mock.ExpectExec("SELECT sda.set_archived\\(\\$1, \\$2, \\$3, \\$4, \\$5, \\$6\\);").
+			WithArgs("108b842a-5d8e-4189-8e8a-9f54dc22576e", file.Path, file.Size, "96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b", "SHA256", "108b842a-5d8e-4189-8e8a-9f54dc22576e").
 			WillReturnError(fmt.Errorf("error for testing"))
 
-		return testDb.SetArchived(file, 42)
+		return testDb.SetArchived(file, "108b842a-5d8e-4189-8e8a-9f54dc22576e", "108b842a-5d8e-4189-8e8a-9f54dc22576e")
 	})
-
 	assert.NotNil(t, r, "SetArchived did not fail correctly")
-
-	log.SetOutput(os.Stdout)
 }
 
 func TestUpdateDatasetEvent(t *testing.T) {
@@ -590,6 +579,53 @@ func TestMapFilesToDataset(t *testing.T) {
 	})
 
 	assert.Nil(t, r, "Tests for MapFilesToDataset failed unexpectedly")
+}
+
+func TestUpdateFileStatus(t *testing.T) {
+	err := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		r := sqlmock.NewResult(0, 1)
+		mock.ExpectExec("INSERT INTO sda.file_event_log\\(file_id, event, correlation_id, user_id, message\\) VALUES\\(\\$1, \\$2, \\$3, \\$4, \\$5\\);").
+			WithArgs("7559caae-a17c-40ae-bdb9-3a7d33408c49", "error", "f83976fc-7e59-4a12-ad17-0154a36e36fc", "dummy", "{\"json\":\"data\"}").
+			WillReturnResult(r)
+
+		return testDb.UpdateFileStatus("7559caae-a17c-40ae-bdb9-3a7d33408c49", "error", "f83976fc-7e59-4a12-ad17-0154a36e36fc", "dummy", "{\"json\":\"data\"}")
+	})
+	assert.Nil(t, err, "UpdateFileStatus failed unexpectedly")
+
+	err = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		mock.ExpectExec("INSERT INTO sda.file_event_log\\(file_id, event, correlation_id, user_id, message\\) VALUES\\(\\$1, \\$2, \\$3, \\$4, \\$5\\);").
+			WithArgs("bad-uuid", "error", "f83976fc-7e59-4a12-ad17-0154a36e36fc", "dummy", "").
+			WillReturnError(fmt.Errorf("error for testing"))
+
+		return testDb.UpdateFileStatus("bad-uuid", "error", "f83976fc-7e59-4a12-ad17-0154a36e36fc", "dummy", "")
+	})
+
+	assert.NotNil(t, err, "SetFileStatus did not fail as expected")
+}
+
+func TestGetFileStatus(t *testing.T) {
+	err := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		mock.ExpectQuery("SELECT event from sda.file_event_log WHERE correlation_id = \\$1 ORDER BY id DESC LIMIT 1;").
+			WithArgs("7559caae-a17c-40ae-bdb9-3a7d33408c49").
+			WillReturnRows(sqlmock.NewRows([]string{"event"}).AddRow("error"))
+
+		_, err := testDb.GetFileStatus("7559caae-a17c-40ae-bdb9-3a7d33408c49")
+
+		return err
+	})
+	assert.Nil(t, err, "UpdateFileStatus failed unexpectedly")
+
+	err = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		mock.ExpectQuery("SELECT event from sda.file_event_log WHERE correlation_id = \\$1 ORDER BY id DESC LIMIT 1;").
+			WithArgs("bad-uuid").
+			WillReturnError(fmt.Errorf("error for testing"))
+
+		_, err := testDb.GetFileStatus("bad-uuid")
+
+		return err
+	})
+
+	assert.NotNil(t, err, "SetFileStatus did not fail as expected")
 }
 
 func TestClose(t *testing.T) {

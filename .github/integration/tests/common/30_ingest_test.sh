@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$STORAGETYPE" = s3notls ] || [ "$STORAGETYPE" = s3notlsheader ]; then
+if [ "$STORAGETYPE" = s3notls ] || [ "$STORAGETYPE" = s3notlsheader ]|| [ "$STORAGETYPE" = cancel ]; then
     exit 0
 fi
 

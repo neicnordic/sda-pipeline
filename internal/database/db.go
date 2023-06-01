@@ -21,7 +21,7 @@ import (
 type Database interface {
 	GetArchived(user, filepath, checksum string) (string, int, error)
 	GetFileID(corrID string) (string, error)
-	GetHeader(fileID int) ([]byte, error)
+	GetHeader(fileID string) ([]byte, error)
 	MarkCompleted(checksum string, fileID int) error
 	MarkReady(accessionID, user, filepath, checksum string) error
 	RegisterFile(filePath, user string) (string, error)
@@ -145,7 +145,7 @@ func (dbs *SQLdb) checkAndReconnectIfNeeded() {
 }
 
 // GetHeader retrieves the file header
-func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
+func (dbs *SQLdb) GetHeader(fileID string) ([]byte, error) {
 	var (
 		r     []byte
 		err   error
@@ -161,11 +161,11 @@ func (dbs *SQLdb) GetHeader(fileID int) ([]byte, error) {
 }
 
 // getHeader is the actual function performing work for GetHeader
-func (dbs *SQLdb) getHeader(fileID int) ([]byte, error) {
+func (dbs *SQLdb) getHeader(fileID string) ([]byte, error) {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB
-	const query = "SELECT header from local_ega.files WHERE id = $1"
+	const query = "SELECT header from sda.files WHERE id = $1"
 
 	var hexString string
 	if err := db.QueryRow(query, fileID).Scan(&hexString); err != nil {
@@ -196,14 +196,14 @@ func (dbs *SQLdb) GetHeaderForStableID(stableID string) (string, error) {
 }
 
 // MarkCompleted marks the file as "COMPLETED"
-func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
+func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID, corrID string) error {
 	var (
 		err   error
 		count int
 	)
 
 	for count == 0 || (err != nil && count < dbRetryTimes) {
-		err = dbs.markCompleted(file, fileID)
+		err = dbs.markCompleted(file, fileID, corrID)
 		count++
 	}
 
@@ -211,26 +211,20 @@ func (dbs *SQLdb) MarkCompleted(file FileInfo, fileID int) error {
 }
 
 // markCompleted performs actual work for MarkCompleted
-func (dbs *SQLdb) markCompleted(file FileInfo, fileID int) error {
+func (dbs *SQLdb) markCompleted(file FileInfo, fileID, corrID string) error {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB
-	const completed = "UPDATE local_ega.files SET status = 'COMPLETED', " +
-		"archive_filesize = $2, " +
-		"archive_file_checksum = $3, " +
-		"archive_file_checksum_type = $4, " +
-		"decrypted_file_size = $5, " +
-		"decrypted_file_checksum = $6, " +
-		"decrypted_file_checksum_type = $7 " +
-		"WHERE id = $1;"
+	const completed = "SELECT sda.set_verified($1, $2, $3, $4, $5, $6, $7);"
 	result, err := db.Exec(completed,
 		fileID,
-		file.Size,
+		corrID,
 		fmt.Sprintf("%x", file.Checksum.Sum(nil)),
 		hashType(file.Checksum),
 		file.DecryptedSize,
 		fmt.Sprintf("%x", file.DecryptedChecksum.Sum(nil)),
-		hashType(file.DecryptedChecksum))
+		hashType(file.DecryptedChecksum),
+	)
 	if err != nil {
 		return err
 	}
@@ -353,10 +347,11 @@ func (dbs *SQLdb) setArchived(file FileInfo, fileID, corrID string) error {
 	const query = "SELECT sda.set_archived($1, $2, $3, $4, $5, $6);"
 	result, err := db.Exec(query,
 		fileID,
+		corrID,
 		file.Path,
 		file.Size,
 		fmt.Sprintf("%x", file.Checksum.Sum(nil)),
-		hashType(file.Checksum), corrID,
+		hashType(file.Checksum),
 	)
 	if err != nil {
 		return err

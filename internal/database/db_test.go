@@ -192,71 +192,47 @@ func TestMarkCompleted(t *testing.T) {
 	file := FileInfo{sha256.New(), 46, "/somepath", sha256.New(), 48}
 
 	_, err := file.Checksum.Write([]byte("checksum"))
-
 	if err != nil {
 		return
 	}
 
 	_, err = file.DecryptedChecksum.Write([]byte("decryptedchecksum"))
-
 	if err != nil {
 		return
 	}
 
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-
-		r := sqlmock.NewResult(10, 1)
-
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'COMPLETED', "+
-			"archive_filesize = \\$2, "+
-			"archive_file_checksum = \\$3, "+
-			"archive_file_checksum_type = \\$4, "+
-			"decrypted_file_size = \\$5, "+
-			"decrypted_file_checksum = \\$6, "+
-			"decrypted_file_checksum_type = \\$7 "+
-			"WHERE id = \\$1;").WithArgs(
-			10,
-			file.Size,
-			"96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b",
-			"SHA256",
-			file.DecryptedSize,
-			"b353d3058b350466bb75a4e5e2263c73a7b900e2c48804780c6dd820b8b151ba",
-			"SHA256").WillReturnResult(r)
-
-		return testDb.MarkCompleted(file, 10)
-	})
-
-	assert.Nil(t, r, "MarkCompleted failed unexpectedly")
-
-	var buf bytes.Buffer
-	log.SetOutput(&buf)
-
-	buf.Reset()
-	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
-
-		mock.ExpectExec("UPDATE local_ega.files SET status = 'COMPLETED', "+
-			"archive_filesize = \\$2, "+
-			"archive_file_checksum = \\$3, "+
-			"archive_file_checksum_type = \\$4, "+
-			"decrypted_file_size = \\$5, "+
-			"decrypted_file_checksum = \\$6, "+
-			"decrypted_file_checksum_type = \\$7 "+
-			"WHERE id = \\$1;").
-			WithArgs(10,
-				file.Size,
+		r := sqlmock.NewResult(0, 1)
+		mock.ExpectExec("SELECT sda.set_verified\\(\\$1, \\$2, \\$3, \\$4, \\$5, \\$6, \\$7\\);").
+			WithArgs(
+				"fb140b10-1354-4266-879e-b34ad3e64c57",
+				"71bb2f05-2061-41ac-9f62-32322fde7e7d",
 				"96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b",
 				"SHA256",
 				file.DecryptedSize,
 				"b353d3058b350466bb75a4e5e2263c73a7b900e2c48804780c6dd820b8b151ba",
-				"SHA256").
-			WillReturnError(fmt.Errorf("error for testing"))
+				"SHA256",
+			).WillReturnResult(r)
 
-		return testDb.MarkCompleted(file, 10)
+		return testDb.MarkCompleted(file, "fb140b10-1354-4266-879e-b34ad3e64c57", "71bb2f05-2061-41ac-9f62-32322fde7e7d")
 	})
+	assert.Nil(t, r, "MarkCompleted failed unexpectedly")
 
+	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
+		mock.ExpectExec("SELECT sda.set_verified\\(\\$1, \\$2, \\$3, \\$4, \\$5, \\$6, \\$7\\);").
+			WithArgs(
+				"fb140b10-1354-4266-879e-b34ad3e64c57",
+				"71bb2f05-2061-41ac-9f62-32322fde7e7d",
+				"96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b",
+				"SHA256",
+				file.DecryptedSize,
+				"b353d3058b350466bb75a4e5e2263c73a7b900e2c48804780c6dd820b8b151ba",
+				"SHA256",
+			).WillReturnError(fmt.Errorf("error for testing"))
+
+		return testDb.MarkCompleted(file, "fb140b10-1354-4266-879e-b34ad3e64c57", "71bb2f05-2061-41ac-9f62-32322fde7e7d")
+	})
 	assert.NotNil(t, r, "MarkCompleted did not fail as expected")
-
-	log.SetOutput(os.Stdout)
 }
 
 func TestRegisterFile(t *testing.T) {
@@ -293,11 +269,11 @@ func TestGetHeader(t *testing.T) {
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 
 		header := []byte{15, 64}
-		mock.ExpectQuery("SELECT header from local_ega.files WHERE id = \\$1").
-			WithArgs(42).
+		mock.ExpectQuery("SELECT header from sda.files WHERE id = \\$1").
+			WithArgs("foo").
 			WillReturnRows(sqlmock.NewRows([]string{"header"}).AddRow("0f40"))
 
-		x, err := testDb.GetHeader(42)
+		x, err := testDb.GetHeader("foo")
 
 		assert.Equal(t, x, header, "did not get expected header")
 
@@ -373,7 +349,7 @@ func TestSetArchived(t *testing.T) {
 	r := sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 		r := sqlmock.NewResult(0, 1)
 		mock.ExpectExec("SELECT sda.set_archived\\(\\$1, \\$2, \\$3, \\$4, \\$5, \\$6\\);").
-			WithArgs("108b842a-5d8e-4189-8e8a-9f54dc22576e", file.Path, file.Size, "96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b", "SHA256", "108b842a-5d8e-4189-8e8a-9f54dc22576e").
+			WithArgs("108b842a-5d8e-4189-8e8a-9f54dc22576e", "108b842a-5d8e-4189-8e8a-9f54dc22576e", file.Path, file.Size, "96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b", "SHA256").
 			WillReturnResult(r)
 
 		return testDb.SetArchived(file, "108b842a-5d8e-4189-8e8a-9f54dc22576e", "108b842a-5d8e-4189-8e8a-9f54dc22576e")
@@ -382,7 +358,7 @@ func TestSetArchived(t *testing.T) {
 
 	r = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 		mock.ExpectExec("SELECT sda.set_archived\\(\\$1, \\$2, \\$3, \\$4, \\$5, \\$6\\);").
-			WithArgs("108b842a-5d8e-4189-8e8a-9f54dc22576e", file.Path, file.Size, "96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b", "SHA256", "108b842a-5d8e-4189-8e8a-9f54dc22576e").
+			WithArgs("108b842a-5d8e-4189-8e8a-9f54dc22576e", "108b842a-5d8e-4189-8e8a-9f54dc22576e", file.Path, file.Size, "96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b", "SHA256").
 			WillReturnError(fmt.Errorf("error for testing"))
 
 		return testDb.SetArchived(file, "108b842a-5d8e-4189-8e8a-9f54dc22576e", "108b842a-5d8e-4189-8e8a-9f54dc22576e")

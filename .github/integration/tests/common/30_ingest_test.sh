@@ -323,7 +323,7 @@ for file in dummy_data.c4gh largefile.c4gh; do
 		fi
 	done
 
-	# Release dataset ids
+	# Release dataset
 	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
 		-H 'Content-Type: application/json;charset=UTF-8' \
 		--data-binary "$(echo '{
@@ -410,6 +410,44 @@ for file in dummy_data.c4gh largefile.c4gh; do
 		echo "File passed through flow but decrypted checksum in DB did not match real decrypted checksum."
 		exit 1
 	fi
+
+	# Deprecate dataset
+	curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchanges/test/sda/publish' \
+		-H 'Content-Type: application/json;charset=UTF-8' \
+		--data-binary "$(echo '{
+						"vhost":"test",
+						"name":"sda",
+						"properties":{
+							"delivery_mode":2,
+							"correlation_id":"CORRID",
+							"content_encoding":"UTF-8",
+							"content_type":"application/json"
+						},
+						"routing_key":"files",
+						"payload_encoding":"string",
+						"payload":"{
+							\"type\":\"deprecate\",
+							\"dataset_id\":\"DATASET\"}"
+						}' | sed -e "s/DATASET/$dataset/" -e "s/CORRID/$correlation_id/" | tr -d '[:space:]' )"
+
+	RETRY_TIMES=0
+	statusindb=''
+
+	# Check that it showed up in the database as well
+
+	until [ -n "$statusindb" ]; do
+		statusindb=$(docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
+			-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
+			neicnordic/pg-client:latest postgresql://postgres:rootpassword@db:5432/lega \
+			-t -A -c "SELECT id FROM local_ega.files where stable_id='$access' AND status='DISABLED';")
+		sleep 3
+		RETRY_TIMES=$((RETRY_TIMES + 1))
+
+		if [ "$RETRY_TIMES" -eq 150 ]; then
+			echo "Timed out waiting correct status in database, aborting"
+			exit 1
+		fi
+	done
 
 	count=$((count + 1))
 done

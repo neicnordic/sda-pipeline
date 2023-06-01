@@ -47,7 +47,7 @@ for routingkey in files ingest; do
 						"name":"sda",
 						"properties":{
 							"delivery_mode":2,
-							"correlation_id":"1",
+							"correlation_id":"8bc6a0ef-2a64-4d50-ab09-59fc789f5186",
 							"content_encoding":"UTF-8",
 							"content_type":"application/json"
 						},
@@ -68,7 +68,7 @@ for routingkey in files ingest; do
 						"name":"sda",
 						"properties":{
 							"delivery_mode":2,
-							"correlation_id":"1",
+							"correlation_id":"8bc6a0ef-2a64-4d50-ab09-59fc789f5186",
 							"content_encoding":"UTF-8",
 							"content_type":"application/json"
 						},
@@ -89,7 +89,7 @@ curl --cacert certs/ca.pem -vvv -u test:test 'https://localhost:15672/api/exchan
 					"name":"sda",
 					"properties":{
 					"delivery_mode":2,
-						"correlation_id":"1",
+						"correlation_id":"8bc6a0ef-2a64-4d50-ab09-59fc789f5186",
 						"content_encoding":"UTF-8",
 						"content_type":"application/json"
 					},

@@ -157,9 +157,6 @@ Otherwise the processing continues with verification:
     1. The original RabbitMQ message is ACKed.
     If this fails an error is written to the logs, but processing continues to the next step.
 
-    1. The archive file is removed from the inbox storage.
-    If this fails an error is written to the logs, and an error is written to the error queue.
-
 ## Communication
 
  - Verify reads messages from one rabbitmq queue (commonly `archived`).

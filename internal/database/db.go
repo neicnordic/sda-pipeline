@@ -445,7 +445,8 @@ func (dbs *SQLdb) updateDatasetEvent(datasetID, status, correlationID, user stri
 
 }
 
-// SetAccessionID marks the file as "READY"
+// SetAccessionID adds a stable id to a file
+// identified by the user submitting it, inbox path and decrypted checksum
 func (dbs *SQLdb) SetAccessionID(accessionID, user, filepath, checksum string) error {
 
 	var err error
@@ -462,7 +463,8 @@ func (dbs *SQLdb) SetAccessionID(accessionID, user, filepath, checksum string) e
 	return err
 }
 
-// MarkReady marks the file as "READY"
+// setAccessionID (actual operation) adds a stable id to a file
+// identified by the user submitting it, inbox path and decrypted checksum
 func (dbs *SQLdb) setAccessionID(accessionID, user, filepath, checksum string) error {
 	dbs.checkAndReconnectIfNeeded()
 

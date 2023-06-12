@@ -72,6 +72,7 @@ type OrchestratorConf struct {
 	QueueMapping   string
 	QueueIngest    string
 	QueueAccession string
+	ReleaseDelay   time.Duration
 }
 
 // NewConfig initializes and parses the config file and/or environment using
@@ -501,6 +502,11 @@ func (c *Config) configSMTP() {
 // configOrchestrator provides the configuration for the standalone orchestator.
 func (c *Config) configOrchestrator() {
 	c.Orchestrator = OrchestratorConf{}
+	if viper.IsSet("broker.dataset.releasedelay") {
+		c.Orchestrator.ReleaseDelay = time.Duration(viper.GetInt("broker.dataset.releasedelay"))
+	} else {
+		c.Orchestrator.ReleaseDelay = 1
+	}
 	c.Orchestrator.ProjectFQDN = viper.GetString("project.fqdn")
 	if viper.IsSet("broker.queue.verified") {
 		c.Orchestrator.QueueVerify = viper.GetString("broker.queue.verified")

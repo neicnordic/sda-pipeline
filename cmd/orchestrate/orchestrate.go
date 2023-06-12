@@ -191,7 +191,7 @@ func processQueue(mq *broker.AMQPBroker, queue string, routingKey string, conf *
 				continue
 			}
 			// let us wait a minute before sending the release message
-			time.Sleep(1 * time.Minute)
+			time.Sleep(conf.Orchestrator.ReleaseDelay * time.Minute)
 			publishMsg, publishType = releaseMessage(delivered.Body, conf)
 			err = validateMsg(&delivered, mq, routingKey, durable, routingSchema, publishMsg, publishType)
 			if err != nil {

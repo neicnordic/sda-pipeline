@@ -400,14 +400,14 @@ func (dbs *SQLdb) checkAccessionIDExists(accessionID string) (bool, error) {
 	return false, nil
 }
 
-// MarkReady marks the file as "READY"
-func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error {
+// UpdateDatasetEvent marks the files in a dataset as "ready" or "disabled"
+func (dbs *SQLdb) UpdateDatasetEvent(datasetID, status, correlationID, user string) error {
 
 	var err error
 
 	// 3, 9, 27, 81, 243 seconds between each retry event.
 	for count := 1; count <= dbRetryTimes; count++ {
-		err = dbs.markReady(accessionID, user, filepath, checksum)
+		err = dbs.updateDatasetEvent(datasetID, status, correlationID, user)
 		if err == nil {
 			break
 		}
@@ -417,13 +417,60 @@ func (dbs *SQLdb) MarkReady(accessionID, user, filepath, checksum string) error 
 	return err
 }
 
-// MarkReady marks the file as "READY"
-func (dbs *SQLdb) markReady(accessionID, user, filepath, checksum string) error {
+// updateDatasetEvent marks the files in a dataset as "ready" or "disabled"
+func (dbs *SQLdb) updateDatasetEvent(datasetID, status, correlationID, user string) error {
+	dbs.checkAndReconnectIfNeeded()
+
+	db := dbs.DB
+	const dataset = "SELECT id FROM sda.datasets WHERE stable_id = $1;"
+	const markFile = "INSERT INTO sda.file_event_log(file_id, event, correlation_id, user_id) " +
+		"SELECT file_id, $2, $3, $4 from sda.file_dataset " +
+		"WHERE dataset_id = $1;"
+
+	var datasetInternalID int
+	if err := db.QueryRow(dataset, datasetID).Scan(&datasetInternalID); err != nil {
+		return err
+	}
+
+	result, err := db.Exec(markFile, datasetInternalID, status, correlationID, user)
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
+		return errors.New("something went wrong with the query zero rows were changed")
+	}
+
+	return nil
+
+}
+
+// SetAccessionID adds a stable id to a file
+// identified by the user submitting it, inbox path and decrypted checksum
+func (dbs *SQLdb) SetAccessionID(accessionID, user, filepath, checksum string) error {
+
+	var err error
+
+	// 3, 9, 27, 81, 243 seconds between each retry event.
+	for count := 1; count <= dbRetryTimes; count++ {
+		err = dbs.setAccessionID(accessionID, user, filepath, checksum)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Duration(math.Pow(3, float64(count))) * time.Second)
+	}
+
+	return err
+}
+
+// setAccessionID (actual operation) adds a stable id to a file
+// identified by the user submitting it, inbox path and decrypted checksum
+func (dbs *SQLdb) setAccessionID(accessionID, user, filepath, checksum string) error {
 	dbs.checkAndReconnectIfNeeded()
 
 	db := dbs.DB
 
-	const ready = "UPDATE local_ega.files SET status = 'READY', stable_id = $1 WHERE " +
+	const ready = "UPDATE local_ega.files SET stable_id = $1 WHERE " +
 		"elixir_id = $2 and inbox_path = $3 and decrypted_file_checksum = $4 and status = 'COMPLETED';"
 	result, err := db.Exec(ready, accessionID, user, filepath, checksum)
 	if err != nil {
@@ -458,12 +505,18 @@ func (dbs *SQLdb) MapFilesToDataset(datasetID string, accessionIDs []string) err
 func (dbs *SQLdb) mapFilesToDataset(datasetID string, accessionIDs []string) error {
 	dbs.checkAndReconnectIfNeeded()
 
-	const getID = "SELECT file_id FROM local_ega.archive_files WHERE stable_id = $1"
-	const mapping = "INSERT INTO local_ega_ebi.filedataset (file_id, dataset_stable_id) " +
-		"VALUES ($1, $2) ON CONFLICT " +
+	const getID = "SELECT id FROM sda.files WHERE stable_id = $1;"
+	const dataset = "INSERT INTO sda.datasets (stable_id) VALUES ($1) " +
+		"ON CONFLICT DO NOTHING;"
+	const mapping = "INSERT INTO sda.file_dataset (file_id, dataset_id) " +
+		"SELECT $1, id FROM sda.datasets WHERE stable_id = $2 ON CONFLICT " +
 		"DO NOTHING;"
 	db := dbs.DB
-	var fileID int64
+	var fileID string
+	_, err := db.Exec(dataset, datasetID)
+	if err != nil {
+		return err
+	}
 	transaction, _ := db.Begin()
 	for _, accessionID := range accessionIDs {
 		err := db.QueryRow(getID, accessionID).Scan(&fileID)

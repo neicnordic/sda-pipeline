@@ -379,7 +379,7 @@ func releaseMessage(body []byte, conf *config.Config) ([]byte, interface{}) {
 func validateMsg(delivered *amqp091.Delivery, mq *broker.AMQPBroker, routingKey string, durable bool, routingSchema string, publishMsg []byte, publishType interface{}) error {
 	err := mq.ValidateJSON(delivered, routingSchema, publishMsg, publishType)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	log.Debugf("Routing message (corr-id: %s, routingkey: %s, message: %s)",

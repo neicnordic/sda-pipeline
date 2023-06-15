@@ -262,7 +262,7 @@ func GetFileID(t *testing.T) {
 		return err
 	})
 
-	assert.Nil(t, r, "GetMainID returned unexpected error")
+	assert.Nil(t, r, "GetFileID returned unexpected error")
 }
 
 func TestGetHeader(t *testing.T) {
@@ -576,7 +576,7 @@ func TestUpdateFileStatus(t *testing.T) {
 		return testDb.UpdateFileStatus("bad-uuid", "error", "f83976fc-7e59-4a12-ad17-0154a36e36fc", "dummy", "")
 	})
 
-	assert.NotNil(t, err, "SetFileStatus did not fail as expected")
+	assert.NotNil(t, err, "UpdateFileStatus did not fail as expected")
 }
 
 func TestGetFileStatus(t *testing.T) {
@@ -589,7 +589,7 @@ func TestGetFileStatus(t *testing.T) {
 
 		return err
 	})
-	assert.Nil(t, err, "UpdateFileStatus failed unexpectedly")
+	assert.Nil(t, err, "GetFileStatus failed unexpectedly")
 
 	err = sqlTesterHelper(t, func(mock sqlmock.Sqlmock, testDb *SQLdb) error {
 		mock.ExpectQuery("SELECT event from sda.file_event_log WHERE correlation_id = \\$1 ORDER BY id DESC LIMIT 1;").
@@ -601,7 +601,7 @@ func TestGetFileStatus(t *testing.T) {
 		return err
 	})
 
-	assert.NotNil(t, err, "SetFileStatus did not fail as expected")
+	assert.NotNil(t, err, "GetFileStatus did not fail as expected")
 }
 
 func TestGetInboxPath(t *testing.T) {

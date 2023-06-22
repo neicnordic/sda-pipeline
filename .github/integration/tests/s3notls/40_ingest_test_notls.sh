@@ -77,6 +77,23 @@ for file in dummy_data.c4gh largefile.c4gh; do
 						}' | sed -e "s/FILENAME/$file/" -e "s/MD5SUM/${md5sum}/" -e "s/SHA256SUM/${sha256sum}/" -e "s/CORRID/$correlation_id/" | tr -d '[:space:]' )"
 
 	RETRY_TIMES=0
+	until docker logs ingest --since="$now" 2>&1 | grep "Wrote archived file"; do
+		echo "waiting for ingestion to complete"
+		RETRY_TIMES=$((RETRY_TIMES + 1))
+		if [ "$RETRY_TIMES" -eq 60 ]; then
+			echo "::error::Time out while waiting for ingest to complete, logs:"
+
+			echo
+			echo ingest
+			echo
+
+			docker logs --since="$now" ingest
+			exit 1
+		fi
+		sleep 10
+	done
+
+	RETRY_TIMES=0
 	until docker logs ingest --since="$now" 2>&1 | grep "File marked as archived"; do
 		echo "waiting for ingestion to complete"
 		RETRY_TIMES=$((RETRY_TIMES + 1))
@@ -113,23 +130,6 @@ for file in dummy_data.c4gh largefile.c4gh; do
 			docker logs --since="$now" verify
 			exit 1
 
-		fi
-		sleep 10
-	done
-
-	RETRY_TIMES=0
-	until docker logs verify --since="$now" 2>&1 | grep "Removed file from inbox"; do
-		echo "waiting for verify to remove file from inbox"
-		RETRY_TIMES=$((RETRY_TIMES + 1))
-		if [ "$RETRY_TIMES" -eq 10 ]; then
-			echo "::error::Time out while waiting for verify to remove file, logs:"
-
-			echo
-			echo verify
-			echo
-
-			docker logs --since="$now" verify
-			exit 1
 		fi
 		sleep 10
 	done

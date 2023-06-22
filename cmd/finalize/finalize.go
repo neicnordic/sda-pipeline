@@ -107,6 +107,20 @@ func main() {
 				message.AccessionID,
 				message.DecryptedChecksums)
 
+			// If the file has been canceled by the uploader, don't spend time working on it.
+			status, err := db.GetFileStatus(delivered.CorrelationId)
+			if err != nil {
+				log.Errorf("failed to get file status, reason: %v", err.Error())
+			}
+			if status == "disabled" {
+				log.Infof("file with correlation ID: %s is disabled, stopping work", delivered.CorrelationId)
+				if err := delivered.Ack(false); err != nil {
+					log.Errorf("Failed acking canceled work, reason: %v", err)
+				}
+
+				continue
+			}
+
 			// Extract the sha256 from the message and use it for the database
 			var checksumSha256 string
 			for _, checksum := range message.DecryptedChecksums {

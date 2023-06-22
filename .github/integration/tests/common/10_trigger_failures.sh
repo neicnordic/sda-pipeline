@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$STORAGETYPE" = s3notls ] || [ "$STORAGETYPE" = s3notlsheader ]; then
+if [ "$STORAGETYPE" = s3notls ] || [ "$STORAGETYPE" = s3notlsheader ] || [ "$STORAGETYPE" = cancel ]; then
     exit 0
 fi
 
@@ -55,7 +55,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
                                "name":"sda",
     	                       "properties":{
     	                                     "delivery_mode":2,
-    	                                     "correlation_id":"1",
+    	                                     "correlation_id":"8bc6a0ef-2a64-4d50-ab09-59fc789f5186",
     	                                     "content_encoding":"UTF-8",
     	                                     "content_type":"application/json"
     	                                    },
@@ -89,7 +89,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
                                "name":"sda",
     	                       "properties":{
     	                                     "delivery_mode":2,
-    	                                     "correlation_id":"1",
+    	                                     "correlation_id":"8bc6a0ef-2a64-4d50-ab09-59fc789f5186",
     	                                     "content_encoding":"UTF-8",
     	                                     "content_type":"application/json"
     	                                    },
@@ -130,7 +130,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
                                "name":"sda",
     	                       "properties":{
     	                                     "delivery_mode":2,
-    	                                     "correlation_id":"1",
+    	                                     "correlation_id":"8bc6a0ef-2a64-4d50-ab09-59fc789f5186",
     	                                     "content_encoding":"UTF-8",
     	                                     "content_type":"application/json"
     	                                    },
@@ -172,7 +172,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
                                "name":"sda",
     	                       "properties":{
     	                                     "delivery_mode":2,
-    	                                     "correlation_id":"1",
+    	                                     "correlation_id":"8bc6a0ef-2a64-4d50-ab09-59fc789f5186",
     	                                     "content_encoding":"UTF-8",
     	                                     "content_type":"application/json"
     	                                    },
@@ -209,7 +209,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
                                "name":"sda",
     	                       "properties":{
     	                                     "delivery_mode":2,
-    	                                     "correlation_id":"1",
+    	                                     "correlation_id":"8bc6a0ef-2a64-4d50-ab09-59fc789f5186",
     	                                     "content_encoding":"UTF-8",
     	                                     "content_type":"application/json"
     	                                    },
@@ -258,7 +258,7 @@ if [ "$STORAGETYPE" != sftpheader ]; then
 								"name":"sda",
 								"properties":{
 												"delivery_mode":2,
-												"correlation_id":"1",
+												"correlation_id":"8bc6a0ef-2a64-4d50-ab09-59fc789f5186",
 												"content_encoding":"UTF-8",
 												"content_type":"application/json"
 												},
@@ -331,7 +331,7 @@ if [ "$STORAGETYPE" != sftpheader ]; then
 						"name":"sda",
 						"properties":{
 							"delivery_mode":2,
-							"correlation_id":"1",
+							"correlation_id":"8bc6a0ef-2a64-4d50-ab09-59fc789f5186",
 							"content_encoding":"UTF-8",
 							"content_type":"application/json"
 						},
@@ -416,7 +416,7 @@ if [ "$STORAGETYPE" != sftpheader ]; then
 						"name":"sda",
 						"properties":{
 							"delivery_mode":2,
-							"correlation_id":"1",
+							"correlation_id":"8bc6a0ef-2a64-4d50-ab09-59fc789f5186",
 							"content_encoding":"UTF-8",
 							"content_type":"application/json"
 						},
@@ -463,7 +463,7 @@ curl --cacert certs/ca.pem  -vvv -u test:test 'https://localhost:15672/api/excha
                                "name":"sda",
     	                       "properties":{
     	                                     "delivery_mode":2,
-    	                                     "correlation_id":"1",
+    	                                     "correlation_id":"8bc6a0ef-2a64-4d50-ab09-59fc789f5186",
     	                                     "content_encoding":"UTF-8",
     	                                     "content_type":"application/json"
     	                                    },
@@ -505,7 +505,7 @@ chmod 600 certs/client-key.pem
 docker run --rm --name client --network dev_utils_default -v "$PWD/certs:/certs" \
 			-e PGSSLCERT=/certs/client.pem -e PGSSLKEY=/certs/client-key.pem -e PGSSLROOTCERT=/certs/ca.pem \
 			neicnordic/pg-client:latest postgresql://postgres:rootpassword@db:5432/lega \
-			-t -A -c "update local_ega.main_to_files set main_id = main_id + 100"
+			-t -A -c "update sda.file_event_log set correlation_id = 'ad8df344-19cc-4452-8331-4c12d47b9804' where correlation_id = '8bc6a0ef-2a64-4d50-ab09-59fc789f5186'"
 
 docker unpause verify &> /dev/null
 

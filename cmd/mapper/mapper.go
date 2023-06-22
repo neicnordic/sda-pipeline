@@ -9,6 +9,7 @@ import (
 	"sda-pipeline/internal/broker"
 	"sda-pipeline/internal/config"
 	"sda-pipeline/internal/database"
+	"sda-pipeline/internal/storage"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -30,6 +31,10 @@ func main() {
 		log.Fatal(err)
 	}
 	db, err := database.NewDB(conf.Database)
+	if err != nil {
+		log.Fatal(err)
+	}
+	inbox, err := storage.NewBackend(conf.Inbox)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -134,13 +139,19 @@ func main() {
 				}
 
 				for _, aID := range mappings.AccessionIDs {
-					log.Infof("Mapped file to dataset "+
-						"(corr-id: %s, "+
-						"datasetid: %s, "+
-						"accessionid: %s)",
-						delivered.CorrelationId,
-						mappings.DatasetID,
-						aID)
+					log.Infof(
+						"Mapped file to dataset (corr-id: %s, datasetid: %s, accessionid: %s)",
+						delivered.CorrelationId, mappings.DatasetID, aID,
+					)
+
+					filePath, err := db.GetInboxPath(aID)
+					if err != nil {
+						log.Errorf("failed to get inbox path for file with stable ID: %v", aID)
+					}
+					err = inbox.RemoveFile(filePath)
+					if err != nil {
+						log.Errorf("Remove file from inbox failed, reason: %v", err)
+					}
 				}
 			case "release":
 

@@ -212,7 +212,6 @@ func NewConfig(app string) (*Config, error) {
 	case "intercept":
 		return c, nil
 	case "verify":
-		c.configInbox()
 		c.configArchive()
 
 		err = c.configDatabase()
@@ -239,6 +238,7 @@ func NewConfig(app string) (*Config, error) {
 
 		return c, nil
 	case "mapper":
+		c.configInbox()
 		err = c.configDatabase()
 		if err != nil {
 			return nil, err

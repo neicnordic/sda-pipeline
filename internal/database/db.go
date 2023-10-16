@@ -221,9 +221,9 @@ func (dbs *SQLdb) markCompleted(file FileInfo, fileID, corrID string) error {
 		corrID,
 		fmt.Sprintf("%x", file.Checksum.Sum(nil)),
 		hashType(file.Checksum),
-		file.DecryptedSize,
 		fmt.Sprintf("%x", file.DecryptedChecksum.Sum(nil)),
 		hashType(file.DecryptedChecksum),
+		file.DecryptedSize,
 	)
 	if err != nil {
 		return err

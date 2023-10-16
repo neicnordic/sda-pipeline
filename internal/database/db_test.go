@@ -209,9 +209,9 @@ func TestMarkCompleted(t *testing.T) {
 				"71bb2f05-2061-41ac-9f62-32322fde7e7d",
 				"96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b",
 				"SHA256",
-				file.DecryptedSize,
 				"b353d3058b350466bb75a4e5e2263c73a7b900e2c48804780c6dd820b8b151ba",
 				"SHA256",
+				file.DecryptedSize,
 			).WillReturnResult(r)
 
 		return testDb.MarkCompleted(file, "fb140b10-1354-4266-879e-b34ad3e64c57", "71bb2f05-2061-41ac-9f62-32322fde7e7d")
@@ -225,9 +225,9 @@ func TestMarkCompleted(t *testing.T) {
 				"71bb2f05-2061-41ac-9f62-32322fde7e7d",
 				"96fa8f226d3801741e807533552bc4b177ac4544d834073b6a5298934d34b40b",
 				"SHA256",
-				file.DecryptedSize,
 				"b353d3058b350466bb75a4e5e2263c73a7b900e2c48804780c6dd820b8b151ba",
 				"SHA256",
+				file.DecryptedSize,
 			).WillReturnError(fmt.Errorf("error for testing"))
 
 		return testDb.MarkCompleted(file, "fb140b10-1354-4266-879e-b34ad3e64c57", "71bb2f05-2061-41ac-9f62-32322fde7e7d")

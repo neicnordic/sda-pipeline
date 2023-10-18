@@ -424,8 +424,8 @@ func (dbs *SQLdb) updateDatasetEvent(datasetID, status, correlationID, user stri
 
 	db := dbs.DB
 	const dataset = "SELECT id FROM sda.datasets WHERE stable_id = $1;"
-	const markFile = "INSERT INTO sda.file_event_log(file_id, event, correlation_id, user_id) " +
-		"SELECT file_id, $2, $3, $4 from sda.file_dataset " +
+	const markFile = "INSERT INTO sda.file_event_log(file_id, event, user_id) " +
+		"SELECT file_id, $2, $3 from sda.file_dataset " +
 		"WHERE dataset_id = $1;"
 
 	var datasetInternalID int
@@ -433,7 +433,7 @@ func (dbs *SQLdb) updateDatasetEvent(datasetID, status, correlationID, user stri
 		return err
 	}
 
-	result, err := db.Exec(markFile, datasetInternalID, status, correlationID, user)
+	result, err := db.Exec(markFile, datasetInternalID, status, user)
 	if err != nil {
 		return err
 	}

@@ -1,3 +1,6 @@
+> ### Archival notice
+> :warning: **This repository is no longer maintained. The code has been integrated and it is further developed at: https://github.com/neicnordic/sensitive-data-archive**
+
 # sda-pipeline
 
 [![License](https://img.shields.io/github/license/neicnordic/sda-pipeline)](https://shields.io)
